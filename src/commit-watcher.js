@@ -20,8 +20,9 @@ export function watchLatestCommit() {
         }
 
         Modal.message.show(
-          "Refresh the page (game will be saved), we've got new stuff: " +
-          `"${json.message}" by ${json.author}`,
+          `${json.author}` + " did something, lets hope it doesn't break the game " + 
+          "<br> Refresh the page (game will be saved), we've got new stuff: " +
+          `"${json.message}"`,
           {
             callback: updateRefresh,
             closeButton: true
@@ -31,5 +32,5 @@ export function watchLatestCommit() {
       });
   }
 
-  setInterval(watch, 60000);
+  setInterval(watch, 30000);
 }

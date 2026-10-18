@@ -190,6 +190,18 @@ body.t-s12 {
   border-left-color: var(--color-alpha--base);
 }
 
+.o-tab-btn--glitch::after {
+  border-left-color: var(--color-glitch);
+}
+
+.o-tab-btn--meta::after {
+  border-left-color: var(--color-meta);
+}
+
+.o-tab-btn--fools::after {
+  border-left-color: var(--color-fools);
+}
+
 .o-tab-btn--divinity::after {
   border-left-color: var(--color-pelle--base);
 }
@@ -277,7 +289,7 @@ body.t-s12 {
 }
 
 .o-subtab__tooltip {
-  width: 25rem;
+  width: 20rem;
   height: 3rem;
   position: absolute;
   bottom: 100%;
@@ -290,7 +302,7 @@ body.t-s12 {
   background: var(--color-base);
   border: 0.1rem solid var(--color-accent);
   border-radius: var(--var-border-radius, 0.4rem);
-  margin-left: -10.2rem;
+  margin-left: -7.7rem;
   transition-duration: 0.2s;
   pointer-events: none;
 }
@@ -358,6 +370,36 @@ body.t-s12 {
 
 .o-tab-btn--celestial .o-subtab__tooltip::after {
   border-top-color: var(--color-celestials);
+}
+
+.o-tab-btn--glitch .o-subtab__tooltip {
+  color: var(--color-glitch);
+  background: var(--color-prestige--accent);
+  border-color: var(--color-glitch);
+}
+
+.o-tab-btn--glitch .o-subtab__tooltip::after {
+  border-top-color: var(--color-glitch);
+}
+
+.o-tab-btn--meta .o-subtab__tooltip {
+  color: var(--color-meta);
+  background: var(--color-prestige--accent);
+  border-color: var(--color-meta);
+}
+
+.o-tab-btn--meta .o-subtab__tooltip::after {
+  border-top-color: var(--color-meta);
+}
+
+.o-tab-btn--fools .o-subtab__tooltip {
+  color: var(--color-fools);
+  background: var(--color-prestige--accent);
+  border-color: var(--color-fools);
+}
+
+.o-tab-btn--fools .o-subtab__tooltip::after {
+  border-top-color: var(--color-fools);
 }
 
 .o-tab-btn--endgame .o-subtab__tooltip {
@@ -618,6 +660,7 @@ body.t-s12 {
   font-size: 1.2rem;
   font-weight: bold;
   color: var(--color-text);
+  border-bottom: 0.1rem solid var(--color-good);
   margin-top: 1rem;
   margin-bottom: 0.5rem;
   padding-bottom: 0.6rem;

@@ -1,0 +1,35 @@
+name: Deploy release
+
+env:
+  FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+    branches:
+      - release
+
+jobs:
+  build:
+    name: Deploy 🚀
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache-dependency-path: 'package-lock.json'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:release
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.GH_PUBLISH_TOKEN }}
+          repository-name: glitchyfishys/AD-V
+          branch: master
+          folder: dist
+          single-commit: true
