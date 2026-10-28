@@ -30,7 +30,7 @@ export default {
       isAvailableForPurchase: false,
       isCapped: false,
       capCP: new Decimal(0),
-      hardcap: CelestialDimensions.HARDCAP_PURCHASES,
+      hardcap: new Decimal(CelestialDimensions.HARDCAP_PURCHASES),
       isAutobuyerUnlocked: false,
       isAutobuyerOn: false
     };
@@ -59,7 +59,7 @@ export default {
     },
     capTooltip() {
       if (this.isCapped) return `Cap reached at ${format(this.capCP)} CP`;
-      return `Purchased ${quantifyHybridLarge("time", this.purchases)}`;
+      return `Purchased ${quantify("time", this.purchases)}`;
     },
     showRow() {
       return this.isUnlocked || this.canUnlock || this.amount.gt(0) ||

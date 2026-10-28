@@ -31,11 +31,9 @@ export default {
       isAvailableForPurchase: false,
       isCapped: false,
       capIP: new Decimal(0),
-      isContinuumActive: false,
-      continuumValue: new Decimal(0),
       isAutobuyerOn: false,
       isEC8Running: false,
-      hardcap: new Decimal(InfinityDimensions.HARDCAP_PURCHASES),
+      hardcap: new Decimal(0),
       eternityReached: false,
       enslavedRunning: false,
     };
@@ -50,8 +48,8 @@ export default {
     costDisplay() {
       if (this.isUnlocked || this.shiftDown) {
         if (this.isCapped) return "Capped";
-        if (this.isContinuumActive) return `Continuum: ${this.continuumString}`;
-        return this.showCostTitle ? `Cost: ${format(this.cost)} IP` : `${format(this.cost)} IP`;
+        const unit = Hell.isInside ? "AM" : "IP";
+        return this.showCostTitle ? `Cost: ${format(this.cost)} ${unit}` : `${format(this.cost)} ${unit}`;
       }
 
       if (this.canUnlock) {
@@ -59,9 +57,6 @@ export default {
       }
 
       return `Reach ${formatPostBreak(InfinityDimension(this.tier).amRequirement)} AM`;
-    },
-    continuumString() {
-      return formatHybridFloat(this.continuumValue, 2);
     },
     hasLongText() {
       return this.costDisplay.length > 20;
@@ -72,15 +67,15 @@ export default {
     capTooltip() {
       if (this.enslavedRunning) return `Nameless prevents the purchase of more than ${format(10)} Infinity Dimensions`;
       if (this.isCapped) return `Cap reached at ${format(this.capIP)} IP`;
-      if (this.isContinuumActive) return "Continuum produces all your Infinity Dimensions";
-      return `Purchased ${quantifyHybridLarge("time", this.purchases)}`;
+      return `Purchased ${quantifyInt("time", this.purchases)}`;
     },
     showRow() {
+      if (Hell.isInside && this.tier > 6) return false;
       return this.eternityReached || this.isUnlocked || this.canUnlock || this.amount.gt(0) ||
         this.hasPrevTier;
     },
     showCostTitle() {
-      return this.cost.log10().lt(1e5);
+      return this.cost.max(1).log10().lte(1e6);
     }
   },
   watch: {
@@ -109,34 +104,17 @@ export default {
         this.capIP.copyFrom(dimension.hardcapIPAmount);
         this.hardcap.copyFrom(dimension.purchaseCap);
       }
-      this.isContinuumActive = Laitela.continuumActive && !this.isEC8Running && Alpha.currentStage >= 9 && !player.disablePostReality;
-      if (this.isContinuumActive) this.continuumValue.copyFrom(dimension.continuumValue);
       this.isEC8Running = EternityChallenge(8).isRunning;
       this.isAutobuyerOn = autobuyer.isActive;
       this.eternityReached = PlayerProgress.eternityUnlocked();
       this.enslavedRunning = Enslaved.isRunning;
     },
     buySingleInfinityDimension() {
-      if (this.isContinuumActive) return;
       InfinityDimension(this.tier).buySingle();
     },
     buyMaxInfinityDimension() {
-      if (this.isContinuumActive) return;
       InfinityDimension(this.tier).buyMax(false);
     },
-    buttonClass() {
-      return {
-        "o-primary-btn--buy-id o-primary-btn o-primary-btn--new o-primary-btn--buy-dim": true,
-        "l-dim-row-small-text": this.hasLongText,
-        "o-non-clickable o-continuum": this.isContinuumActive
-      };
-    },
-    maxButtonClass() {
-      return {
-        "o-primary-btn--id-auto": true,
-        "o-non-clickable o-continuum": this.isContinuumActive
-      };
-    }
   }
 };
 </script>
@@ -157,7 +135,8 @@ export default {
     <div class="l-dim-row-multi-button-container">
       <PrimaryButton
         :enabled="isAvailableForPurchase || (!isUnlocked && canUnlock)"
-        :class="buttonClass()"
+        class="o-primary-btn--buy-id o-primary-btn--buy-dim c-dim-tooltip-container"
+        :class="{ 'l-dim-row-small-text': hasLongText }"
         @click="buySingleInfinityDimension"
       >
         {{ costDisplay }}
@@ -174,7 +153,7 @@ export default {
       <PrimaryButton
         v-else
         :enabled="isAvailableForPurchase && isUnlocked"
-        :class="maxButtonClass()"
+        class="o-primary-btn--id-auto"
         @click="buyMaxInfinityDimension"
       >
         Buy Max
@@ -182,21 +161,3 @@ export default {
     </div>
   </div>
 </template>
-
-<style scoped>
-.o-non-clickable {
-  cursor: auto;
-}
-
-.o-continuum {
-  border-color: var(--color-laitela--accent);
-  color: var(--color-laitela--accent);
-  background: var(--color-laitela--base);
-}
-
-.o-continuum:hover {
-  border-color: var(--color-laitela--accent);
-  color: var(--color-laitela--base);
-  background: var(--color-laitela--accent);
-}
-</style>

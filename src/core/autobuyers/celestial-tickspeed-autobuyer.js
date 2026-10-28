@@ -38,7 +38,7 @@ export class CelestialTickspeedAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get canTick() {
-    return CelestialTickspeed.isAvailableForPurchase && CelestialTickspeed.isAffordable && super.canTick;
+    return super.canTick && CelestialTickspeed.isAvailableForPurchase && CelestialTickspeed.isAffordable;
   }
 
   tick() {

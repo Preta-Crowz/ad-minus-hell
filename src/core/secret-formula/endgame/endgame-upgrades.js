@@ -1,20 +1,22 @@
+import { DC } from "../../constants";
+
 const rebuyable = props => {
+  const boughtAmount = () => new Decimal(player.endgame.rebuyables[props.id]);
   props.cost = () => getHybridCostScaling(
-    player.endgame.rebuyables[props.id],
-    1e100,
-    props.initialCost,
-    props.costMult,
-    props.costMult / 10,
+    boughtAmount(),
+    DC.E100,
+    new Decimal(props.initialCost),
+    new Decimal(props.costMult),
+    new Decimal(props.costMult / 10),
     DC.E309,
-    1e3,
-    props.initialCost * props.costMult
+    DC.E3,
+    new Decimal(props.initialCost * props.costMult)
   );
   const { effect } = props;
-  if (props.overflowing) props.effect = () => player.disablePostReality ? DC.D1 : Decimal.pow(effect, player.endgame.rebuyables[props.id]).min(DC.NUMMAX).times(Decimal.pow(effect, player.endgame.rebuyables[props.id]).div(DC.NUMMAX).max(2).log2());
-  else if (props.isDecimal) props.effect = () => player.disablePostReality ? DC.D1 : Decimal.pow(effect, player.endgame.rebuyables[props.id]);
-  else props.effect = () => player.disablePostReality ? 1 : Math.pow(effect, player.endgame.rebuyables[props.id]);
+  if (props.overflowing) props.effect = () => (player.disablePostReality ? DC.D1 : Decimal.pow(effect, boughtAmount()).min(DC.NUMMAX).times(Decimal.pow(effect, boughtAmount()).div(DC.NUMMAX).max(2).log2()));
+  else props.effect = () => (player.disablePostReality ? DC.D1 : Decimal.pow(effect, boughtAmount()));
   props.description = () => props.textTemplate.replace("{value}", format(effect, 2, 2));
-  props.formatEffect = value => (props.id === 2 || props.id === 3) ? formatX(value, 2, 4) : formatX(value, 2, 2);
+  props.formatEffect = value => ((props.id === 2 || props.id === 3) ? formatX(value, 2, 4) : formatX(value, 2, 2));
   props.formatCost = value => format(value, 2, 0);
   return props;
 };
@@ -69,9 +71,9 @@ export const endgameUpgrades = [
     id: 6,
     cost: new Decimal(1e45),
     requirement: () => `Have ${format(DC.E280)} Reality Shards without purchasing the 6th Galaxy Generator Upgrade`,
-    hasFailed: () => GalaxyGeneratorUpgrades.RSMult.boughtAmount > 0,
-    checkRequirement: () => GalaxyGeneratorUpgrades.RSMult.boughtAmount === 0 && Currency.realityShards.gte(DC.E280) && 
-      player.endgames >= 10,
+    hasFailed: () => GalaxyGeneratorUpgrades.RSMult.boughtAmount.gt(0),
+    checkRequirement: () => GalaxyGeneratorUpgrades.RSMult.boughtAmount.eq(0) && Currency.realityShards.gte(DC.E280) &&
+      player.endgames.gte(10),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     canLock: true,
     lockEvent: "purchase the 6th Galaxy Generator Upgrade",
@@ -97,21 +99,19 @@ export const endgameUpgrades = [
     checkRequirement: () => Time.bestEndgameRealTime.totalMinutes.lt(10),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: () => `Generate Endgames ${formatInt(10)} times slower than your fastest Endgame (real time)`,
-    effect: () => player.disablePostReality ? DC.NUMMAX : new Decimal(player.records.bestEndgame.realTime * 10),
+    effect: () => (player.disablePostReality ? DC.NUMMAX : new Decimal(player.records.bestEndgame.realTime * 10)),
     formatEffect: value => {
       if (new Decimal(value).gte(9999999999)) return "No Endgame generation";
-      let endgames = 1;
-      endgames *= ((ExpansionPack.enslavedPack.isBought && !player.disablePostReality)
-        ? Math.floor(1 + Math.pow(Math.log10(Math.min(Tesseracts.effectiveCount, 1000) * Math.max(Math.log10(Tesseracts.effectiveCount) - 2, 1) + 1), Math.log10(player.endgames + 1)))
-        : 1);
-      endgames *= Math.pow(1.33, Alpha.currentStage);
-      if (DivinityMilestone.firstDivine.isReached && !player.disablePostReality) endgames *= 10;
-      endgames *= DivineDimensions.conversionFormula1.toNumber();
+      let endgames = DC.D1.times((ExpansionPack.enslavedPack.isBought && !player.disablePostReality)
+        ? getTesseractEndgameMultiplier()
+        : 1).times(Math.pow(1.33, Alpha.currentStage));
+      if (DivinityMilestone.firstDivine.isReached && !player.disablePostReality) endgames = endgames.times(10);
+      endgames = endgames.times(DivineDimensions.conversionFormula1);
       const timeStr = Time.bestEndgameRealTime.totalMilliseconds.lte(100) && !Alpha.isDestroyed
         ? `${TimeSpan.fromMilliseconds(new Decimal(1000)).toStringShort()} (capped)`
         : (Time.bestEndgameRealTime.totalMilliseconds.lte(33)
-           ? `${TimeSpan.fromMilliseconds(new Decimal(330)).toStringShort()} (capped)`
-           : `${TimeSpan.fromMilliseconds(new Decimal(value)).toStringShort()}`);
+          ? `${TimeSpan.fromMilliseconds(new Decimal(330)).toStringShort()} (capped)`
+          : `${TimeSpan.fromMilliseconds(new Decimal(value)).toStringShort()}`);
       return `${quantify("Endgame", endgames)} every ${timeStr}`;
     }
   },
@@ -135,7 +135,7 @@ export const endgameUpgrades = [
     requirement: () => "Complete Effarig, Nameless, V and Ra before pouring anything into Teresa",
     hasFailed: () => player.celestials.teresa.pouredAmount.gt(0),
     checkRequirement: () => player.celestials.teresa.pouredAmount.eq(0) &&
-      EffarigUnlock.reality.isUnlocked && Enslaved.isCompleted && V.spaceTheorems >= 36 && Ra.totalPetLevel >= 100,
+      EffarigUnlock.reality.isUnlocked && Enslaved.isCompleted && V.spaceTheorems.gte(36) && Ra.totalPetLevel >= 100,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     canLock: true,
     lockEvent: "pour RM into Teresa",
@@ -151,7 +151,7 @@ export const endgameUpgrades = [
     description: () =>
       `Delay the Infinity Challenge 8 Reward Hardcap by ${formatPow(9)},
       and multiply all Celestial Dimensions by ${formatX(9)}`,
-    effect: () => player.disablePostReality ? 1 : 9
+    effect: () => (player.disablePostReality ? 1 : 9)
   },
   {
     name: "Unstable Undermining",
@@ -161,15 +161,18 @@ export const endgameUpgrades = [
     checkRequirement: () => GalaxyGenerator.galaxies.gte(1e60),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: () => `Reduce the Galaxy Generator Instability Magnitude by ${formatInt(1)}`,
-    effect: () => player.disablePostReality ? 0 : 1
+    effect: () => (player.disablePostReality ? 0 : 1)
   },
   {
     name: "Barrier Breaching",
     id: 13,
     cost: new Decimal(1e78),
     requirement: () => `Reach a Glyph Level of ${formatInt(76543)}`,
-    checkRequirement: () => player.records.bestEndgame.glyphLevel.gte(76543),
-    checkEvent: GAME_EVENT.REALITY_RESET_AFTER,
+    checkRequirement: () => Decimal.max(
+      player.records.bestReality.glyphLevel,
+      player.records.bestEndgame.glyphLevel
+    ).gte(76543),
+    checkEvent: [GAME_EVENT.REALITY_RESET_AFTER, GAME_EVENT.GAME_TICK_AFTER],
     description: "Weaken the third Glyph Level Instability"
   },
   {
@@ -177,14 +180,14 @@ export const endgameUpgrades = [
     id: 14,
     cost: new Decimal(1e84),
     requirement: () => `Reach ${format(1e40)} Galaxies without purchasing the 6th Galaxy Generator Upgrade`,
-    hasFailed: () => GalaxyGeneratorUpgrades.RSMult.boughtAmount > 0,
-    checkRequirement: () => GalaxyGeneratorUpgrades.RSMult.boughtAmount === 0 && GalaxyGenerator.galaxies.gte(1e40) && 
-      player.endgames >= 10,
+    hasFailed: () => GalaxyGeneratorUpgrades.RSMult.boughtAmount.gt(0),
+    checkRequirement: () => GalaxyGeneratorUpgrades.RSMult.boughtAmount.eq(0) && GalaxyGenerator.galaxies.gte(1e40) &&
+      player.endgames.gte(10),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     canLock: true,
     lockEvent: "purchase the 6th Galaxy Generator Upgrade",
     description: () => `Weaken the second Galaxy Generator Instability Magnitude by ${formatPercents(0.1)}`,
-    effect: () => player.disablePostReality ? 1 : 0.9
+    effect: () => (player.disablePostReality ? 1 : 0.9)
   },
   {
     name: () => `${player.universes.current === 2 ? "Matter Multitudes" : "Antimatter Amassment"}`,
@@ -195,9 +198,9 @@ export const endgameUpgrades = [
     checkRequirement: () => Currency.antimatter.value.add(1).log10().gte(1e33) && !Pelle.isDoomed,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: () => `Gain a power to the ${player.universes.current === 2 ? "Matter" : "Antimatter"} Exponent based on Imaginary Machines`,
-    effect: () => player.disablePostReality ? 1 : 1 + (Decimal.pow(Decimal.log10(Decimal.log10(
+    effect: () => (player.disablePostReality ? 1 : 1 + (Decimal.pow(Decimal.log10(Decimal.log10(
       player.reality.imaginaryMachines.add(1)).add(1)), 2).min(10).add(Decimal.log10(Decimal.log10(
-      player.reality.imaginaryMachines.add(1)).add(1)).sub(Math.sqrt(10)).max(0)).div(200)).toNumber(),
+      player.reality.imaginaryMachines.add(1)).add(1)).sub(Math.sqrt(10)).max(0)).div(200)).toNumber()),
     formatEffect: value => formatPow(value, 2, 4)
   },
   {
@@ -208,7 +211,7 @@ export const endgameUpgrades = [
     checkRequirement: () => Currency.galacticPower.gte(1e10),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: "You can equip a second Currency Path in Endgame Masteries",
-    effect: () => player.disablePostReality ? 1 : 2
+    effect: () => (player.disablePostReality ? 1 : 2)
   },
   {
     name: "Compression Calculations",
@@ -218,7 +221,7 @@ export const endgameUpgrades = [
     checkRequirement: () => Currency.galacticPower.gte(1e20),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: "You can equip a second Compression Path in Endgame Masteries",
-    effect: () => player.disablePostReality ? 1 : 2
+    effect: () => (player.disablePostReality ? 1 : 2)
   },
   {
     name: "Money Multiplication",
@@ -229,7 +232,7 @@ export const endgameUpgrades = [
     checkRequirement: () => Currency.galacticPower.gte(1e30) && EndgameUpgrade(16).isBought,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: "You can equip a third Currency Path in Endgame Masteries",
-    effect: () => player.disablePostReality ? 1 : 3
+    effect: () => (player.disablePostReality ? 1 : 3)
   },
   {
     name: "Dimensional Distension",
@@ -240,7 +243,7 @@ export const endgameUpgrades = [
     checkRequirement: () => Currency.galacticPower.gte(1e40) && EndgameUpgrade(17).isBought,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: "You can equip a third Compression Path in Endgame Masteries",
-    effect: () => player.disablePostReality ? 1 : 3
+    effect: () => (player.disablePostReality ? 1 : 3)
   },
   {
     name: "Omnipotent Opulence",
@@ -251,7 +254,7 @@ export const endgameUpgrades = [
     checkRequirement: () => Currency.galacticPower.gte(1e50) && EndgameUpgrade(18).isBought && EndgameUpgrade(19).isBought,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: "You can equip a fourth Compression and Currency Path in Endgame Masteries",
-    effect: () => player.disablePostReality ? 1 : 4
+    effect: () => (player.disablePostReality ? 1 : 4)
   },
   {
     name: "Infinite Improvements",
@@ -272,7 +275,7 @@ export const endgameUpgrades = [
     checkRequirement: () => BreakEternityUpgrade.tgThresholdUncap.isBought,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: () => `Apply a power to the Tachyon Galaxy Threshold based on Endgames`,
-    effect: () => player.disablePostReality ? 1 : 1 / Math.log10(player.endgames + 1),
+    effect: () => (player.disablePostReality ? 1 : Decimal.log10(player.endgames.add(1)).reciprocal()),
     formatEffect: value => formatPow(value, 2, 3)
   },
   {
@@ -284,7 +287,7 @@ export const endgameUpgrades = [
     checkRequirement: () => BreakEternityUpgrade.tesseractMultiplier.isBought,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: "Celestial Points delay the Free Tesseract Softcap",
-    effect: () => player.disablePostReality ? 1 : Math.pow(1 + Decimal.log10(Decimal.max(Decimal.log10(player.endgame.celestialPoints.max(1)).div(200), 1)).toNumber(), 2),
+    effect: () => (player.disablePostReality ? 1 : Math.pow(1 + Decimal.log10(Decimal.max(Decimal.log10(player.endgame.celestialPoints.max(1)).div(200), 1)).toNumber(), 2)),
     formatEffect: value => formatX(value, 2, 2)
   },
   {
@@ -296,7 +299,11 @@ export const endgameUpgrades = [
     checkRequirement: () => BreakEternityUpgrade.glyphSacrificeUncap.isBought,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: "All Glyph Sacrifice Values are increased based on Celestial Matter",
-    effect: () => player.disablePostReality ? 1 : Decimal.pow(Decimal.max(Decimal.log10(Decimal.log10(player.endgame.celestialMatter.add(1)).add(1)).div(2), 1), 1.5).toNumber(),
+    effect: () => {
+      if (player.disablePostReality) return DC.D1;
+      const matterLog = Decimal.log10(player.endgame.celestialMatter.add(1)).add(1);
+      return Decimal.pow(Decimal.max(Decimal.log10(matterLog).div(2), 1), 1.5);
+    },
     formatEffect: value => formatPow(value, 2, 3)
   },
   {
@@ -308,7 +315,7 @@ export const endgameUpgrades = [
     checkRequirement: () => BreakEternityUpgrade.glyphSlotImprovement.isBought,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: () => `Glyph Level gains a multiplier based on ${player.universes.current === 2 ? "Matter" : "Antimatter"} which applies after Instability`,
-    effect: () => player.disablePostReality ? 1 : Decimal.min(Decimal.pow(Decimal.max(Decimal.log10(Decimal.log10(player.antimatter.add(1)).add(1)).div(100), 1), 0.05), 1.2).toNumber(),
+    effect: () => (player.disablePostReality ? 1 : Decimal.min(Decimal.pow(Decimal.max(Decimal.log10(Decimal.log10(player.antimatter.add(1)).add(1)).div(100), 1), 0.05), 1.2).toNumber()),
     formatEffect: value => formatX(value, 2, 4)
   },
 ];

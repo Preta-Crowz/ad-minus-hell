@@ -17,9 +17,11 @@ export default {
       negativeBHDivisor: 1,
       maxNegativeBlackHole: 300,
       isDisabled: false,
-      amountSlider: 0.01,
-      timeSlider: 5,
-      areExtraSlidersUnlocked: false
+      lowermax: false,
+      isValid: true,
+      isFocused: false,
+      actualValue: Decimal.log10(player.blackHoleNegative),
+      displayValue: Decimal.log10(player.blackHoleNegative).toString(),
     };
   },
   computed: {
@@ -31,36 +33,95 @@ export default {
     reqLockText() {
       return `Inversion strength cannot be modified due to Lock for
         "${ImaginaryUpgrade(24).name}"`;
+    },
+    typeFunctions() {
+      const functions = AutobuyerInputFunctions.float;
+      if (functions === undefined) {
+        throw new Error("Unknown autobuyer input type");
+      }
+      return functions;
+    },
+    validityClass() {
+      return this.isValid ? undefined : "o-autobuyer-input--invalid";
     }
   },
   methods: {
     update() {
-      this.isNegativeBHUnlocked = V.isFlipped && BlackHoles.arePermanent;
+      this.isNegativeBHUnlocked = V.isHard && BlackHoles.arePermanent;
       this.isInverted = BlackHoles.areNegative;
       this.isLaitela = Laitela.isRunning;
-      this.negativeSlider = -Math.log10(player.blackHoleNegative);
-      this.negativeBHDivisor = Math.pow(10, this.negativeSlider);
-      const maxInversion = player.requirementChecks.reality.slowestBH <= 1e-300;
+      this.negativeSlider = Decimal.log10(player.blackHoleNegative).toNumber();
+      this.negativeBHDivisor = Decimal.pow(10, this.negativeSlider);
+      const maxInversion = player.requirementChecks.reality.slowestBH.gte(1e300);
       this.isDisabled = ImaginaryUpgrade(24).isLockingMechanics && Ra.isRunning && maxInversion;
-      this.amountSlider = player.celestials.enslaved.pulseAmount * 500;
-      this.timeSlider = player.celestials.enslaved.pulseTime;
-      this.areExtraSlidersUnlocked = ExpansionPack.enslavedPack.isBought && !player.disablePostReality;
+      this.maxNegativeBlackHole = (GlitchSpeedUpgrades.all[2].isBought ? 1e300 : 300);
+      this.lowermax = GlitchSpeedUpgrades.all[2].isBought;
+
+      this.extra = `The input is exponential so ${format(10)} would be ${format(1e10)}`
+      if (this.isFocused) return;
+      this.updateDisplayValue();
+      
     },
     adjustSliderNegative(value) {
       this.negativeSlider = value;
-      player.blackHoleNegative = Math.pow(10, -this.negativeSlider);
-      player.requirementChecks.reality.slowestBH = Math.max(
+      player.blackHoleNegative = Decimal.pow10(this.negativeSlider);
+      player.requirementChecks.reality.slowestBH = Decimal.max(
         player.requirementChecks.reality.slowestBH,
         player.blackHoleNegative
       );
     },
-    adjustSliderPulseAmount(value) {
-      this.amountSlider = value;
-      player.celestials.enslaved.pulseAmount = this.amountSlider / 500;
+    adjustInput(value) {
+      const parsedValue = Number.parseFloat(value);
+      if (!Number.isFinite(parsedValue)) {
+        this.isValid = false;
+        return;
+      }
+      this.isValid = true;
+      this.negativeSlider = parsedValue;
+      player.blackHoleNegative = Decimal.pow(10, this.negativeSlider);
+      player.requirementChecks.reality.slowestBH = Decimal.max(
+        player.requirementChecks.reality.slowestBH,
+        player.blackHoleNegative);
+        
+      this.isFocused = false;
+      event.target.blur();
     },
-    adjustSliderPulseTime(value) {
-      this.timeSlider = value;
-      player.celestials.enslaved.pulseTime = this.timeSlider;
+    areEqual(value, other) {
+      if (other === undefined || value === undefined) return false;
+      return this.typeFunctions.areEqual(value, other);
+    },
+    updateDisplayValue() {
+      this.displayValue = this.typeFunctions.formatValue(this.actualValue);
+    },
+    handleInput(event) {
+      const input = event.target.value;
+      this.displayValue = input;
+      if (input.length === 0) {
+        this.isValid = false;
+        return;
+      }
+      const parsedValue = this.typeFunctions.tryParse(input);
+      this.isValid = parsedValue !== undefined;
+      this.actualValue = this.typeFunctions.copyValue(parsedValue);
+    },
+    handleFocus() {
+      this.isFocused = true;
+    },
+    handleChange(event) {
+      if (this.isValid) {
+        this.negativeSlider = this.typeFunctions.copyValue(this.actualValue);
+        player.blackHoleNegative = Decimal.pow(10, this.negativeSlider);
+        player.requirementChecks.reality.slowestBH = Decimal.max(
+          player.requirementChecks.reality.slowestBH,
+          player.blackHoleNegative);
+      } else {
+        this.updateDisplayValue();
+      }
+      this.updateDisplayValue();
+      this.isValid = true;
+
+      this.isFocused = false;
+      event.target.blur();
     },
     sliderProps(negative) {
       return {
@@ -71,24 +132,51 @@ export default {
         tooltip: false
       };
     },
-    sliderPropsAmount() {
-      return {
-        min: 1,
-        max: 500,
-        interval: 1,
-        width: "55rem",
-        tooltip: false
-      };
-    },
-    sliderPropsTime() {
-      return {
-        min: 1,
-        max: 100,
-        interval: 1,
-        width: "55rem",
-        tooltip: false
-      };
-    },
+  }
+};
+  
+ const AutobuyerInputFunctions = {
+  decimal: {
+    areEqual: (value, other) => Decimal.eq(value, other),
+    formatValue: value => Notation.scientific.format(value, 2, 2),
+    copyValue: value => new Decimal(value),
+    tryParse: input => {
+      if (!input) return undefined;
+      try {
+        let decimal;
+        if (/^e\d*[.]?\d+$/u.test(input.replaceAll(",", ""))) {
+          // Logarithm Notation
+          decimal = Decimal.pow10(parseFloat(input.replaceAll(",", "").slice(1)));
+        } else {
+          decimal = Decimal.fromString(input.replaceAll(",", ""));
+        }
+        return isNaN(decimal.mag) || isNaN(decimal.layer) || isNaN(decimal.sign) ? undefined : decimal;
+      } catch (e) {
+        return undefined;
+      }
+    }
+  },
+  float: {
+    areEqual: (value, other) => value === other,
+    formatValue: value => Notation.scientific.format(value, 2, 2),
+    copyValue: value => value,
+    tryParse: input => {
+      const float = parseFloat(input);
+      return isNaN(float) ? undefined : float;
+    }
+  },
+  int: {
+    areEqual: (value, other) => value === other,
+    formatValue: value => Notation.scientific.format(value, 2, 2),
+    copyValue: value => value,
+    tryParse: input => {
+      if (!input) return undefined;
+      // We explicitly check formatting here instead of letting parseInt handle the whole thing because otherwise the
+      // fact that parseInt removes extraneous letters means junk like "361ebqv3" registers as valid and parses as 361
+      if (!/^\d+$/u.test(input.replaceAll(",", ""))) return undefined;
+      const int = parseInt(input, 10);
+      return isNaN(int) || !Number.isInteger(int) ? undefined : int;
+    }
   }
 };
 </script>
@@ -107,13 +195,31 @@ export default {
         >
           <i class="fas fa-question-circle l-margin-left" />
         </span>)
+        <br>
+        <div
+        v-if="lowermax">
+        {{ extra }}
+      </div>
       </b>
+
       <SliderComponent
-        v-if="!isDisabled"
+        v-if="!isDisabled && !lowermax"
         v-bind="sliderProps(true)"
         :value="negativeSlider"
         @input="adjustSliderNegative($event)"
       />
+      <input
+        v-else-if="!isDisabled && lowermax"
+        :value="displayValue"
+        :class="validityClass"
+        min="0"
+        type="number"
+        class="o-autobuyer-input"
+        @change="handleChange"
+        @focus="handleFocus"
+        @input="handleInput"
+      >
+      
       <div
         v-else
         class="l-lock-text"
@@ -123,31 +229,6 @@ export default {
       <br>
       Inverting the Black Hole only affects its own speedup, no other upgrades or effects, although
       it will also indirectly affect the Effarig Game speed power effect.
-    </div>
-    <br>
-    <div
-      v-if="areExtraSlidersUnlocked"
-      class="l-black-hole-sliders"
-    >
-      <b>
-        Black Holes will auto-release {{ formatPercents(amountSlider / 500, 2, 1) }} of Stored Game Time per second if Pulse is on.
-      </b>
-      <SliderComponent
-        v-if="areExtraSlidersUnlocked"
-        v-bind="sliderPropsAmount()"
-        :value="amountSlider"
-        @input="adjustSliderPulseAmount($event)"
-      />
-      <br>
-      <b>
-        Black Holes currently release Stored Game Time every {{ formatInt(timeSlider) }} ticks of Pulse is on.
-      </b>
-      <SliderComponent
-        v-if="areExtraSlidersUnlocked"
-        v-bind="sliderPropsTime()"
-        :value="timeSlider"
-        @input="adjustSliderPulseTime($event)"
-      />
     </div>
   </div>
 </template>

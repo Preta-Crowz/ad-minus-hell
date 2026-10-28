@@ -73,6 +73,15 @@ export const Perks = {
    */
   find(id) {
     return Perks.all.find(p => p.id === id);
+  },
+  buyAllAvailable() {
+    let boughtCount = 0;
+    while (Currency.perkPoints.gte(1)) {
+      const perk = Perks.all.find(candidate => candidate.canBeBought);
+      if (!perk || !perk.purchase()) break;
+      boughtCount++;
+    }
+    return boughtCount;
   }
 };
 

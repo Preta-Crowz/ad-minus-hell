@@ -1,58 +1,58 @@
 <script>
 import AutobuyerToggles from "./AutobuyerToggles";
 import BigCrunchAutobuyerBox from "./BigCrunchAutobuyerBox";
-import BulkSingularityAutobuyerBox from "./BulkSingularityAutobuyerBox";
-import CelestialCrunchAutobuyerBox from "./CelestialCrunchAutobuyerBox";
-import CelestialDimensionBoostAutobuyerBox from "./CelestialDimensionBoostAutobuyerBox";
-import CelestialEternityAutobuyerBox from "./CelestialEternityAutobuyerBox";
-import CelestialGalaxyAutobuyerBox from "./CelestialGalaxyAutobuyerBox";
-import CelestialTickspeedAutobuyerBox from "./CelestialTickspeedAutobuyerBox";
 import DimensionAutobuyerBox from "./DimensionAutobuyerBox";
 import DimensionBoostAutobuyerBox from "./DimensionBoostAutobuyerBox";
-import EndgameAutobuyerBox from "./EndgameAutobuyerBox";
 import EternityAutobuyerBox from "./EternityAutobuyerBox";
 import GalaxyAutobuyerBox from "./GalaxyAutobuyerBox";
 import OpenModalHotkeysButton from "@/components/OpenModalHotkeysButton";
 import RealityAutobuyerBox from "./RealityAutobuyerBox";
+import MetaAutobuyerBox from "./MetaAutobuyerBox";
 import SimpleAutobuyersMultiBox from "./SimpleAutobuyersMultiBox";
 import TickspeedAutobuyerBox from "./TickspeedAutobuyerBox";
+import EndgameAutobuyerBox from "./EndgameAutobuyerBox";
+import CelestialCrunchAutobuyerBox from "./CelestialCrunchAutobuyerBox";
+import CelestialEternityAutobuyerBox from "./CelestialEternityAutobuyerBox";
+import CelestialDimensionBoostAutobuyerBox from "./CelestialDimensionBoostAutobuyerBox";
+import CelestialGalaxyAutobuyerBox from "./CelestialGalaxyAutobuyerBox";
+import CelestialTickspeedAutobuyerBox from "./CelestialTickspeedAutobuyerBox";
+import BulkSingularityAutobuyerBox from "./BulkSingularityAutobuyerBox";
 
 export default {
   name: "AutobuyersTab",
   components: {
     AutobuyerToggles,
     OpenModalHotkeysButton,
-    EndgameAutobuyerBox,
     RealityAutobuyerBox,
-    CelestialEternityAutobuyerBox,
     EternityAutobuyerBox,
-    CelestialCrunchAutobuyerBox,
     BigCrunchAutobuyerBox,
-    CelestialGalaxyAutobuyerBox,
     GalaxyAutobuyerBox,
-    CelestialDimensionBoostAutobuyerBox,
     DimensionBoostAutobuyerBox,
-    BulkSingularityAutobuyerBox,
-    CelestialTickspeedAutobuyerBox,
     TickspeedAutobuyerBox,
     DimensionAutobuyerBox,
-    SimpleAutobuyersMultiBox
+    SimpleAutobuyersMultiBox,
+    MetaAutobuyerBox,
+    EndgameAutobuyerBox,
+    CelestialCrunchAutobuyerBox,
+    CelestialEternityAutobuyerBox,
+    CelestialDimensionBoostAutobuyerBox,
+    CelestialGalaxyAutobuyerBox,
+    CelestialTickspeedAutobuyerBox,
+    BulkSingularityAutobuyerBox
   },
   data() {
     return {
       hasInfinity: false,
-      tickBought: false,
       hasContinuum: false,
       displayADAutobuyersIndividually: false,
       hasInstant: false,
-      isFlipped: false
     };
   },
   computed: {
     // It only makes sense to show this if the player has seen gamespeed-altering effects, but we should keep it there
     // permanently as soon as they have
     hasSeenGamespeedAlteringEffects() {
-      return PlayerProgress.seenAlteredSpeed();
+      return Hell.isInside || PlayerProgress.seenAlteredSpeed();
     },
     gameTickLength() {
       return `${formatInt(player.options.updateRate)} ms`;
@@ -61,9 +61,7 @@ export default {
   methods: {
     update() {
       this.hasInfinity = PlayerProgress.infinityUnlocked();
-      this.tickBought = Autobuyer.tickspeed.isBought;
       this.hasContinuum = Laitela.continuumActive;
-      this.isFlipped = player.universes.current === 2;
       this.checkADAutoStatus();
     },
     checkADAutoStatus() {
@@ -98,22 +96,23 @@ export default {
     </div>
     <b>Autobuyers with no displayed bulk have unlimited bulk by default.</b>
     <b>
-      {{ isFlipped ? "Matter" : "Antimatter" }} Dimension Autobuyers can have their bulk upgraded once interval is below {{ formatInt(100) }} ms.
+      Antimatter Dimension Autobuyers can have their bulk upgraded once interval is below {{ formatInt(100) }} ms.
     </b>
     <b v-if="hasInstant">Autobuyers with "Instant" interval will trigger every game tick ({{ gameTickLength }}).</b>
-    <EndgameAutobuyerBox class="c-endgame-pos" />
+    <MetaAutobuyerBox class="c-meta-pos" />
+    <EndgameAutobuyerBox />
+    <CelestialCrunchAutobuyerBox />
+    <CelestialEternityAutobuyerBox />
     <RealityAutobuyerBox class="c-reality-pos" />
-    <CelestialEternityAutobuyerBox class="c-celestial-eternity-pos" />
     <EternityAutobuyerBox class="c-eternity-pos" />
-    <CelestialCrunchAutobuyerBox class="c-celestial-infinity-pos" />
     <BigCrunchAutobuyerBox class="c-infinity-pos" />
-    <CelestialGalaxyAutobuyerBox />
     <GalaxyAutobuyerBox />
-    <CelestialDimensionBoostAutobuyerBox />
     <DimensionBoostAutobuyerBox />
-    <BulkSingularityAutobuyerBox />
+    <TickspeedAutobuyerBox v-if="!hasContinuum" />
+    <CelestialDimensionBoostAutobuyerBox />
+    <CelestialGalaxyAutobuyerBox />
     <CelestialTickspeedAutobuyerBox />
-    <TickspeedAutobuyerBox v-if="!hasContinuum || !tickBought" />
+    <BulkSingularityAutobuyerBox />
     <template v-if="displayADAutobuyersIndividually">
       <DimensionAutobuyerBox
         v-for="tier in 8"
@@ -130,23 +129,15 @@ export default {
 when they're open. It looks slightly hacky but actually can't be done any other way; each AutobuyerBox creates
 its own stacking context, which means that all z-indices specified within are essentially scoped and the
 AutobuyerBox components will always render in page order regardless of internal z-indices without these. */
-.c-endgame-pos {
-  z-index: 6;
-}
-  
-.c-reality-pos {
-  z-index: 5;
-}
-
-.c-celestial-eternity-pos {
+.c-meta-pos {
   z-index: 4;
 }
 
-.c-eternity-pos {
+.c-reality-pos {
   z-index: 3;
 }
 
-.c-celestial-infinity-pos {
+.c-eternity-pos {
   z-index: 2;
 }
 

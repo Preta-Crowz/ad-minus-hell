@@ -5,8 +5,8 @@ import OptionsButton from "@/components/OptionsButton";
 import PrimaryToggleButton from "@/components/PrimaryToggleButton";
 import SelectLargeNotationDropdown from "./SelectLargeNotationDropdown";
 import SelectNotationDropdown from "@/components/tabs/options-visual/SelectNotationDropdown";
-import SelectThemeDropdown from "@/components/tabs/options-visual/SelectThemeDropdown";
 import SelectSidebarDropdown from "@/components/tabs/options-visual/SelectSidebarDropdown";
+import SelectThemeDropdown from "@/components/tabs/options-visual/SelectThemeDropdown";
 import UpdateRateSlider from "./UpdateRateSlider";
 
 export default {
@@ -98,7 +98,8 @@ export default {
           </template>
         </ExpandingControlBox>
         <ExpandingControlBox
-          class="l-options-grid__button c-options-grid__notations l-high-z-index"
+          style="z-index: 4"
+          class="l-options-grid__button c-options-grid__notations"
           button-class="o-primary-btn o-primary-btn--option l-options-grid__notations-header"
           :label="notationLabel"
         >
@@ -158,7 +159,7 @@ export default {
       </div>
       <div class="l-options-grid__row">
         <ExpandingControlBox
-          class="l-options-grid__button c-options-grid__notations l-low-z-index"
+          class="l-options-grid__button c-options-grid__notations"
           button-class="o-primary-btn o-primary-btn--option l-options-grid__notations-header"
           :label="postNotationLabel"
         >
@@ -171,12 +172,3 @@ export default {
     </div>
   </div>
 </template>
-<style scoped>
-.l-high-z-index {
-  z-index: 2;
-}
-
-.l-low-z-index {
-  z-index: 1;
-}
-</style>

@@ -55,8 +55,8 @@ export const Speedrun = {
   // If a name isn't given, choose a somewhat-likely-to-be-unique big number instead
   generateName(name) {
     if (name.trim() === "") {
-      const id = Math.floor((1e7 - 1) * Math.random()) + 1;
-      return `AD Player #${"0".repeat(6 - Math.floor(Math.log10(id)))}${id}`;
+      const id = Math.floor((1e10 - 1) * Math.random()) + 1;
+      return `ADV Player #${"0".repeat(6 - Math.floor(Math.log10(id)))}${id}`;
     }
     if (name.length > 40) return `${name.slice(0, 37)}...`;
     return name;
@@ -64,7 +64,7 @@ export const Speedrun = {
   // Hard-resets the current save and puts it in a state ready to be "unpaused" once resources start being generated
   prepareSave(name) {
     // Carry all relevant post-completion variables over too
-    Endgame.resetStuff();
+    NG.restartWithCarryover();
 
     player.speedrun.isUnlocked = true;
     player.speedrun.isActive = true;
@@ -97,12 +97,12 @@ export const Speedrun = {
     player.lastUpdate = Date.now();
 
     // This needs to be calculated "live" because using spentSTD includes any offline progress purchases too
-    let currentSpent = 0;
+    let currentSpent = new Decimal(1);
     for (const purchase of ShopPurchase.all) {
       if (purchase.config.instantPurchase) continue;
-      currentSpent += purchase.purchases * purchase.cost;
+      currentSpent = currentSpent.add(purchase.purchases.mul(purchase.cost));
     }
-    this.setSTDUse(ShopPurchaseData.isIAPEnabled && currentSpent > 0);
+    this.setSTDUse(ShopPurchaseData.isIAPEnabled && currentSpent.gt(0));
   },
   isPausedAtStart() {
     return player.speedrun.isActive && !player.speedrun.hasStarted;
@@ -147,7 +147,7 @@ class SpeedrunMilestone extends GameMechanicState {
   complete() {
     if (this.isReached || !player.speedrun.isActive) return;
     // Rounding slightly reduces filesize by removing weird float rounding
-    player.speedrun.records[this.config.id] = Math.round(player.records.realTimePlayed);
+    player.speedrun.records[this.config.id] = Math.round(player.records.trueTimePlayed);
     GameUI.notify.success(`Speedrun Milestone Reached: ${this.name}`);
   }
 }

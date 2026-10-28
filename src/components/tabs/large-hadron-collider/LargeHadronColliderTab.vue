@@ -80,7 +80,8 @@ export default {
     update() {
       this.hasAccelerator = Accelerators.all.some(a => a.isUnlocked);
       this.unlockReq.copyFrom(Decimal.pow10(1e200));
-      this.canSeeEntropy1 = player.records.totalAntimatterOutsideDoom.gte(Decimal.pow10(1e200)) && !Slabdrill.isCursed;
+      this.canSeeEntropy1 = (player.records.totalAntimatterOutsideDoom.gte(Decimal.pow10(1e200)) ||
+        LHC.voidRunning || LHC.nullifiedVoidRunning) && !Slabdrill.isCursed;
       this.canSeeEntropy2 = player.records.totalAntimatterOutsideDoom.gte(Decimal.pow10(1e260)) && !Pelle.isDoomed && !Slabdrill.isCursed;
       this.entropyCorrupted = Slabdrill.isCursed;
       this.textShift = ["Glitched", "Corrupted", "Disrupted"];
@@ -88,7 +89,7 @@ export default {
       this.accelPower = LHC.acceleratorSpeed * 100000;
       this.amSoftcap.copyFrom(Pelle.isDoomed ? DC.E9E15 : Decimal.pow10(1e200));
       this.amSoftcap2.copyFrom(Decimal.pow10(1e260));
-      this.amHardcap.copyFrom(Pelle.isDoomed ? DC.ENUMMAX : LHC.breakingPoint);
+      this.amHardcap.copyFrom(AntimatterDimension(1).cappedProductionInNormalChallenges);
       this.isRunning = LHC.voidRunning || LHC.nullifiedVoidRunning;
       this.highestAntimatter.copyFrom(player.endgame.largeHadronCollider.void.highestAntimatter);
       this.nullMatter.copyFrom(player.endgame.largeHadronCollider.void.nullMatter);
@@ -116,7 +117,7 @@ export default {
       this.isFlipped = player.universes.current === 2;
     },
     formatNullAmount(amount) {
-      return amount.gte(DC.NUMMAX) && !DualityUpgrade(26).isBought ? Notations.current.infinite : format(amount, 2, 2);
+      return format(amount, 2, 2);
     },
     glitchAnim() {
       let flux = Math.random() / (this.voidMode === 1 ? 2 : 4);
@@ -234,7 +235,7 @@ export default {
     </div>
     <br>
     <br>
-    <div v-if="highestAntimatter.gt(10)">
+    <div v-if="isRunning || highestAntimatter.gt(10) || nullMatter.gt(0)">
       <span class="c-void-antimatter-amount">
         [Your highest {{ isFlipped ? "Matter" : "Antimatter" }} inside The Void is {{ format(highestAntimatter, 2, 1) }}.]
       </span>

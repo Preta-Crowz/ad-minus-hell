@@ -17,6 +17,10 @@ export class AnnihilationAutobuyerState extends AutobuyerState {
     return this.data.multiplier;
   }
 
+  get mode() {
+    return this.data.mode;
+  }
+
   set multiplier(value) {
     this.data.multiplier = value;
   }
@@ -25,16 +29,12 @@ export class AnnihilationAutobuyerState extends AutobuyerState {
     return 0;
   }
 
-  get mode() {
-    return this.data.mode;
-  }
-
   get hasInput() {
     return true;
   }
 
   get inputType() {
-    return "float";
+    return "decimal";
   }
 
   get inputEntry() {
@@ -42,11 +42,8 @@ export class AnnihilationAutobuyerState extends AutobuyerState {
   }
 
   tick() {
-    if (this.mode === 0 && Laitela.darkMatterMultGain.gte(this.multiplier)) {
-      Laitela.annihilate();
-    }
-
-    if (this.mode === 1 && Laitela.darkMatterMultGain.gte(Laitela.darkMatterMult.times(this.multiplier))) {
+    const target = this.mode === 1 ? Laitela.darkMatterMult.times(this.multiplier) : this.multiplier;
+    if (Laitela.darkMatterMultGain.gte(target)) {
       Laitela.annihilate();
     }
   }

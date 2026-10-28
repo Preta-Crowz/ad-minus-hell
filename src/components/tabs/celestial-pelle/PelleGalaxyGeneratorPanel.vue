@@ -2,20 +2,20 @@
 import wordShift from "@/core/word-shift";
 
 import PelleUpgrade from "./PelleUpgrade";
+import PrimaryToggleButton from "../../PrimaryToggleButton.vue";
 
 export default {
   name: "GalaxyGeneratorPanel",
   components: {
-    PelleUpgrade
+    PelleUpgrade,
+    PrimaryToggleButton,
   },
   data() {
     return {
       isUnlocked: false,
-      isDilated: false,
-      isFinalized: false,
-      galaxies: new Decimal(0),
-      generatedGalaxies: new Decimal(0),
-      galaxiesPerSecond: new Decimal(0),
+      galaxies: new Decimal(),
+      generatedGalaxies: new Decimal(),
+      galaxiesPerSecond: 0,
       cap: 0,
       isCapped: false,
       capRift: null,
@@ -25,13 +25,15 @@ export default {
       capRiftName: "",
       galGenInstability: 0,
       harshGalGenInstability: 0,
-      effectiveInstability: new Decimal(0),
-      instabilityStart: new Decimal(0),
-      harshInstabilityStart: new Decimal(0),
-      generationReduction: new Decimal(0),
-      trueGenerationReduction: new Decimal(0),
+      effectiveInstability: new Decimal(),
+      instabilityStart: new Decimal(),
+      harshInstabilityStart: new Decimal(),
+      generationReduction: new Decimal(),
+      trueGenerationReduction: new Decimal(),
       isInstabilityShown: false,
       isSecondInstabilityShown: false,
+      isAutoUnlocked: false,
+      isAutobuyerOn: false,
     };
   },
   computed: {
@@ -41,12 +43,41 @@ export default {
         : "fas fa-compress-arrows-alt";
     },
     upgrades() {
-      if (!EndgameMilestone.fasterGalaxies.isReached || player.disablePostReality) return GalaxyGeneratorUpgrades.all.filter(u => u.id !== "galaxyGeneratorRSMult" && u.id !== "galaxyGeneratorDTMult" && u.id !== "galaxyGeneratorRemnantPow" && u.id !== "galaxyGeneratorExponential" && u.id !== "galaxyGeneratorSuperExponential");
-      if (!DivinityMilestone.firstDivine.isReached || player.disablePostReality) return GalaxyGeneratorUpgrades.all.filter(u => u.id !== "galaxyGeneratorDTMult" && u.id !== "galaxyGeneratorRemnantPow" && u.id !== "galaxyGeneratorExponential" && u.id !== "galaxyGeneratorSuperExponential");
-      if (!DivinityMilestone.divineDimensions.isReached || player.disablePostReality) return GalaxyGeneratorUpgrades.all.filter(u => u.id !== "galaxyGeneratorRemnantPow" && u.id !== "galaxyGeneratorExponential" && u.id !== "galaxyGeneratorSuperExponential");
-      if (!DivinityMilestone.celestialSurge.isReached || player.disablePostReality) return GalaxyGeneratorUpgrades.all.filter(u => u.id !== "galaxyGeneratorExponential" && u.id !== "galaxyGeneratorSuperExponential");
-      if (!Accelerators.cosmic._milestones[1].isUnlocked || player.disablePostReality) return GalaxyGeneratorUpgrades.all.filter(u => u.id !== "galaxyGeneratorSuperExponential");
-      return GalaxyGeneratorUpgrades.all;
+      const upgrades = GalaxyGeneratorUpgrades.all;
+      if (!EndgameMilestone.fasterGalaxies.isReached || player.disablePostReality) {
+        return upgrades.filter(upgrade => ![
+          "galaxyGeneratorRSMult",
+          "galaxyGeneratorDTMult",
+          "galaxyGeneratorRemnantPow",
+          "galaxyGeneratorExponential",
+          "galaxyGeneratorSuperExponential"
+        ].includes(upgrade.id));
+      }
+      if (!DivinityMilestone.firstDivine.isReached || player.disablePostReality) {
+        return upgrades.filter(upgrade => ![
+          "galaxyGeneratorDTMult",
+          "galaxyGeneratorRemnantPow",
+          "galaxyGeneratorExponential",
+          "galaxyGeneratorSuperExponential"
+        ].includes(upgrade.id));
+      }
+      if (!DivinityMilestone.divineDimensions.isReached || player.disablePostReality) {
+        return upgrades.filter(upgrade => ![
+          "galaxyGeneratorRemnantPow",
+          "galaxyGeneratorExponential",
+          "galaxyGeneratorSuperExponential"
+        ].includes(upgrade.id));
+      }
+      if (!DivinityMilestone.celestialSurge.isReached || player.disablePostReality) {
+        return upgrades.filter(upgrade => ![
+          "galaxyGeneratorExponential",
+          "galaxyGeneratorSuperExponential"
+        ].includes(upgrade.id));
+      }
+      if (!Accelerators.cosmic._milestones[1].isUnlocked || player.disablePostReality) {
+        return upgrades.filter(upgrade => upgrade.id !== "galaxyGeneratorSuperExponential");
+      }
+      return upgrades;
     },
     galaxyText() {
       let text = format(Decimal.max(this.galaxies, 0), 2);
@@ -60,31 +91,38 @@ export default {
       return Decimal.pow(this.generatedGalaxies.div(this.cap), 0.45).toNumber();
     }
   },
+  watch: {
+    isAutobuyerOn(newValue){
+      Autobuyer.galgenSac.isActive = newValue;
+    }
+  },
   methods: {
     update() {
       this.isUnlocked = Pelle.hasGalaxyGenerator;
-      this.isDilated = player.dilation.active;
-      this.isFinalized = PelleStrikes.dilation.isDestroyed();
       this.isCapped = GalaxyGenerator.isCapped;
-      this.isCollapsed = player.celestials.pelle.collapsed.galaxies && !this.isCapped;
+      this.isCollapsed = player.celestials.pelle.collapsed.galaxies;
       if (this.isCollapsed || !this.isUnlocked) return;
       this.galaxies.copyFrom(player.galaxies.add(GalaxyGenerator.galaxies));
       this.generatedGalaxies.copyFrom(GalaxyGenerator.generatedGalaxies);
-      this.galaxiesPerSecond.copyFrom(GalaxyGenerator.gainPerSecond);
+      this.galaxiesPerSecond = GalaxyGenerator.gainPerSecond;
       this.cap = GalaxyGenerator.generationCap;
       this.capRift = GalaxyGenerator.capRift;
       this.sacrificeActive = GalaxyGenerator.sacrificeActive;
       this.barWidth = (this.isCapped ? this.capRift.reducedTo : this.emphasisedStart);
       if (this.capRift) this.capRiftName = wordShift.wordCycle(this.capRift.name);
       this.galGenInstability = GalaxyGenerator.galGenInstability;
-      this.harshGalGenInstability = GalaxyGenerator.harshGalGenInstability;
+      this.harshGalGenInstability = GalaxyGenerator.harshGalGenInstabilityByGalaxies(this.galaxies);
       this.effectiveInstability.copyFrom(Decimal.pow(this.galGenInstability, this.harshGalGenInstability));
       this.instabilityStart.copyFrom(GalaxyGenerator.instabilityStart);
       this.harshInstabilityStart.copyFrom(GalaxyGenerator.harshInstabilityStart);
-      this.generationReduction.copyFrom(Decimal.max(1, Decimal.pow(this.galGenInstability, Decimal.log10(Decimal.max(Decimal.pow(this.galaxies.div(this.instabilityStart), 0.75), 1)))));
-      this.trueGenerationReduction.copyFrom(Decimal.max(1, Decimal.pow(Decimal.pow(this.galGenInstability, this.harshGalGenInstability), Decimal.log10(Decimal.max(Decimal.pow(this.galaxies.div(this.instabilityStart), 0.75), 1)))));
+      const instabilityStartRatio = Decimal.max(Decimal.pow(this.galaxies.div(this.instabilityStart), 0.75), 1);
+      this.generationReduction.copyFrom(Decimal.max(1,
+        Decimal.pow(this.galGenInstability, Decimal.log10(instabilityStartRatio))));
+      this.trueGenerationReduction.copyFrom(GalaxyGenerator.gainPerSecondPostCapByGalaxies(this.galaxies));
       this.isInstabilityShown = PlayerProgress.endgameUnlocked() || this.galaxies.gte(this.instabilityStart);
       this.isSecondInstabilityShown = this.galaxies.gte(this.harshInstabilityStart);
+      this.isAutoUnlocked = Autobuyer.galgenSac.isUnlocked;
+      this.isAutobuyerOn = Autobuyer.galgenSac.isActive;
     },
     increaseCap() {
       if (GalaxyGenerator.isCapped) GalaxyGenerator.startSacrifice();
@@ -95,7 +133,6 @@ export default {
     unlock() {
       player.celestials.pelle.galaxyGenerator.unlocked = true;
       Pelle.quotes.galaxyGeneratorUnlock.show();
-      if (player.endgames >= 1) Pelle.quotes.galgen2.show();
     }
   },
 };
@@ -105,7 +142,6 @@ export default {
   <div class="l-pelle-panel-container">
     <div class="c-pelle-panel-title">
       <i
-        v-if="!isCapped"
         :class="collapseIcon"
         class="c-collapse-icon-clickable"
         @click="toggleCollapse"
@@ -145,6 +181,7 @@ export default {
             </span>
           </div>
         </div>
+        <div class="l-spoon-btn-group">
         <div>
           <button
             class="c-increase-cap"
@@ -184,6 +221,13 @@ export default {
             </div>
           </button>
         </div>
+        <PrimaryToggleButton
+            v-if="isAutoUnlocked"
+            v-model="isAutobuyerOn"
+            label="Auto"
+            style="margin-top: -.75rem; max-width: 70rem; width: 100%; align-self: center;"
+          />
+      </div>
         <div class="l-galaxy-generator-upgrades-container">
           <PelleUpgrade
             v-for="upgrade in upgrades"
@@ -194,17 +238,11 @@ export default {
         </div>
       </div>
       <button
-        v-if="(isDilated || isFinalized) && !isUnlocked"
+        v-else
         class="c-generator-unlock-button"
         @click="unlock"
       >
         Unlock the Galaxy Generator
-      </button>
-      <button
-        v-if="!isDilated && !isFinalized"
-        class="c-generator-locked-button"
-      >
-        You must be inside Dilation to unlock the Galaxy Generator
       </button>
     </div>
   </div>
@@ -229,19 +267,6 @@ export default {
   font-weight: bold;
   color: black;
   background: linear-gradient(var(--color-pelle--secondary), var(--color-pelle--base));
-  border-radius: var(--var-border-radius, 0.5rem);
-  padding: 2rem;
-  cursor: pointer;
-}
-
-.c-generator-locked-button {
-  width: 25rem;
-  height: 10rem;
-  font-family: Typewriter;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: black;
-  background: #5f5f5f;
   border-radius: var(--var-border-radius, 0.5rem);
   padding: 2rem;
   cursor: pointer;
@@ -329,12 +354,6 @@ export default {
 }
 
 .s-base--dark .c-medium-text {
-  text-shadow: 0.2rem 0.2rem 0.2rem black;
-}
-
-.c-danger-text {
-  font-weight: bold;
-  color: var(--color-pelle--base);
   text-shadow: 0.2rem 0.2rem 0.2rem black;
 }
 </style>

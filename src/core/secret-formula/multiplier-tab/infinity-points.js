@@ -1,3 +1,4 @@
+import { DC } from "../../constants";
 import { PlayerProgress } from "../../player-progress";
 
 import { MultiplierTabIcons } from "./icons";
@@ -10,9 +11,9 @@ export const IP = {
       ? format(gainedInfinityPoints(), 2, 2)
       : "Cannot Crunch"),
     // This effectively hides everything if the player can't actually gain any
-    multValue: () => (Player.canCrunch ? gainedInfinityPoints() : 1),
+    multValue: () => (Player.canCrunch ? gainedInfinityPoints() : DC.D1),
     isActive: () => PlayerProgress.infinityUnlocked() || Player.canCrunch,
-    dilationEffect: () => (Laitela.isRunning ? 0.75 * Effects.product(DilationUpgrade.dilationPenalty) : 1),
+    dilationEffect: () => (Laitela.isRunning ? Decimal.mul(0.75, Effects.product(DilationUpgrade.dilationPenalty, GlitchSpeedUpgrade(1))) : DC.D1),
     isDilated: true,
     overlay: ["∞", "<i class='fa-solid fa-layer-group' />"],
   },
@@ -22,7 +23,7 @@ export const IP = {
     fakeValue: DC.D5,
     multValue: () => {
       const div = Effects.min(308, Achievement(103), TimeStudy(111));
-      return Decimal.pow10(player.records.thisInfinity.maxAM.log10() / div - 0.75);
+      return Decimal.pow10(player.records.thisInfinity.maxAM.log10().div(div.sub(0.75)));
     },
     isActive: () => player.break,
     icon: MultiplierTabIcons.CONVERT_FROM("AM"),
@@ -41,7 +42,7 @@ export const IP = {
       const div = Effects.min(308, Achievement(103), TimeStudy(111));
       return `log(AM)/${formatInt(308)} ➜ log(AM)/${format(div, 2, 1)}`;
     },
-    powValue: () => 308 / Effects.min(308, Achievement(103), TimeStudy(111)),
+    powValue: () => Decimal.div(308, Effects.min(308, Achievement(103), TimeStudy(111))),
     isActive: () => Achievement(103).canBeApplied || TimeStudy(111).isBought,
     icon: MultiplierTabIcons.DIVISOR("IP"),
   },
@@ -83,8 +84,8 @@ export const IP = {
   },
   glyph: {
     name: "Equipped Glyphs",
-    multValue: () => Pelle.specialGlyphEffect.infinity.times(Pelle.isDoomed ? 1 : getAdjustedGlyphEffect("infinityIP")),
-    powValue: () => (GlyphAlteration.isAdded("infinity") ? getSecondaryGlyphEffect("infinityIP") : 1),
+    multValue: () => Pelle.specialGlyphEffect.infinity.times(Pelle.isDoomed ? DC.D1 : getAdjustedGlyphEffect("infinityIP")),
+    powValue: () => (GlyphAlteration.isAdded("infinity") ? getSecondaryGlyphEffect("infinityIP") : DC.D1),
     isActive: () => PlayerProgress.realityUnlocked(),
     icon: MultiplierTabIcons.GENERIC_GLYPH,
   },
@@ -103,20 +104,48 @@ export const IP = {
   iap: {
     name: "Shop Tab Purchases",
     multValue: () => ShopPurchase.IPPurchases.currentMult,
-    isActive: () => ShopPurchaseData.totalSTD > 0,
+    isActive: () => player.IAP.STDcoins.gt(0),
     icon: MultiplierTabIcons.IAP,
   },
 
   nerfTeresa: {
     name: "Teresa's Reality",
-    powValue: () => 0.55,
+    powValue: () => Decimal.mul(GlitchSpeedUpgrades.all[0].effectOrDefault(1), 0.55),
     isActive: () => Teresa.isRunning,
     icon: MultiplierTabIcons.GENERIC_TERESA,
   },
   nerfV: {
     name: "V's Reality",
-    powValue: () => 0.5,
+    powValue: () => Decimal.mul(GlitchSpeedUpgrades.all[0].effectOrDefault(1), 0.5),
     isActive: () => V.isRunning,
     icon: MultiplierTabIcons.GENERIC_V,
+  },
+  glitchChallengePI: {
+    name: "Glitch Challenge (PI)",
+    multValue: () => DC.D1.timesEffectsOf(
+      preInfinityUG(6),
+      preInfinityUG(7),
+    ),
+    isActive: () => [6,7].some(x => preInfinityUG(x).isBought),
+    icon: MultiplierTabIcons.GLITCH_CHALLENGE,
+  },
+  glitchChallengeBI: {
+    name: "Glitch Challenge (BI)",
+    multValue: () => DC.D1.timesEffectsOf(
+      breakInfinityUG(0),
+      breakInfinityUG(1),
+      breakInfinityUG(2),
+      breakInfinityUG(3),
+    ),
+    isActive: () => [0,1,2,3].some(x => breakInfinityUG(x).isBought),
+    icon: MultiplierTabIcons.GLITCH_CHALLENGE,
+  },
+  glitchChallengeEternity: {
+    name: "Glitch Challenge (Eternity)",
+    multValue: () => DC.D1.timesEffectsOf(
+      eternityUG(0),
+    ),
+    isActive: () => eternityUG(0).isBought,
+    icon: MultiplierTabIcons.GLITCH_CHALLENGE,
   },
 };

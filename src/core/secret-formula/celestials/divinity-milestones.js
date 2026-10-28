@@ -115,5 +115,33 @@ export const divinityMilestones = {
         Gain ${formatX(10)} more generated Endgame Skills
         Unlock Slabdrill’s Expansion Pack`;
     }
+  },
+  automaticDivinity: {
+    divinities: 25,
+    get reward() {
+      return `Automatically become Divine at ${format(DC.ENUMMAX)} Antimatter
+        Galaxy Generator Upgrade Autobuyers buy max`;
+    }
+  },
+  metaAutomation: {
+    divinities: 100,
+    get reward() {
+      return `Unlock Autobuyers for rebuyable Meta Upgrades
+        Unlock passive Meta Relay generation at ${formatPercents(0.01)} of pending Meta Relays per second`;
+    }
+  },
+  bulkDivinity: {
+    divinities: 1e3,
+    get reward() {
+      return `Automatically become Divine in bulk when Antimatter Dimension production remains at ${format(DC.ENUMMAX)} or higher after each Divinity increase, up to ${formatInt(100)} Divinities at once`;
+    }
+  },
+  divinityOverdrive: {
+    divinities: 1e5,
+    get reward() {
+      return `Increase bulk automatic Divinity resets to ${formatInt(1000)} at once
+        Automatically buy unlocked Tesseracts, Penteracts, Hexeracts, and Hepteracts
+        Endgame Upgrades and Celestial Dimensions still require Celestial Points, but no longer consume them`;
+    }
   }
 };

@@ -79,7 +79,7 @@ export default {
     getETAText() {
       if (this.canBeBought || !this.isAvailableForPurchase || this.isBought || Pelle.isDoomed) return "";
       const time = MachineHandler.estimateIMTimer(this.upgrade.cost);
-      if (isFinite(new Decimal(time).toNumber())) return TimeSpan.fromSeconds(new Decimal(time)).toString();
+      if (time.lt("10^8000000000000")) return TimeSpan.fromSeconds(time).toString();
       return "Never affordable";
     },
     toggleLock(upgrade) {
@@ -87,8 +87,11 @@ export default {
       upgrade.toggleMechanicLock();
     },
     attemptPurchase() {
-      if (this.upgrade.id === 15 && EndgameUpgrade(9).isLockingMechanics) EndgameUpgrade(9).tryShowWarningModal();
-      else this.upgrade.purchase();
+      if (this.upgrade.id === 15 && EndgameUpgrade(9).isLockingMechanics) {
+        EndgameUpgrade(9).tryShowWarningModal();
+      } else {
+        this.upgrade.purchase();
+      }
     }
   }
 };

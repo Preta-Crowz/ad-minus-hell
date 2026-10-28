@@ -17,13 +17,17 @@ export default {
       focusedResourceId: -1,
       reactionsAvailable: false,
       realityCreationVisible: false,
+      glitchCreationVisible: false,
       animationTimer: 0,
       alchemyCap: 0,
-      capFactor: 0,
+      capFactor: new Decimal(),
       createdRealityGlyph: false,
+      createdGlitchGlyph: false,
       allReactionsDisabled: false,
       // Used to force a re-render of reaction lines when reality glyphs are created
       realityAmount: 0,
+      glitchAmount: 0,
+      alc: false,
     };
   },
   computed: {
@@ -50,43 +54,42 @@ export default {
         "tutorial--glow": !this.createdRealityGlyph
       };
     },
+    glitchGlyphCreationClass() {
+      return {
+        "o-primary-btn--subtab-option": true,
+        "tutorial--glow": !this.createdGlitchGlyph && this.glitchCreationVisible
+      };
+    },
     reactions() {
       return AlchemyReactions.all.compact().filter(r => r.product.isUnlocked);
     },
     isDoomed() {
-      return Pelle.isDoomed;
+      return Pelle.isDoomed && !ChallengerUpgrade(11).isBought;
     },
     pelleSymbol() {
       return Pelle.symbol;
-    },
-    shouldDisplayPelle() {
-      return this.PelleStage() !== -1;
-    },
-    PelleClass() {
-      return {
-        "c-pelle-symbol-overlay": true,
-        "c-pelle-symbol-overlay-tier0": this.PelleStage() === 0,
-        "c-pelle-symbol-overlay-tier1": this.PelleStage() === 1,
-        "c-pelle-symbol-overlay-tier2": this.PelleStage() === 2,
-        "c-pelle-symbol-overlay-tier3": this.PelleStage() === 3,
-        "c-pelle-symbol-overlay-tier4": this.PelleStage() === 4,
-      };
     }
   },
   methods: {
     update() {
       this.reactionsAvailable = AlchemyResources.all.filter(res => !res.isBaseResource && res.isUnlocked).length !== 0;
       this.realityCreationVisible = Ra.pets.effarig.level >= 25;
+      this.glitchCreationVisible = VUnlocks.RMcap.isUnlocked;
       this.animationTimer += 35;
       this.alchemyCap = Ra.alchemyResourceCap;
-      this.capFactor = 1 / GlyphSacrificeHandler.glyphRefinementEfficiency;
+      this.capFactor = new Decimal(GlyphSacrificeHandler.glyphRefinementEfficiency).recip();
       this.createdRealityGlyph = player.reality.glyphs.createdRealityGlyph;
+      this.createdGlitchGlyph = player.reality.glyphs.createdGlitchGlyph;
       this.allReactionsDisabled = this.reactions.every(reaction => !reaction.isActive);
-      this.realityAmount = AlchemyResource.reality.amount;
+      this.realityAmount = structuredClone(AlchemyResource.reality.amount);
+      this.glitchAmount = structuredClone(AlchemyResource.glitch.amount);
+      this.alc = player.options.animations.background;
     },
     orbitSize(orbit) {
-      const maxRadius = this.layout.orbits.map(o => o.radius).max();
-      return `${(orbit.radius / maxRadius * 50)}%`;
+      const maxRadius = this.layout.orbits.map(o => o.radius).nMax();
+      let radius = Decimal.clampMax(orbit.radius, 1e100);
+      radius = radius.toNumber();
+      return `${(radius / maxRadius * 50)}%`;
     },
     handleMouseEnter(node) {
       this.infoResourceId = node.resource.id;
@@ -117,11 +120,11 @@ export default {
       const outRes = reactionArrow.product.resource;
       // We render the reaction as capped if it won't trigger; this can happen under two conditions - either the
       // output is higher than this particular input amount, or it's at its cap due to a different input
-      return (outRes.amount > 0 && outRes.amount >= inRes.amount) || outRes.amount >= outRes.cap;
+      return (outRes.amount.gt(0) && outRes.amount.lte(inRes.amount)) || outRes.amount.gte(outRes.cap);
     },
     isLessThanRequired(reactionArrow) {
-      return reactionArrow.product.resource.amount > 0 &&
-        reactionArrow.reagent.cost < reactionArrow.reagent.resource.cap;
+      return reactionArrow.product.resource.amount.gt(0) &&
+        Decimal.lt(reactionArrow.reagent.cost, reactionArrow.reagent.resource.cap);
     },
     isActiveReaction(reactionArrow) {
       return reactionArrow.reaction.isActive && !this.isDoomed;
@@ -196,20 +199,7 @@ export default {
       }
     },
     resetAlchemy() {
-      for (const res of AlchemyResources.all) res.amount = 0;
-    },
-    createRealityGlyph() {
-      if (ExpansionPack.effarigPack.isBought && !player.disablePostReality) {
-        if (GameCache.glyphInventorySpace.value === 0) {
-          Modal.message.show("No available inventory space; Sacrifice some Glyphs to free up space.",
-            { closeEvent: GAME_EVENT.GLYPHS_CHANGED });
-          return;
-        }
-        Glyphs.addToInventory(GlyphGenerator.realityGlyph(Decimal.floor(AlchemyResource.reality.amount)));
-        if (!ExpansionPack.effarigPack.isBought || player.disablePostReality) AlchemyResource.reality.amount = 0;
-        player.reality.glyphs.createdRealityGlyph = true;
-      }
-      else Modal.realityGlyph.show();
+      AlchemyResources.reset();
     },
     nodeClass(node) {
       const resource = node.resource;
@@ -217,18 +207,6 @@ export default {
         "o-clickable": resource.isUnlocked && !resource.isBaseResource && !this.isDoomed
       };
     },
-    PelleStage() {
-      if (!this.isDoomed) return -1;
-      if (AlchemyResource.power.isDestroyed || AlchemyResource.infinity.isDestroyed || AlchemyResource.time.isDestroyed ||
-        AlchemyResource.replication.isDestroyed || AlchemyResource.dilation.isDestroyed || AlchemyResource.effarig.isDestroyed) return 0;
-      if (AlchemyResource.cardinality.isDestroyed || AlchemyResource.eternity.isDestroyed || AlchemyResource.dimensionality.isDestroyed ||
-        AlchemyResource.inflation.isDestroyed || AlchemyResource.alternation.isDestroyed) return 1;
-      if (AlchemyResource.synergism.isDestroyed || AlchemyResource.momentum.isDestroyed || AlchemyResource.decoherence.isDestroyed) return 2;
-      if (AlchemyResource.exponential.isDestroyed || AlchemyResource.force.isDestroyed || AlchemyResource.uncountability.isDestroyed ||
-        AlchemyResource.boundless.isDestroyed || AlchemyResource.multiversal.isDestroyed || AlchemyResource.unpredictability.isDestroyed) return 3;
-      if (AlchemyResource.reality.isDestroyed) return 4;
-      return -1;
-    }
   }
 };
 </script>
@@ -250,17 +228,36 @@ export default {
         {{ allReactionsDisabled ? "Enable" : "Disable" }} all reactions
       </PrimaryButton>
       <PrimaryButton
-        v-if="realityCreationVisible"
-        :class="realityGlyphCreationClass"
-        @click="createRealityGlyph"
-      >
-        View Reality Glyph creation
-      </PrimaryButton>
-      <PrimaryButton
         class="o-primary-btn--subtab-option"
         @click="resetAlchemy"
       >
         Force-reset all Alchemy resources
+      </PrimaryButton>
+      <PrimaryButton
+        v-if="realityCreationVisible"
+        :class="realityGlyphCreationClass"
+        onclick="Modal.realityGlyph.show()"
+      >
+        View Reality Glyph creation
+      </PrimaryButton>
+      <PrimaryButton
+        v-else
+        :class="realityGlyphCreationClass"
+      >
+        Reality Glyph creation is locked
+      </PrimaryButton>
+      <PrimaryButton
+        v-if="glitchCreationVisible"
+        :class="glitchGlyphCreationClass"
+        onclick="Modal.glitchGlyph.show()"
+      >
+        View Glitch Glyph creation
+      </PrimaryButton>
+      <PrimaryButton
+        v-else
+        :class="glitchGlyphCreationClass"
+      >
+        Glitch Glyph creation is locked
       </PrimaryButton>
     </div>
     <AlchemyResourceInfo
@@ -280,8 +277,8 @@ export default {
       :style="circleStyle"
     >
       <span
-        v-if="shouldDisplayPelle"
-        :class="PelleClass"
+        v-if="isDoomed"
+        class="c-pelle-symbol-overlay"
         v-html="pelleSymbol"
       />
       <svg class="l-alchemy-orbit-canvas">
@@ -305,20 +302,22 @@ export default {
         @mouseleave="handleMouseLeave"
         @click="handleClick(node)"
       />
-      <svg class="l-alchemy-arrow-canvas">
-        <line
-          v-for="(reactionArrow, idx) in layout.reactionArrows"
-          :key="'arrow-' + idx + realityAmount"
-          v-bind="reactionArrowPaths(reactionArrow)"
-          :class="reactionPathClass(reactionArrow)"
-        />
-        <line
-          v-for="(reactionArrow, idx) in layout.reactionArrows"
-          :key="'arrow2-' + idx + realityAmount"
-          v-bind="reactionArrowPositions(reactionArrow)"
-          :class="reactionArrowClass(reactionArrow)"
-        />
-      </svg>
+      <span v-if="alc">
+        <svg class="l-alchemy-arrow-canvas">
+          <line
+            v-for="(reactionArrow, idx) in layout.reactionArrows"
+            :key="'arrow-' + idx + realityAmount"
+            v-bind="reactionArrowPaths(reactionArrow)"
+            :class="reactionPathClass(reactionArrow)"
+          />
+          <line
+            v-for="(reactionArrow, idx) in layout.reactionArrows"
+            :key="'arrow2-' + idx + realityAmount"
+            v-bind="reactionArrowPositions(reactionArrow)"
+            :class="reactionArrowClass(reactionArrow)"
+          />
+        </svg>
+      </span>
     </div>
   </div>
 </template>
@@ -333,33 +332,16 @@ export default {
   width: 100%;
   height: 100%;
   position: absolute;
+  top: -1.5rem;
   left: 0;
   justify-content: center;
   align-items: center;
+  font-size: 60rem;
   color: var(--color-pelle--base);
   text-shadow: 0 0 3rem;
   pointer-events: none;
   user-select: none;
   opacity: 0.8;
   z-index: 2;
-}
-
-.c-pelle-symbol-overlay-tier0 {
-  font-size: 60rem;
-  top: -1.5rem;
-}
-.c-pelle-symbol-overlay-tier1 {
-  font-size: 45rem;
-  top: -1.125rem;
-}
-.c-pelle-symbol-overlay-tier2 {
-  font-size: 30rem;
-}
-.c-pelle-symbol-overlay-tier3 {
-  font-size: 20rem;
-  top: -0.5rem;
-}
-.c-pelle-symbol-overlay-tier4 {
-  font-size: 5rem;
 }
 </style>

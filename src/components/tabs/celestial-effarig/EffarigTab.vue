@@ -12,45 +12,53 @@ export default {
   },
   data() {
     return {
-      relicShards: new Decimal(0),
-      shardRarityBoost: 0,
-      shardPower: 0,
-      shardMaxRarityIncrease: 0,
-      shardsGained: new Decimal(0),
-      currentShardsRate: new Decimal(0),
-      amplification: 0,
-      amplifiedShards: new Decimal(0),
-      amplifiedShardsRate: new Decimal(0),
+      relicShards: new Decimal(),
+      shardRarityBoost: new Decimal(),
+      shardPower: new Decimal(),
+      shardsGained: new Decimal(),
+      currentShardsRate: new Decimal(),
+      amplification: new Decimal(),
+      amplifiedShards: new Decimal(),
+      amplifiedShardsRate: new Decimal(),
       runUnlocked: false,
       quote: "",
       isRunning: false,
       vIsFlipped: false,
-      relicShardRarityAlwaysMax: false,
-      hasSecondShop: false
+      relicShardRarityAlwaysMax: false
     };
   },
   computed: {
-    shopUnlocks: () => {
-      let u = [
-        EffarigUnlock.adjuster,
-        EffarigUnlock.glyphFilter,
-        EffarigUnlock.setSaves
-      ];
-      if (Achievement(227).isUnlocked) u.push(EffarigUnlock.maintainRS, EffarigUnlock.glyphGenerationBoost,
-        EffarigUnlock.maxMomentum, EffarigUnlock.maxRarityBoost, EffarigUnlock.extendRun);
-      return u;
+    sName(){
+      if(player.options.themeModern == "S15") return "Teresa-Effarig";
+      if(player.options.themeModern == "S14") return "Ra-Effarig";
+      if(player.options.themeModern == "S17") return `The Nameless Effarig's`;
+      if(player.options.themeModern == "S18") return `Lai'tela-Effarig's`;
+      if(player.options.themeModern == "S19") return `Pelle-Effarig's`;
+      if(player.options.themeModern == "S13") return "V-Effarig";
+      return "Effarig";
     },
+    sCel(){
+      if(player.options.themeModern == "S15") return "Teresa-Effarig";
+      if(player.options.themeModern == "S14") return "Ra-Effarig";
+      if(player.options.themeModern == "S17") return `The Nameless Effarig`;
+      if(player.options.themeModern == "S18") return `Lai'tela-Effarig`;
+      if(player.options.themeModern == "S19") return `Pelle-Effarig`;
+      if(player.options.themeModern == "S13") return "V-Effarig";
+      return "Effarig";
+    },
+    shopUnlocks: () => [
+      EffarigUnlock.adjuster,
+      EffarigUnlock.glyphFilter,
+      EffarigUnlock.setSaves,
+      EffarigUnlock.EC10Requirement
+    ],
     runUnlock: () => EffarigUnlock.run,
-    runUnlocks: () => {
-      let r = [
-        EffarigUnlock.infinity,
-        EffarigUnlock.eternity,
-        EffarigUnlock.reality,
-      ];
-      if (EffarigUnlock.extendRun.isUnlocked) r.push(EffarigUnlock.endgame);
-      return r;
-    },
-    symbol: () => GLYPH_SYMBOLS.effarig,
+    runUnlocks: () => [
+      EffarigUnlock.infinity,
+      EffarigUnlock.eternity,
+      EffarigUnlock.reality
+    ],
+    symbol: () => GlyphInfo.effarig.regularGlyphSymbol,
     runButtonOuterClass() {
       return {
         "l-effarig-run-button": true,
@@ -71,7 +79,7 @@ export default {
     showShardsRate() {
       return this.currentShardsRate;
     },
-    isDoomed: () => Pelle.isDoomed || Slabdrill.isCursed,
+    isDoomed: () => Pelle.isDoomed,
   },
   watch: {
     isRunning() {
@@ -81,21 +89,18 @@ export default {
   methods: {
     update() {
       this.relicShards.copyFrom(Currency.relicShards.value);
-      this.shardRarityBoost = Effarig.maxRarityBoost / 100;
-      this.shardPower = player.disablePostReality && !SlabdrillUnlocks.timeStudy181.isUnlocked
-        ? 1 : Ra.unlocks.maxGlyphRarityAndShardSacrificeBoost.effectOrDefault(1);
-      this.shardMaxRarityIncrease = Effarig.rarityCapIncrease / 100;
+      this.shardRarityBoost.copyFrom(Effarig.maxRarityBoost.div(100));
+      this.shardPower = Ra.unlocks.maxGlyphRarityAndShardSacrificeBoost.effectOrDefault(new Decimal(1));
       this.shardsGained.copyFrom(Effarig.shardsGained);
-      this.currentShardsRate.copyFrom(this.shardsGained.div(Time.thisRealityRealTime.totalMinutes));
-      this.amplification = simulatedRealityCount(false);
-      this.amplifiedShards.copyFrom(this.shardsGained.times(1 + this.amplification));
-      this.amplifiedShardsRate.copyFrom(this.amplifiedShards.div(Time.thisRealityRealTime.totalMinutes));
+      this.currentShardsRate = (this.shardsGained.div(Time.thisRealityRealTime.totalMinutes));
+      this.amplification.copyFrom(simulatedRealityCount(false));
+      this.amplifiedShards = this.shardsGained.mul(this.amplification.add(1));
+      this.amplifiedShardsRate = (this.amplifiedShards.div(Time.thisRealityRealTime.totalMinutes));
       this.quote = Effarig.quote;
       this.runUnlocked = EffarigUnlock.run.isUnlocked;
       this.isRunning = Effarig.isRunning;
-      this.vIsFlipped = V.isFlipped;
-      this.relicShardRarityAlwaysMax = (Ra.unlocks.extraGlyphChoicesAndRelicShardRarityAlwaysMax.canBeApplied || EndgameMilestone.startRa.isReached) && !player.disablePostReality;
-      this.hasSecondShop = Achievement(227).isUnlocked;
+      this.vIsFlipped = V.isHard;
+      this.relicShardRarityAlwaysMax = Ra.unlocks.extraGlyphChoicesAndRelicShardRarityAlwaysMax.canBeApplied;
     },
     startRun() {
       if (this.isDoomed) return;
@@ -124,19 +129,15 @@ export default {
             <br>
             by a random value between +{{ formatPercents(0) }} and +{{ formatPercents(shardRarityBoost, 2) }}.
           </span>
-          <span v-if="shardPower > 1">
+          <span v-if="shardPower.gt(1)">
             <br>
             Glyph Sacrifice gain is also being raised to {{ formatPow(shardPower, 0, 2) }}.
-          </span>
-          <span v-if="shardMaxRarityIncrease > 0">
-            <br>
-            The Glyph Rarity cap is also being increased by +{{ formatPercents(shardMaxRarityIncrease, 2) }}.
           </span>
         </div>
         <div class="c-effarig-relic-description">
           You will gain {{ quantify("Relic Shard", shardsGained, 2) }} next Reality
           ({{ format(currentShardsRate, 2) }}/min).
-          <span v-if="amplification !== 0">
+          <span v-if="amplification.neq(0)">
             <br>
             Due to amplification of your current Reality,
             <br>
@@ -175,7 +176,7 @@ export default {
       >
         <div class="c-effarig-run-description">
           <span :class="{ 'o-pelle-disabled': isDoomed }">
-            Enter Effarig's Reality.
+            Enter {{sName}} Reality.
           </span>
         </div>
         <div
@@ -193,9 +194,9 @@ export default {
           {{ runDescription }}
         </div>
         <EffarigRunUnlockReward
-          v-for="(runRewardUnlock, j) in runUnlocks"
-          :key="j"
-          :unlock="runRewardUnlock"
+          v-for="(unlock, i) in runUnlocks"
+          :key="i"
+          :unlock="unlock"
         />
       </div>
     </div>

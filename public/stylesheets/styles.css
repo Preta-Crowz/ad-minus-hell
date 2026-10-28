@@ -1072,6 +1072,17 @@ button:focus {
   background: var(--color-pelle--base);
 }
 
+.o-tab-btn--hell {
+  color: #ff3b30;
+  background-color: #1a0000;
+  border-color: #b3120f;
+}
+
+.o-tab-btn--hell:hover {
+  background: #b3120f;
+  color: #fff;
+}
+
 .o-tab-btn--universes {
   background-color: var(--color-prestige--accent);
   animation: a-universes-glow-primary 10s infinite;
@@ -9216,10 +9227,7 @@ kbd {
 }
 
 .c-enslaved-run-button__icon__sigil {
-  position: absolute;
-  top: -3.7rem;
-  right: -0.2rem;
-  font-size: 14.8rem;
+  font-size: 12rem;
   transform: rotate(45deg);
 }
 
@@ -9717,8 +9725,8 @@ kbd {
 }
 
 .l-ra-pet-container {
-  float: left;
-  width: 50%;
+  float: none;
+  width: 100%;
 }
 
 .c-ra-memory-header {
@@ -9756,6 +9764,7 @@ kbd {
 
 .l-ra-non-pets {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
 }
 
@@ -9910,13 +9919,31 @@ kbd {
 }
 
 .l-ra-all-pets-container {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 80rem;
+  max-width: 100%;
   height: 100%;
   justify-content: center;
-  align-items: center;
+  align-items: start;
   margin: auto;
+}
+
+@media screen and (max-width: 720px) {
+  .l-ra-all-pets-container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .c-ra-pet-header {
+    width: calc(100% - 4rem);
+    max-width: 35rem;
+  }
+
+  .c-ra-run-button,
+  .c-ra-remembrance-unlock {
+    width: calc(100% - 4rem);
+    max-width: 33rem;
+  }
 }
 
 .l-ra-unlock {
@@ -9966,11 +9993,14 @@ kbd {
   justify-content: center;
   align-items: center;
   font-size: 1.3rem;
+  font-family: inherit;
   color: black;
   background: grey;
   border: var(--var-border-width, 0.2rem) solid black;
   border-right: 0;
   border-radius: var(--var-border-radius, 1rem);
+  padding: 0;
+  appearance: none;
   transition-duration: 0.2s;
 }
 
@@ -10112,6 +10142,7 @@ kbd {
   justify-content: center;
   align-items: center;
   font-size: 2rem;
+  font-family: inherit;
   color: black;
   background: grey;
   border: var(--var-border-width, 0.2rem) solid black;
@@ -10119,6 +10150,8 @@ kbd {
   border-radius: var(--var-border-radius, 1rem);
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+  padding: 0;
+  appearance: none;
   transition-duration: 0.2s;
 }
 
@@ -15411,8 +15444,8 @@ kbd {
 }
 
 .l-ra-pet-container {
-  float: left;
-  width: 50%;
+  float: none;
+  width: 100%;
 }
 
 .c-ra-memory-header {
@@ -15450,6 +15483,7 @@ kbd {
 
 .l-ra-non-pets {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
 }
 
@@ -15604,13 +15638,31 @@ kbd {
 }
 
 .l-ra-all-pets-container {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 80rem;
+  max-width: 100%;
   height: 100%;
   justify-content: center;
-  align-items: center;
+  align-items: start;
   margin: auto;
+}
+
+@media screen and (max-width: 720px) {
+  .l-ra-all-pets-container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .c-ra-pet-header {
+    width: calc(100% - 4rem);
+    max-width: 35rem;
+  }
+
+  .c-ra-run-button,
+  .c-ra-remembrance-unlock {
+    width: calc(100% - 4rem);
+    max-width: 33rem;
+  }
 }
 
 .l-ra-unlock {
@@ -15660,11 +15712,14 @@ kbd {
   justify-content: center;
   align-items: center;
   font-size: 1.3rem;
+  font-family: inherit;
   color: black;
   background: grey;
   border: var(--var-border-width, 0.2rem) solid black;
   border-right: 0;
   border-radius: var(--var-border-radius, 1rem);
+  padding: 0;
+  appearance: none;
   transition-duration: 0.2s;
 }
 
@@ -15806,6 +15861,7 @@ kbd {
   justify-content: center;
   align-items: center;
   font-size: 2rem;
+  font-family: inherit;
   color: black;
   background: grey;
   border: var(--var-border-width, 0.2rem) solid black;
@@ -15813,6 +15869,8 @@ kbd {
   border-radius: var(--var-border-radius, 1rem);
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+  padding: 0;
+  appearance: none;
   transition-duration: 0.2s;
 }
 

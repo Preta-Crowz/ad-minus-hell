@@ -37,32 +37,42 @@ export default {
       singularityCap: new Decimal(0),
       singularityWaitTime: "",
       showAnnihilation: false,
-      endgameUnlocked: false,
-      darkMatterCap: new Decimal(0),
-      softcap1: new Decimal(0),
-      softcap2: new Decimal(0),
-      softcapOmega: new Decimal(0),
-      hadronsUnlocked: false,
-      isUncapped: false,
+      hadronsUnlocked: false
     };
   },
   computed: {
+    sName() {
+      if (player.options.themeModern === "S15") return "Teresa-Lai'tela's";
+      if (player.options.themeModern === "S16") return "Effarig-Lai'tela's";
+      if (player.options.themeModern === "S17") return "The Nameless Lai'tela's";
+      if (player.options.themeModern === "S14") return "Ra-Lai'tela's";
+      if (player.options.themeModern === "S19") return "Pelle-Lai'tela's";
+      if (player.options.themeModern === "S13") return "V-Lai'tela's";
+      return "Lai'tela's";
+    },
+    sCel() {
+      if (player.options.themeModern === "S15") return "Teresa-Lai'tela";
+      if (player.options.themeModern === "S16") return "Effarig-Lai'tela";
+      if (player.options.themeModern === "S17") return "The Nameless Lai'tela";
+      if (player.options.themeModern === "S14") return "Ra-Lai'tela";
+      if (player.options.themeModern === "S19") return "Pelle-Lai'tela";
+      if (player.options.themeModern === "S13") return "V-Lai'tela";
+      return "Lai'tela";
+    },
     styleObject() {
       return {
         color: this.isDMCapped ? "var(--color-bad)" : "",
       };
-    }
+    },
   },
   methods: {
     update() {
-      this.isDoomed = (Pelle.isDoomed && !PelleDestructionUpgrade.continuumBuff.canBeApplied);
+      this.isDoomed = Pelle.isDoomed && !ChallengerUpgrade(17).isBought;
       this.darkMatter.copyFrom(Currency.darkMatter);
-      this.isDMCapped = this.darkMatter.eq(Laitela.darkMatterCap);
+      this.isDMCapped = this.darkMatter.gte(Laitela.darkMatterCap);
       this.maxDarkMatter.copyFrom(Currency.darkMatter.max);
       this.darkEnergy.copyFrom(player.celestials.laitela.darkEnergy);
-      this.matterExtraPurchasePercentage.copyFrom(Laitela.matterExtraPurchaseFactor.gte(11)
-        ? Laitela.matterExtraPurchaseFactor
-        : Laitela.matterExtraPurchaseFactor.sub(1));
+      this.matterExtraPurchasePercentage.copyFrom(Laitela.matterExtraPurchaseFactor.sub(1));
       this.autobuyersUnlocked = SingularityMilestone.darkDimensionAutobuyers.canBeApplied ||
         SingularityMilestone.darkDimensionAutobuyers.canBeApplied ||
         SingularityMilestone.autoCondense.canBeApplied ||
@@ -70,16 +80,10 @@ export default {
       this.singularityPanelVisible = Currency.singularities.gt(0);
       this.singularitiesUnlocked = Singularity.capIsReached || this.singularityPanelVisible;
       this.singularityCap.copyFrom(Singularity.cap);
-      this.singularityWaitTime = TimeSpan.fromSeconds(new Decimal((this.singularityCap.sub(this.darkEnergy)).div(
-        Currency.darkEnergy.productionPerSecond))).toStringShort();
+      this.singularityWaitTime = TimeSpan.fromSeconds((this.singularityCap.sub(this.darkEnergy))
+        .div(Currency.darkEnergy.productionPerSecond)).toStringShort();
       this.showAnnihilation = Laitela.annihilationUnlocked;
-      this.endgameUnlocked = PlayerProgress.endgameUnlocked();
-      this.darkMatterCap.copyFrom(Laitela.darkMatterCap);
-      this.softcap1.copyFrom(Laitela.darkMatterSoftcap1);
-      this.softcap2.copyFrom(Laitela.darkMatterSoftcap2);
-      this.softcapOmega.copyFrom(Laitela.darkMatterOmegaSoftcap);
       this.hadronsUnlocked = DualityUpgrade(15).isBought;
-      this.isUncapped = Alpha.isDestroyed;
 
       const d1 = DarkMatterDimension(1);
       this.darkMatterGain = d1.amount.times(d1.powerDM).divide(d1.interval).times(1000);
@@ -91,11 +95,6 @@ export default {
       ui.view.h2pForcedTab = GameDatabase.h2p.tabs.filter(tab => tab.name === "Lai'tela")[0];
       Modal.h2p.show();
     },
-    formatContinuumPercentage() {
-      return Laitela.matterExtraPurchaseFactor.gte(11)
-        ? formatX(this.matterExtraPurchasePercentage, 2, 2)
-        : formatDecimalPercents(this.matterExtraPurchasePercentage, 2);
-    }
   }
 };
 </script>
@@ -108,7 +107,7 @@ export default {
         class="o-primary-btn--subtab-option"
         @click="showLaitelaHowTo()"
       >
-        Click for Lai'tela info
+        Click for {{sName}} info
       </PrimaryButton>
       <PrimaryButton
         class="o-primary-btn--subtab-option"
@@ -126,35 +125,10 @@ export default {
     <div class="o-laitela-matter-amount">
       Your maximum Dark Matter ever is
       <span :style="styleObject">{{ format(maxDarkMatter, 2) }}</span><span v-if="!isDoomed">,
-        giving {{ formatContinuumPercentage() }} more purchases from Continuum</span>.
+        giving {{ formatPercents(matterExtraPurchasePercentage, 2) }} more purchases from Continuum</span>.
     </div>
     <div class="o-laitela-matter-amount">
       Dark Matter Dimensions are unaffected by storing real time.
-    </div>
-    <div
-      v-if="maxDarkMatter.gte(softcap1)"
-      class="o-laitela-matter-amount"
-    >
-      Dark Matter is softcapped past {{ format(softcap1, 2) }}.
-    </div>
-    <div
-      v-if="maxDarkMatter.gte(softcap2)"
-      class="o-laitela-matter-amount"
-    >
-      Dark Matter is further softcapped past {{ format(softcap2, 2) }}.
-    </div>
-    <div
-      v-if="endgameUnlocked"
-      class="o-laitela-matter-amount"
-    >
-      Dark Matter is <span v-if="isUncapped">harshly softcapped</span><span v-if="!isUncapped">hardcapped</span> at
-      {{ format(darkMatterCap, 2) }}.
-    </div>
-    <div
-      v-if="maxDarkMatter.gte(softcapOmega)"
-      class="o-laitela-matter-amount"
-    >
-      Dark Matter is further harshly softcapped past {{ format(softcapOmega, 2) }}.
     </div>
     <h2
       v-if="!singularitiesUnlocked"

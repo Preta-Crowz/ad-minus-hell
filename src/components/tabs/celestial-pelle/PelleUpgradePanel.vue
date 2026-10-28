@@ -14,6 +14,7 @@ export default {
     return {
       showBought: false,
       isCollapsed: false,
+      isDoomed: false,
       isHovering: false,
       remnants: new Decimal(0),
       realityShards: new Decimal(0),
@@ -23,6 +24,15 @@ export default {
     };
   },
   computed: {
+    sName(){
+      if(player.options.themeModern == "S15") return "Teresa-Pelle";
+      if(player.options.themeModern == "S16") return "Effarig-Pelle";
+      if(player.options.themeModern == "S17") return `The Nameless Pelle`;
+      if(player.options.themeModern == "S18") return `Lai'tela-Pelle`;
+      if(player.options.themeModern == "S14") return "Ra-Pelle";
+      if(player.options.themeModern == "S13") return "V-Pelle";
+      return "Pelle";
+    },
     collapseIcon() {
       return this.isCollapsed
         ? "fas fa-expand-arrows-alt"
@@ -45,6 +55,7 @@ export default {
     update() {
       this.showBought = Pelle.cel.showBought;
       this.isCollapsed = player.celestials.pelle.collapsed.upgrades;
+      this.isDoomed = Pelle.isDoomed;
       this.remnants.copyFrom(Pelle.cel.remnants);
       this.realityShards.copyFrom(Pelle.cel.realityShards);
       this.shardRate.copyFrom(Pelle.realityShardGainPerSecond);
@@ -70,7 +81,7 @@ export default {
         class="c-collapse-icon-clickable"
         @click="toggleCollapse"
       />
-      Pelle Upgrades
+      {{sName}} Upgrades
     </div>
     <div
       v-if="!isCollapsed"

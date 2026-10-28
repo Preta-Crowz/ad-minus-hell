@@ -335,6 +335,12 @@ class ChallengerUpgradeState extends BitPurchasableMechanicState {
     this.registerEvents(config.checkEvent, () => this.tryUnlock());
   }
 
+  onPurchased() {
+    if (this.id !== 21 || !Pelle.isDoomed) return;
+    Glyphs.refreshActive();
+    EventHub.dispatch(GAME_EVENT.GLYPHS_EQUIPPED_CHANGED);
+  }
+
   get name() {
     return this.config.name;
   }
@@ -345,6 +351,46 @@ class ChallengerUpgradeState extends BitPurchasableMechanicState {
 
   get currency() {
     return Currency.challengersEssence;
+  }
+
+  get isUseless() {
+    if (this.isBought || !Pelle.isDoomed || player.disablePostReality) return false;
+    if (this.id === 0) {
+      const infinityUpgradesAlreadyEnabled = PelleDestructionUpgrade.x2IPUpgrade.canBeApplied &&
+        InfinityUpgrade.all.every(upgrade => upgrade === InfinityUpgrade.ipMult || upgrade.isBought) &&
+        BreakInfinityUpgrade.all.every(upgrade => upgrade.isRebuyable ? upgrade.isCapped : upgrade.isBought);
+      return infinityUpgradesAlreadyEnabled;
+    }
+    if (this.id === 4) return Pelle.uselessPerks.length === 0;
+    if (this.id === 12) {
+      return TeresaUnlocks.all.every(unlock => !unlock.pelleDisabled) &&
+        (!Pelle.isDisabled("glyphsac") || PelleRealityUpgrade.scourToEmpower.canBeApplied);
+    }
+    if (this.id === 14) {
+      const namelessUnlocks = Ra.unlocks.all.filter(unlock => unlock.pet.name === "The Nameless Ones");
+      return PelleDestructionUpgrade.blackHole.canBeApplied &&
+        namelessUnlocks.every(unlock => !unlock.disabledByPelle);
+    }
+    if (this.id === 18) return ImaginaryUpgrades.all.every(upgrade => !upgrade.pelleDisabled);
+    if (this.id === 16) {
+      return PelleCelestialUpgrade.raTeresa2.canBeApplied &&
+        PelleCelestialUpgrade.raTeresa3.canBeApplied &&
+        PelleDestructionUpgrade.spaceTheorems.canBeApplied &&
+        Ra.unlocks.all.every(unlock => !unlock.disabledByPelle);
+    }
+    if (this.id === 17) {
+      return PelleDestructionUpgrade.singularityMilestones.canBeApplied &&
+        PelleDestructionUpgrade.continuumBuff.canBeApplied;
+    }
+    return false;
+  }
+
+  get isPermanentlyLocked() {
+    return (player.glitch.challengerUpgradeLockbits & (1 << this.id)) !== 0;
+  }
+
+  get isAvailableForPurchase() {
+    return !this.isPermanentlyLocked && !this.isUseless;
   }
 
   get bitIndex() {

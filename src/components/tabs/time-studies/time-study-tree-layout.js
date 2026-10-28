@@ -61,8 +61,7 @@ export class TimeStudyTreeLayout {
       normalRow(                   null, TS(31), TS(32), TS(33)                       )
     ];
 
-    if (type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_62 || type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_62_181 ||
-      type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_TRIAD_STUDIES) {
+    if (Perk.bypassEC5Lock.isBought) {
       this.rows.push(
         normalRow(                     null, TS(41), TS(42), EC(5)                      ),
         normalRow(                               TS(51)                                 )
@@ -79,38 +78,64 @@ export class TimeStudyTreeLayout {
       normalRow(                      TS(71),  TS(72),  TS(73)                        ),
       normalRow(                      TS(81),  TS(82),  TS(83)                        ),
       normalRow(                      TS(91),  TS(92),  TS(93)                        ),
-      normalRow(                      TS(101), TS(102), TS(103)                       ),
-      normalRow(                       EC(7),  TS(111),  null                         ),
-      normalRow(                      TS(121), TS(122), TS(123)                       ),
-      normalRow(               EC(6), TS(131), TS(132), TS(133), EC(8)                ),
+      normalRow(                      TS(101), TS(102), TS(103)                       )
+    );
+    
+
+    this.rows.push(
+      normalRow(                      EC(6),  TS(111),  EC(7)                        ),
+      normalRow(               null, TS(121), TS(122), TS(123), null                 ),
+      normalRow(               null, TS(131), TS(132), TS(133), EC(8)                )
+    );
+    
+    this.rows.push(
       normalRow(                      TS(141), TS(142), TS(143)                       ),
       normalRow(               null,   EC(9), TS(151),   null,   EC(4)                ),
       normalRow(                          TS(161), TS(162)                            )
     );
-
-    if (type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_181 || type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_62_181 ||
-      type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_TRIAD_STUDIES) {
+    
+    if (Perk.bypassEC1Lock.isBought && Perk.bypassEC2Lock.isBought && Perk.bypassEC3Lock.isBought) {
+      if(EffarigUnlock.EC10Requirement.canBeApplied){
       this.rows.push(
-        normalRow(                         null, TS(171),  EC(2)                        ),
-        normalRow(                        EC(1), TS(181),  EC(3)                        )
+        normalRow(                         EC(1), TS(171),  EC(2)                        ),
+        normalRow(                        EC(10), TS(181),  EC(3)                        )
       );
-    } else {
+      }else{
       this.rows.push(
+        normalRow(                         EC(1), TS(171),  EC(2)                        ),
+        normalRow(                        null, TS(181),  EC(3)                          ),
+        normalRow(                                EC(10)                                 )
+        );
+      }
+      
+    } else {
+      
+      if (EffarigUnlock.EC10Requirement.canBeApplied){
+        this.rows.push(
         normalRow(                               TS(171)                                ),
         normalRow(                         EC(1), EC(2), EC(3)                          ),
-        normalRow(                               TS(181)                                )
+        normalRow(                         EC(10), TS(181), null                        )
+          );
+      } else {
+        this.rows.push(
+        normalRow(                               TS(171)                                ),
+        normalRow(                         EC(1), EC(2), EC(3)                          ),
+        normalRow(                               TS(181)                                ),
+        normalRow(                                EC(10)                                )
       );
+        
+      }
+      
     }
-
+    
     this.rows.push(
-      normalRow(                               EC(10)                                 ),
       normalRow(             TS(191),          TS(192),          TS(193)              ),
       normalRow(                               TS(201)                                ),
       normalRow(    TS(211),          TS(212),          TS(213),          TS(214)     ),
       wideRow  (TS(221), TS(222), TS(223), TS(224), TS(225), TS(226), TS(227), TS(228))
     );
 
-    if (type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_TRIAD_STUDIES && (!Pelle.isDoomed || PelleCelestialUpgrade.raV2.canBeApplied)) {
+    if (type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_TRIAD_STUDIES) {
       this.rows.push(
         normalRow(                 TS(301), TS(302), TS(303), TS(304)                 )
       );
@@ -124,6 +149,13 @@ export class TimeStudyTreeLayout {
       normalRow(          TimeStudy.timeDimension(7), TimeStudy.timeDimension(8)      ),
       normalRow(                          TimeStudy.reality                           )
     );
+
+    if (VUnlocks.newStudies.isUnlocked) {
+      this.rows.push(
+        normalRow(                     TS(401), TS(402), TS(403),                     )
+      );
+    }
+
     /* eslint-enable no-multi-spaces, space-in-parens, func-call-spacing */
 
     /**
@@ -172,8 +204,8 @@ export class TimeStudyTreeLayout {
       new TimeStudyConnection(TS(11), enslavedStudy)
     );
 
-    this.width = this.rows.map(row => row.width).max();
-    const heightNoSpacing = this.rows.map(r => r.layout.itemHeight).sum();
+    this.width = this.rows.map(row => row.width).nMax();
+    const heightNoSpacing = this.rows.map(r => r.layout.itemHeight).nSum();
     this.height = heightNoSpacing + (this.rows.length - 1) * this.spacing;
 
     for (const study of this.studies) {
@@ -191,7 +223,7 @@ export class TimeStudyTreeLayout {
 
   itemPosition(row) {
     const rows = this.rows.slice(0, row);
-    const heightNoSpacing = rows.map(r => r.layout.itemHeight).sum();
+    const heightNoSpacing = rows.map(r => r.layout.itemHeight).nSum();
     return heightNoSpacing + rows.length * this.spacing;
   }
 
@@ -212,8 +244,8 @@ export const STUDY_TREE_LAYOUT_TYPE = {
   ALTERNATIVE_62_181: 3,
   ALTERNATIVE_TRIAD_STUDIES: 4,
   get current() {
-    const alt62 = (Perk.bypassEC5Lock.isBought && !player.disablePostReality);
-    const alt181 = (Perk.bypassEC1Lock.isBought && Perk.bypassEC2Lock.isBought && Perk.bypassEC3Lock.isBought && !player.disablePostReality);
+    const alt62 = Perk.bypassEC5Lock.isBought;
+    const alt181 = Perk.bypassEC1Lock.isBought && Perk.bypassEC2Lock.isBought && Perk.bypassEC3Lock.isBought;
     if (Ra.canBuyTriad) return this.ALTERNATIVE_TRIAD_STUDIES;
     if (alt62 && alt181) return this.ALTERNATIVE_62_181;
     if (alt62) return this.ALTERNATIVE_62;

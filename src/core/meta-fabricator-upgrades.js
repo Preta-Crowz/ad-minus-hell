@@ -64,6 +64,28 @@ class RebuyableMetaUpgradeState extends RebuyableMechanicState {
   set boughtAmount(value) {
     player.meta.upgrades.rebuyable[this.id] = value;
   }
+
+  bulkPurchase() {
+    if (!this.isAffordable) return false;
+    const currentAmount = this.boughtAmount;
+    const { initialCost, costMult } = this.config;
+    const costParameters = [
+      DC.E50,
+      new Decimal(initialCost),
+      new Decimal(costMult),
+      new Decimal(costMult / 10),
+      DC.E309,
+      DC.E3,
+      new Decimal(initialCost * costMult)
+    ];
+    const newAmount = getInverseHybridCostScaling(Currency.metaRelays.value, ...costParameters)
+      .max(currentAmount);
+    if (newAmount.lte(currentAmount)) return false;
+
+    this.boughtAmount = newAmount;
+    Currency.metaRelays.subtract(getHybridCostScaling(newAmount.sub(1), ...costParameters));
+    return true;
+  }
 }
 
 MetaUpgradeState.index = mapGameData(

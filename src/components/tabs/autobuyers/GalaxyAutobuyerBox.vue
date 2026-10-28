@@ -22,8 +22,7 @@ export default {
       hasMaxedInterval: false,
       limitGalaxies: false,
       isBuyMaxUnlocked: false,
-      buyMax: false,
-      isFlipped: false
+      buyMax: false
     };
   },
   computed: {
@@ -42,7 +41,6 @@ export default {
       this.hasMaxedInterval = this.autobuyer.hasMaxedInterval;
       this.isBuyMaxUnlocked = this.autobuyer.isBuyMaxUnlocked;
       this.limitGalaxies = this.autobuyer.limitGalaxies;
-      this.isFlipped = player.universes.current === 2;
     }
   }
 };
@@ -52,7 +50,7 @@ export default {
   <AutobuyerBox
     :autobuyer="autobuyer"
     :is-modal="isModal"
-    :name="isFlipped ? 'Automatic Matter Galaxies' : 'Automatic Antimatter Galaxies'"
+    name="Automatic Antimatter Galaxies"
     :show-interval="!isBuyMaxUnlocked"
   >
     <template
@@ -83,11 +81,11 @@ export default {
           type="checkbox"
           class="o-clickable"
         >
-        Limit {{ isFlipped ? "Matter" : "Antimatter" }} Galaxies to:
+        Limit Antimatter Galaxies to:
       </label>
       <AutobuyerInput
         :autobuyer="autobuyer"
-        type="int"
+        type="decimal"
         property="maxGalaxies"
       />
     </template>

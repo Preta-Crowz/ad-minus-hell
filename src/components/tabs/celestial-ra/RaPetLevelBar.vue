@@ -11,8 +11,8 @@ export default {
     return {
       isUnlocked: false,
       level: 0,
-      memories: new Decimal(0),
-      requiredMemories: new Decimal(0),
+      memories: new Decimal(),
+      requiredMemories: new Decimal(),
       nextLevelEstimate: "",
     };
   },
@@ -74,6 +74,8 @@ export default {
           return true;
         case "V":
           return Math.min(Math.floor(this.level / 6), 4) !== Math.min(Math.floor((this.level + 1) / 6), 4);
+        case "Glitchyfishys":
+          return true;
         default:
           return false;
       }
@@ -90,6 +92,8 @@ export default {
           return `${formatX(20)} to stored game time, and you can store an additional hour of real time`;
         case "V":
           return "You can purchase an additional Triad Study";
+        case "Glitchyfishys":
+          return "Increase memory gain";
         default:
           return "false";
       }
@@ -124,7 +128,9 @@ export default {
       />
     </div>
     <button
+      type="button"
       :class="classObject"
+      :aria-label="`Level ${pet.name} to ${formatInt(level + 1)}`"
       @click="pet.levelUp()"
     >
       <span class="fas fa-arrow-up" />
@@ -149,10 +155,3 @@ export default {
     </button>
   </div>
 </template>
-
-<style scoped>
-.c-ra-pet-upgrade__tooltip {
-  font-family: Typewriter, serif;
-  line-height: 1.5;
-}
-</style>

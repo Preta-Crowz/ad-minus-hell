@@ -1,3 +1,5 @@
+const celBackground = cel => [[cel, 0]];
+
 export const vQuotes = {
   initial: {
     id: 0,
@@ -28,12 +30,14 @@ export const vQuotes = {
       "So fast...",
       "Do not think so much of yourself.",
       "This is just the beginning.",
+      {text: "It's weak here", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {text: "But it's getting stronger", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
       "You will never be better than me.",
     ],
   },
   achievement1: {
     id: 4,
-    requirement: () => V.spaceTheorems >= 1,
+    requirement: () => V.spaceTheorems.gte(1),
     lines: [
       "Only one? Pathetic.",
       "Your accomplishments pale in comparison to mine.",
@@ -41,7 +45,7 @@ export const vQuotes = {
   },
   achievement6: {
     id: 5,
-    requirement: () => V.spaceTheorems >= 6,
+    requirement: () => V.spaceTheorems.gte(6),
     lines: [
       "This is nothing.",
       "Do not be so full of yourself.",
@@ -57,7 +61,7 @@ export const vQuotes = {
   },
   achievement12: {
     id: 7,
-    requirement: () => V.spaceTheorems >= 12,
+    requirement: () => V.spaceTheorems.gte(12),
     lines: [
       "How did you...",
       "This barely amounts to anything!",
@@ -66,7 +70,7 @@ export const vQuotes = {
   },
   achievement24: {
     id: 8,
-    requirement: () => V.spaceTheorems >= 24,
+    requirement: () => V.spaceTheorems.gte(24),
     lines: [
       "Impossible...",
       "After how difficult it was for me...",
@@ -82,53 +86,46 @@ export const vQuotes = {
   },
   allAchievements: {
     id: 10,
-    requirement: () => V.spaceTheorems >= 36,
+    requirement: () => V.spaceTheorems.gte(36),
     lines: [
       "I... how did you do it...",
+      {text: "They have to be getting stronger.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
       "I worked so hard to get them...",
       "I am the greatest...",
+      {text: "You must have cheated.", displayed: () => SecretAchievement(23).isUnlocked },
+      {text: "This has to explain the corruptions.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
       "No one is better than me...",
       "No one... no one... no on-",
     ],
   },
-  expansionPacks: {
+  extremeUnlocked: {
     id: 11,
     lines: [
-      "Because you committed a crime against the higher-ups.",
-      "And by the way, I'm tired of hearing the BS that Ra did it.",
-      "You've always been begging for a higher rank.",
-      "I, on the other hand, should've taken Ra's rank when Pelle wiped his memories...",
-      "But NOOOO, that HAD to be the ONE THING he remembered...",
-      "So now I, rightful ruler of the Celestials, am stuck here at fourth-best.",
-      "Oh, hi Pelle.",
-      "I didn't MEAN rightful ruler, I just meant I should have a higher rank.",
-      "Why didn't I get Ra's after he was exiled?",
-      "Surely I must be better than him.",
-      "After all, I AM the Celestial of Achievements."
-    ]
+      "Destroyer, he wants me to be nice to you...",
+      "You ruined all of my Achievements",
+      "So... for each time you complete my Revengeance Achievement",
+      "I'm getting Glitch to Dilate your Dimensions and Tickspeed",
+      "I will not let YOU be better than me",
+    ],
   },
-  vPack: {
+  extremeFinished: {
     id: 12,
-    requirement: () => ExpansionPack.vPack.isBought,
+    requirement: () => V.spaceTheorems.gte(230),
     lines: [
-      "...",
-      "Destroyer?!?!",
-      "Why are you back?",
-      "And... you found my secret upgrade...",
-      "No no no...",
-      "You cannot be better than me..."
-    ]
+      {text: "Y-Y-You finished", tremble: true},
+      {text: "oh no", tremble: true},
+      {text: "S-S-So... Glitch isn't able to stop you", tremble: true},
+      {text: "Not even With y-your Dimensions and Tickspeed being Dilated", tremble: true},
+      "I was never able to beat you...",
+      "Please at least give me back my Achievements before you go...",
+      {text: "Please give V back his Achievements, I don't want to ask again", name: "Glitch", background: [["glitch", 0]]},
+      {text: "You all ready made him sad the first time", name: "Glitch", background: [["glitch", 0]]},
+    ],
   },
-  maxAutoV: {
+  thankYou: {
     id: 13,
-    requirement: () => VUpgrade.auto.isCapped,
     lines: [
-      "Wait...",
-      "How did you cap the upgrade?",
-      "You've reduced me to nothing but a memory...",
-      "I will not be cast aside!",
-      "Do you hear me?",
-      "I will not be-"
-    ]
-  }
+      "Thank you Destroyer, please don't complete them again",
+    ],
+  },
 };

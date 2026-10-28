@@ -1,49 +1,45 @@
 import { BitUpgradeState } from "../game-mechanics";
 import { GameDatabase } from "../secret-formula/game-database";
 
+import { DC } from "../constants";
+
 import { Quotes } from "./quotes";
 
 export const EFFARIG_STAGES = {
   INFINITY: 1,
   ETERNITY: 2,
   REALITY: 3,
-  ENDGAME: 4,
-  COMPLETED: 5
+  COMPLETED: 4,
+  OVERRIDE: 5
 };
 
 export const Effarig = {
   displayName: "Effarig",
   possessiveName: "Effarig's",
   initializeRun() {
-    if (!EffarigUnlock.endgame.isUnlocked && EffarigUnlock.extendRun.isUnlocked) {
-      player.disablePostReality = true;
-      Endgame.resetNoReward();
-      player.disablePostReality = true;
-      disChargeAllPerkUpgrades();
-      disChargeAll();
-      disChargeAllBreakUpgrades();
-      disChargeAllEternityUpgrades();
-      player.endgame.overcharge.allowComplex = false;
-      AutomatorBackend.stop();
-    }
     clearCelestialRuns();
     player.celestials.effarig.run = true;
     recalculateAllGlyphs();
     Tab.reality.glyphs.show(false);
-    if (!EffarigUnlock.endgame.isUnlocked && EffarigUnlock.extendRun.isUnlocked) {
-      for (let slots = 0; slots < Glyphs.activeSlotCount; slots++) {
-        for (const type of BASIC_GLYPH_TYPES) Glyphs.addToInventory(GlyphGenerator.omniGlyph(type));
-        Glyphs.addToInventory(GlyphGenerator.omniGlyph("effarig"));
-      }
-      if (ImaginaryUpgrade(25).isBought) {
-        player.reality.imaginaryUpgradeBits -= Math.pow(2, 25);
-      }
-    }
   },
   get isRunning() {
     return player.celestials.effarig.run;
   },
+  tickExpansionPackLayers(diff) {
+    if (!ExpansionPack.effarigPack.isBought || player.disablePostReality) return;
+    const layerDuration = Math.max(player.records.bestEndgame.realTime / 10, 1);
+    player.celestials.effarig.effarigTime += diff.div(layerDuration).toNumber();
+    if (player.celestials.effarig.effarigTime >= 1) {
+      player.celestials.effarig.effarigTime -= 1;
+      player.celestials.effarig.effarigLayer += 1;
+    }
+    if (player.celestials.effarig.effarigLayer >= 1) EffarigUnlock.infinity.unlock();
+    if (player.celestials.effarig.effarigLayer >= 2) EffarigUnlock.eternity.unlock();
+    if (player.celestials.effarig.effarigLayer >= 3) EffarigUnlock.reality.unlock();
+  },
   get currentStage() {
+    // Hell has no stage progression for Effarig
+    if (Hell.isInside) return EFFARIG_STAGES.COMPLETED;
     if (!EffarigUnlock.infinity.isUnlocked) {
       return EFFARIG_STAGES.INFINITY;
     }
@@ -52,9 +48,6 @@ export const Effarig = {
     }
     if (!EffarigUnlock.reality.isUnlocked) {
       return EFFARIG_STAGES.REALITY;
-    }
-    if (!EffarigUnlock.endgame.isUnlocked && EffarigUnlock.extendRun.isUnlocked) {
-      return EFFARIG_STAGES.ENDGAME;
     }
     return EFFARIG_STAGES.COMPLETED;
   },
@@ -66,10 +59,10 @@ export const Effarig = {
         return "Eternity";
       case EFFARIG_STAGES.REALITY:
         return "Reality";
-      case EFFARIG_STAGES.ENDGAME:
-        return "Endgame";
+        case EFFARIG_STAGES.OVERDRIVE:
+        return "Overdrive";
       default:
-        return EffarigUnlock.extendRun.isUnlocked ? "Endgame" : "Reality";
+        return "Overdrive";
     }
   },
   get eternityCap() {
@@ -78,59 +71,32 @@ export const Effarig = {
   get glyphLevelCap() {
     switch (this.currentStage) {
       case EFFARIG_STAGES.INFINITY:
-        return new Decimal(100);
+        return new Decimal(DC.E2);
       case EFFARIG_STAGES.ETERNITY:
         return new Decimal(1500);
       case EFFARIG_STAGES.REALITY:
         return new Decimal(2000);
-      case EFFARIG_STAGES.ENDGAME:
-        return Decimal.floor(Time.thisEndgameRealTime.totalMilliseconds).times(Decimal.pow(2, Time.thisEndgameRealTime.totalHours));
+        case EFFARIG_STAGES.OVERDRIVE:
+        return new Decimal(15000);
       default:
-        return EffarigUnlock.extendRun.isUnlocked
-          ? Decimal.floor(Time.thisEndgameRealTime.totalMilliseconds).times(Decimal.pow(2, Time.thisEndgameRealTime.totalHours))
-          : new Decimal(2000);
+        return new Decimal(15000);
     }
   },
-  get glyphEffectAmount() {
-    const genEffectBitmask = Glyphs.activeWithoutCompanion
-      .filter(g => generatedTypes.includes(g.type))
-      .reduce((prev, curr) => prev | curr.effects, 0);
-    const nongenEffectBitmask = Glyphs.activeWithoutCompanion
-      .filter(g => !generatedTypes.includes(g.type))
-      .reduce((prev, curr) => prev | curr.effects, 0);
-    return countValuesFromBitmask(genEffectBitmask) + countValuesFromBitmask(nongenEffectBitmask);
-  },
-  get fullGlyphEffectAmount() {
-    let glyphEff = [];
-    let filterInv = Glyphs.inventoryList.filter(g => g.type !== "companion");
-    for (let inv = 0; inv < 120; inv++) {
-      if (filterInv[inv]) glyphEff.push(filterInv[inv]);
-    }
-    for (let act = 0; act < 20; act++) {
-      if (Glyphs.activeWithoutCompanion[act]) glyphEff.push(Glyphs.activeWithoutCompanion[act])
-    }
-    const genEffectBitmaskTotal = glyphEff
-      .filter(g => generatedTypes.includes(g.type))
-      .reduce((prev, curr) => prev | curr.effects, 0);
-    const nongenEffectBitmaskTotal = glyphEff
-      .filter(g => !generatedTypes.includes(g.type))
-      .reduce((prev, curr) => prev | curr.effects, 0);
-    return countValuesFromBitmask(genEffectBitmaskTotal) + countValuesFromBitmask(nongenEffectBitmaskTotal);
-  },
+
   get shardsGained() {
-    const effectAmount = ResurgenceUpgrade.rsSurge.isBought ? this.fullGlyphEffectAmount : this.glyphEffectAmount;
-    const extraBoost = (ExpansionPack.effarigPack.isBought && !player.disablePostReality) ? Decimal.log10(player.antimatter.add(10)) : DC.D1;
-    if (!TeresaUnlocks.effarig.canBeApplied && !EndgameMilestone.celestialEarlyUnlock.isReached) return new Decimal(0);
-    return Decimal.floor(Decimal.pow(Currency.eternityPoints.value.add(1).log10().div(7500), effectAmount)).times(
-      AlchemyResource.effarig.effectValue).times(extraBoost).timesEffectOf(Ra.unlocks.relicShardBoost);
+    if (!TeresaUnlocks.effarig.canBeApplied && !EndgameMilestone.celestialEarlyUnlock.isReached) return DC.D0;
+    const extraBoost = ExpansionPack.effarigPack.isBought && !player.disablePostReality
+      ? Decimal.log10(player.antimatter.add(10))
+      : DC.D1;
+    const effectAmount = ResurgenceUpgrade.rsSurge.isBought
+      ? new Set(Glyphs.inventoryList.flatMap(glyph => glyph.effects)).size
+      : getActiveGlyphEffects().length;
+    return Decimal.floor(Decimal.pow(Currency.eternityPoints.value.add(1).log10().div(7500), effectAmount))
+      .times(AlchemyResource.effarig.effectValue)
+      .times(extraBoost).timesEffectOf(Ra.unlocks.relicShardBoost);
   },
   get maxRarityBoost() {
-    return 15 * (Decimal.pow(Decimal.log10(Decimal.log10(Currency.relicShards.value.plus(10))).add(1), 1.5).sub(1)).toNumber();
-  },
-  get rarityCapIncrease() {
-    return EffarigUnlock.maxRarityBoost.isUnlocked && !player.disablePostReality
-      ? Decimal.pow(Decimal.log10(Decimal.log10(Currency.relicShards.value.plus(10))).add(1), 1.5).sub(1).times(15).div(100).pow(3).sub(2.5).times(40).max(0).toNumber()
-      : 0;
+    return Decimal.log10(Decimal.log10(Currency.relicShards.value.add(10))).times(5);
   },
   nerfFactor(power) {
     let c;
@@ -142,38 +108,51 @@ export const Effarig = {
         c = 29.29;
         break;
       case EFFARIG_STAGES.REALITY:
-        c = 25;
-        break;
-      case EFFARIG_STAGES.ENDGAME:
-        c = 0;
+        c = 29.29;
+      break;
+        case EFFARIG_STAGES.OVERDRIVE:
+        c = 12.5;
         break;
       default:
-        c = EffarigUnlock.extendRun.isUnlocked ? 0 : 25;
+        c = 12.5;
         break;
     }
-    return (DC.D1.sub(new Decimal(c).div(Decimal.sqrt(power.add(1).pLog10().max(1)).add(c)))).times(3).toNumber();
+    return (DC.D1.sub(new Decimal(c).div(Decimal.sqrt(power.add(1).absLog10()).add(c)))).times(3);
   },
   get tickDilation() {
-    return 0.7 + 0.1 * this.nerfFactor(Currency.timeShards.value);
+    return this.nerfFactor(Currency.timeShards.value).div(10).add(0.7).min(0.9999);
   },
   get multDilation() {
-    return 0.25 + 0.25 * this.nerfFactor(Currency.infinityPower.value);
+    return this.nerfFactor(Currency.infinityPower.value).div(4).add(0.25).min(0.9999);
   },
   get tickspeed() {
     const base = Tickspeed.baseValue.reciprocal().log10().add(3);
     return Decimal.pow10(Decimal.pow(base, this.tickDilation)).reciprocal();
   },
   multiplier(mult) {
-    const base = new Decimal(mult).max(1).pLog10();
+    if(Decimal.lt(mult, 1)) return mult;
+    const base = new Decimal(mult).add(1).log10();
     return Decimal.pow10(Decimal.pow(base, this.multDilation));
   },
   get bonusRG() {
-    if (Pelle.isDoomed && !PelleCelestialUpgrade.maxRGIncrease.canBeApplied) return 0;
     // Will return 0 if Effarig Infinity is uncompleted
-    return Decimal.floor(replicantiCap().pLog10().div(LOG10_MAX_VALUE).sub(1)).toNumber();
+    return Decimal.floor(replicantiCap().max(1).log10().div(LOG10_MAX_VALUE).sub(1));
   },
   quotes: Quotes.effarig,
-  symbol: "Ϙ"
+  symbol: "Ϙ",
+
+  reset() {
+    if(MetaMilestone.metaKeepEff.isReached) return;
+    Currency.relicShards.reset();
+    const effarig = player.celestials.effarig;
+    effarig.unlockBits = 0;
+    effarig.autoAdjustGlyphWeights = false;
+    effarig.glyphWeights.dt = 25;
+    effarig.glyphWeights.ep = 25;
+    effarig.glyphWeights.eternities = 25;
+    effarig.glyphWeights.repl = 25;
+    player.reality.showSidebarPanel = 0;
+  }
 };
 
 class EffarigUnlockState extends BitUpgradeState {
@@ -185,9 +164,7 @@ class EffarigUnlockState extends BitUpgradeState {
   }
 
   get isEffectActive() {
-    const hasAllEffarigRewards = (PelleCelestialUpgrade.replicantiCapIncrease.canBeApplied &&
-      PelleCelestialUpgrade.maxRGIncrease.canBeApplied && PelleCelestialUpgrade.effarigRewards.canBeApplied);
-    return (!Pelle.isDisabled("effarig") || hasAllEffarigRewards) && !player.disablePostReality;
+    return !Pelle.isDisabled("effarig");
   }
 
   purchase() {

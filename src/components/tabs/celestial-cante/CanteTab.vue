@@ -43,8 +43,8 @@ export default {
       return this.isRunning ? "c-cente-run-button__inner--running" : "c-cente-run-button__inner--not-running";
     },
     runDescription() {
-      return `${GameDatabase.celestials.descriptions[7].effects()}\n
-      ${GameDatabase.celestials.descriptions[7].description()}`;
+      return `${GameDatabase.celestials.descriptions[9].effects()}\n
+      ${GameDatabase.celestials.descriptions[9].description()}`;
     },
     isDoomed: () => Pelle.isDoomed,
   },

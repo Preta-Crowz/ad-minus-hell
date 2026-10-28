@@ -3,13 +3,14 @@ import { GameDatabase } from "../secret-formula/game-database";
 
 import { Quotes } from "./quotes";
 
-import { matchOnlyDeepmerge } from "@/utility/deepmerge";
+import { deepmergeAll, matchOnlyDeepmerge } from "@/utility/deepmerge";
 
 export const Slabdrill = {
   displayName: "Slabdrill",
   possessiveName: "Slabdrill's",
+  // Fragmentation of Slabdrill: Hell is a Cursed Reality
   get isCursed() {
-    return player.celestials.slabdrill.isCursed;
+    return player.celestials.slabdrill.isCursed || Hell.isInside;
   },
   get isUnlocked() {
     return Slabdrill.isCursed || Slabdrill.isDestroyed;
@@ -74,6 +75,7 @@ export const Slabdrill = {
     Tab.dimensions.antimatter.show(false);
   },
   warpToPelleDomain() {
+    if (Slabdrill.isCursed && Slabdrill.currentStage < SlabdrillUnlocks.all.length) return;
     player.celestials.slabdrill.isCursed = false;
     player.celestials.slabdrill.isDestroyed = true;
     clearCelestialRuns();
@@ -82,10 +84,10 @@ export const Slabdrill = {
     player.celestials.slabdrill.serpentinePower = DC.D0;
     for (let alch = 0; alch < 5; alch++) {
       player.celestials.ra.alchemy[alch].bestPreDoom = 0;
-      player.celestials.ra.alchemy[alch].amount = 0;
+      player.celestials.ra.alchemy[alch].amount = DC.D0;
     }
     player.celestials.ra.alchemy[10].bestPreDoom = 0;
-    player.celestials.ra.alchemy[10].amount = 0;
+    player.celestials.ra.alchemy[10].amount = DC.D0;
     player.celestials.effarig.relicShards = DC.D0;
     Endgame.resetNoReward(true);
     player.endgame.overcharge.allowComplex = true;
@@ -98,13 +100,52 @@ export const Slabdrill = {
   advanceLayer() {
     player.celestials.slabdrill.stage++;
   },
-  enterCore(coreJump = false) {
-    player.celestials.slabdrill.records = matchOnlyDeepmerge(player, player.celestials.slabdrill.records, "eternityChalls");
-    finishProcessReality({ reset: true });
-    let cache = Object.keys(GameCache);
-    for (let c = 0; c < cache.length; c++) {
-        GameCache[cache[c]].invalidate();
+  // A strike is only encountered once the previous one is done, so a requirement already met beforehand
+  // (e.g. Replicanti unlocked before Strike 5) must still trigger when its stage becomes current
+  checkStrikeCatchUp() {
+    if (!Slabdrill.isCursed || Slabdrill.coreActive) return;
+    const stage = Slabdrill.currentStage;
+    if (stage === 3 && player.break) {
+      Slabdrill.advanceLayer();
+      GameCache.tickSpeedMultDecrease.invalidate();
+      GameCache.dimensionMultDecrease.invalidate();
+      Glyphs.refreshActive();
+      for (const type of GlyphInfo.basicGlyphTypes) Glyphs.addToInventory(GlyphGenerator.omniGlyph(type));
+      Slabdrill.quotes.breakInfinity.show();
+    } else if (stage === 4 && InfinityChallenge(4).isCompleted) {
+      Slabdrill.advanceLayer();
+      Slabdrill.quotes.infinityChallengeFour.show();
+    } else if (stage === 5 && player.replicanti.unl) {
+      player.endgame.ethereal.power = DC.D0;
+      player.endgame.ethereal.sector = DC.D1;
+      Slabdrill.advanceLayer();
+      player.replicanti.chance = DC.D1.div(1000);
+      Slabdrill.quotes.replicanti.show();
+    } else if (stage === 7 && TimeStudy(181).isBought) {
+      Slabdrill.advanceLayer();
+      Glyphs.refreshActive();
+      Slabdrill.quotes.timeStudy181.show();
+    } else if (stage === 8 && EternityChallenge(10).completions >= 1) {
+      Slabdrill.advanceLayer();
+      Glyphs.refreshActive();
+      Slabdrill.quotes.eternityChallengeTen.show();
+    } else if (stage === 9 && player.dilation.active) {
+      Slabdrill.advanceLayer();
+      Glyphs.refreshActive();
+      Slabdrill.quotes.dilation.show();
     }
+  },
+  enterCore(coreJump = false) {
+    const snapshot = deepmergeAll([{}, player]);
+    // Nested snapshots would otherwise grow the save exponentially each entry
+    delete snapshot.celestials.slabdrill.records;
+    delete snapshot.celestials.alpha.records;
+    // Hell's stash holds the whole other world and its options are shared, so neither may be snapshotted or rolled back
+    delete snapshot.hell;
+    delete snapshot.options;
+    player.celestials.slabdrill.records = snapshot;
+    finishProcessReality({ reset: true });
+    Lazy.invalidateAll();
     player.celestials.slabdrill.core.isActive = true;
     player.break = true;
     Tab.dimensions.antimatter.show(!coreJump);
@@ -112,18 +153,25 @@ export const Slabdrill = {
   exitCore() {
     player.celestials.slabdrill.core.isActive = false;
     finishProcessReality({ reset: true });
+    // The snapshot predates the hunt, so Slabdrill's own progress must survive the restore
+    const kept = {
+      core: { ...player.celestials.slabdrill.core },
+      stage: player.celestials.slabdrill.stage,
+      serpentinePower: player.celestials.slabdrill.serpentinePower,
+      unlockBits: player.celestials.slabdrill.unlockBits,
+    };
     player = matchOnlyDeepmerge(player.celestials.slabdrill.records, player, "eternityChalls");
+    Object.assign(player.celestials.slabdrill, kept);
+    delete player.celestials.slabdrill.records;
+    player.celestials.slabdrill.records = {};
     GameStorage.loadPlayerObject(player);
     for (let a = 0; a < 8; a++) {
       if (player.auto.antimatterDims.all[a].isUnlocked) {
-        Currency.antimatter.add(Autobuyer.antimatterDimension(a+1).cost);
+        Currency.antimatter.add(new Decimal(Autobuyer.antimatterDimension(a+1).cost));
         Autobuyer.antimatterDimension(a+1).purchase();
       }
     }
-    let cache = Object.keys(GameCache);
-    for (let c = 0; c < cache.length; c++) {
-        GameCache[cache[c]].invalidate();
-    }
+    Lazy.invalidateAll();
   },
   get layerReqs() {
     return ["Perform a Dimension Boost", "Create a Galaxy", "Reach Infinity", "Break Infinity", "Complete Infinity Challenge 4",

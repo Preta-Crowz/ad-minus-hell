@@ -19,23 +19,23 @@ export default {
       isEC9Running: false,
       isEnslavedRunning: false,
       isAnyAutobuyerUnlocked: false,
-      conversionRate: 0,
+      conversionRate: new Decimal(0),
       nextDimCapIncrease: new Decimal(0),
       tesseractCost: new Decimal(0),
       totalDimCap: new Decimal(0),
       canBuyTesseract: false,
       enslavedCompleted: false,
-      boughtTesseracts: 0,
-      extraTesseracts: 0,
+      boughtTesseracts: new Decimal(0),
+      extraTesseracts: new Decimal(0),
       creditsClosed: false,
       showLockedDimCostNote: true,
-      isFlipped: false
+      ID8cap: new Decimal(),
     };
   },
   computed: {
     tesseractCountString() {
-      const extra = this.extraTesseracts > 0 ? ` + ${format(this.extraTesseracts, 2, 2)}` : "";
-      return `${formatHybridSmall(this.boughtTesseracts, 3)}${extra}`;
+      const extra = this.extraTesseracts.gt(0) ? ` + ${format(this.extraTesseracts, 2, 2)}` : "";
+      return `${format(this.boughtTesseracts)}${extra}`;
     },
   },
   methods: {
@@ -43,9 +43,9 @@ export default {
       this.showLockedDimCostNote = !InfinityDimension(8).isUnlocked;
       this.isEC9Running = EternityChallenge(9).isRunning;
       this.infinityPower.copyFrom(Currency.infinityPower);
-      this.conversionRate = InfinityDimensions.powerConversionRate;
+      this.conversionRate.copyFrom(InfinityDimensions.powerConversionRate);
       if (this.isEC9Running) {
-        this.dimMultiplier.copyFrom(Decimal.pow(Decimal.max(this.infinityPower.add(1).log2(), 1), 4).max(1));
+        this.dimMultiplier.copyFrom(Decimal.pow(Decimal.max(this.infinityPower.log2(), 1), 4).max(1));
       } else {
         this.dimMultiplier.copyFrom(this.infinityPower.pow(this.conversionRate).max(1));
       }
@@ -61,11 +61,11 @@ export default {
       this.tesseractCost.copyFrom(Tesseracts.nextCost);
       this.totalDimCap.copyFrom(InfinityDimensions.totalDimCap);
       this.canBuyTesseract = Tesseracts.canBuyTesseract;
-      this.enslavedCompleted = Enslaved.isCompleted && !player.disablePostReality;
-      this.boughtTesseracts = Tesseracts.bought;
-      this.extraTesseracts = Tesseracts.extra;
+      this.enslavedCompleted = Enslaved.isCompleted;
+      this.boughtTesseracts.copyFrom(Tesseracts.bought);
+      this.extraTesseracts.copyFrom(Tesseracts.extra);
       this.creditsClosed = GameEnd.creditsEverClosed;
-      this.isFlipped = player.universes.current === 2;
+      this.ID8cap = Decimal.pow(1e15, TimeStudy(403).effectOrDefault(1));
     },
     maxAll() {
       InfinityDimensions.buyMax();
@@ -114,7 +114,7 @@ export default {
         to a
         <span class="c-infinity-dim-description__accent">{{ formatX(dimMultiplier, 2, 1) }}</span>
         multiplier on all
-        <span v-if="!isEC9Running">{{ isFlipped ? "Matter" : "Antimatter" }} Dimensions.</span>
+        <span v-if="!isEC9Running">Antimatter Dimensions.</span>
         <span v-else>Time Dimensions due to Eternity Challenge 9.</span>
       </p>
     </div>
@@ -142,7 +142,11 @@ export default {
     </div>
     <div v-else>
       All Infinity Dimensions except for the 8th are limited to a maximum of {{ format(totalDimCap, 2) }}
-      purchases each.
+      purchases each.<br>
+      But 8th Dimensions do not give a multiplier past {{ format(ID8cap, 2) }} times brought
+    </div>
+    <div v-if="powerPerSecond.gte('1e1E25')">
+      Infinity Power is softcaped above {{ format("1e1E25") }}.
     </div>
     <div>You are getting {{ format(powerPerSecond, 2, 0) }} {{ incomeType }} per second.</div>
     <b

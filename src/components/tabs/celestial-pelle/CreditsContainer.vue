@@ -12,7 +12,6 @@ export default {
       scroll: 0,
       audio: null,
       isMuted: false,
-      isFastForward: false,
     };
   },
   computed: {
@@ -31,15 +30,6 @@ export default {
     muteIconClass() {
       return this.isMuted ? "fa-volume-xmark" : "fa-volume-high";
     },
-    speedStyle() {
-      return {
-        top: `calc(${this.scroll + 20}px - 100vh)`,
-        display: this.rolling ? "block" : "none"
-      };
-    },
-    speedIconClass() {
-      return this.isFastForward ? "fa-forward" : "fa-play";
-    },
     celestialDisplays() {
       return {
         teresa: Teresa.symbol,
@@ -56,7 +46,7 @@ export default {
     rolling(newVal, oldVal) {
       if (GameEnd.creditsEverClosed) return;
       if (!oldVal && newVal && this.audio === null) {
-        this.audio = new Audio(`audio/credits.mp3`);
+        this.audio = new Audio(`audio/credits-${Math.floor(Math.random() * 4) + 1}.mp3`);
         this.audio.play();
       }
     }
@@ -73,11 +63,10 @@ export default {
   methods: {
     update() {
       const height = (this.$refs.creditsDisplay?.offsetHeight || 0) + innerHeight;
-      const fast = this.isFastForward ? 10 : 1;
       this.rolling = GameEnd.endState > END_STATE_MARKERS.CREDITS_START;
       this.scroll = (
         Math.clampMax(GameEnd.endState, END_STATE_MARKERS.CREDITS_END) - END_STATE_MARKERS.CREDITS_START
-      ) / (END_STATE_MARKERS.SONG_END - END_STATE_MARKERS.CREDITS_START) * height * fast;
+      ) / (END_STATE_MARKERS.SONG_END - END_STATE_MARKERS.CREDITS_START) * height;
       if (this.audio) this.audio.volume = this.isMuted
         ? 0
         : Math.clamp((GameEnd.endState - END_STATE_MARKERS.CREDITS_START), 0, 0.3);
@@ -96,12 +85,6 @@ export default {
       :class="muteIconClass"
       :style="muteStyle"
       @click="isMuted = !isMuted"
-    />
-    <i
-      class="c-speed-button fa-solid"
-      :class="speedIconClass"
-      :style="speedStyle"
-      @click="isFastForward = !isFastForward"
     />
     <div
       v-for="(celSymbol, celIndex) in celestialDisplays"
@@ -228,19 +211,6 @@ perfectly the same. */
   color: white;
 }
 
-.c-speed-button {
-  position: fixed;
-  left: 6rem;
-  font-size: 2rem;
-  opacity: 0.5;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.t-s12 .c-speed-button {
-  color: white;
-}
-
 .c-credits-container {
   width: 100%;
   height: 100%;
@@ -278,8 +248,8 @@ perfectly the same. */
 }
 
 .c-enslaved-credits {
-  top: 240rem;
-  left: 80%;
+  top: 235rem;
+  left: 52%;
   color: var(--color-enslaved--base);
   animation: a-enslaved-credits 10s linear infinite;
 }
@@ -292,8 +262,8 @@ perfectly the same. */
 }
 
 .c-ra-credits {
-  top: 480rem;
-  left: 60%;
+  top: 315rem;
+  left: 44%;
   color: var(--color-ra--base);
   animation: a-ra-credits 10s ease-in-out infinite;
 }

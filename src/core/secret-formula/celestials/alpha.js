@@ -32,10 +32,10 @@ export const alphaUnlocks = {
     id: 3,
     requirement: 4,
     nerfDescription: "Infinity Upgrade costs are squared",
-    buffDescription: () => `IP Gain is raised ${formatPow(1 + (Tesseracts.effectiveCount / 1000), 2, 3)} (based on Tesseracts)`,
+    buffDescription: () => `IP Gain is raised ${formatPow(Tesseracts.effectiveCount.div(1000).add(1), 2, 3)} (based on Tesseracts)`,
     effects: {
       nerf: 2,
-      buff: () => 1 + (Tesseracts.effectiveCount / 1000)
+      buff: () => Tesseracts.effectiveCount.div(1000).add(1)
     }
   },
   autoCrunchChallenge: {
@@ -74,10 +74,10 @@ export const alphaUnlocks = {
   breakUpgrades: {
     id: 7,
     requirement: 8,
-    nerfDescription: () => `The Infinity Dimension Purchase cap is decreased to ${formatInt(player.records.thisReality.galaxies.toNumber() * (EternityChallenge(1).isRunning ? 2 : 1))} (based on Galaxies)`,
+    nerfDescription: () => `The Infinity Dimension Purchase cap is decreased to ${formatInt(new Decimal(player.records.thisReality.galaxies).toNumber() * (EternityChallenge(1).isRunning ? 2 : 1))} (based on Galaxies)`,
     buffDescription: () => `Reduce Post-Break Tickspeed cost scaling by ${format(0.15, 2, 2)} and Post-Break Dimension cost scaling by ${format(0.25, 2, 2)}`,
     effects: {
-      nerf: () => player.records.thisReality.galaxies.toNumber() * (EternityChallenge(1).isRunning ? 2 : 1),
+      nerf: () => new Decimal(player.records.thisReality.galaxies).toNumber() * (EternityChallenge(1).isRunning ? 2 : 1),
       buffA: 0.15,
       buffB: 0.25
     }

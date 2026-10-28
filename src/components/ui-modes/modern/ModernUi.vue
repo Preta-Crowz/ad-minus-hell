@@ -10,7 +10,6 @@ import NewsTicker from "../NewsTicker";
 import NullifyButton from "../NullifyButton";
 
 import GameSpeedDisplay from "@/components/GameSpeedDisplay";
-import CursedBackground from "@/components/ui-modes/CursedBackground";
 
 
 export default {
@@ -26,43 +25,36 @@ export default {
     HeaderBlackHole,
     HeaderPrestigeGroup,
     GameSpeedDisplay,
-    CursedBackground
   },
   data() {
     return {
       bigCrunch: false,
+      cursedCore: false,
       divine: false,
-      nullified: false,
+      nullify: false,
       hasReality: false,
-      newGameKey: "",
-      inCursedCore: false
     };
   },
   computed: {
     news() {
-      return this.$viewModel.news && !this.inCursedCore;
+      return this.$viewModel.news && !this.cursedCore;
     },
     topMargin() {
-      return this.$viewModel.news || this.inCursedCore ? "" : "margin-top: 3.9rem";
+      if (this.cursedCore) return "width: 100%; margin-left: 0";
+      return this.$viewModel.news ? "" : "margin-top: 3.9rem";
     },
     bottomBorder() {
-      return this.inCursedCore ? "" : "border-bottom: 0.1rem solid var(--color-good)";
+      return this.cursedCore ? "" : "border-bottom: 0.1rem solid var(--color-good)";
     }
   },
   methods: {
     update() {
       const crunchButtonVisible = !player.break && Player.canCrunch;
-      const divinityVisible = Pelle.isDoomed && player.antimatter.gte(DC.ENUMMAX);
-      const nullifyVisible = player.endgame.largeHadronCollider.void.nullMatter.gte(DC.NUMMAX) &&
-        !player.endgame.largeHadronCollider.void.nullified;
+      this.divine = Pelle.isDoomed && player.antimatter.gte(DC.ENUMMAX);
+      this.nullify = Currency.nullMatter.value.gte(DC.NUMMAX) && !player.endgame.largeHadronCollider.void.nullified;
+      this.cursedCore = Slabdrill.coreActive;
       this.bigCrunch = crunchButtonVisible && Time.bestInfinityRealTime.totalMinutes.gt(1);
-      this.divine = divinityVisible;
-      this.nullified = nullifyVisible;
       this.hasReality = PlayerProgress.realityUnlocked();
-      // This only exists to force a key-swap after pressing the button to start a new game; the news ticker can break
-      // if it isn't redrawn
-      this.newGameKey = Pelle.isDoomed;
-      this.inCursedCore = player.celestials.slabdrill.core.isActive;
     },
     handleClick() {
       if (PlayerProgress.infinityUnlocked()) manualBigCrunchResetRequest();
@@ -80,19 +72,17 @@ export default {
       href="stylesheets/new-ui-styles.css"
     >
     <div
-      :key="newGameKey"
       class="game-container"
       :style="topMargin"
     >
       <NewsTicker
         v-if="news"
       />
-      <BigCrunchButton v-if="!inCursedCore" />
-      <DivinityButton v-if="!inCursedCore" />
-      <NullifyButton v-if="!inCursedCore" />
-      <CursedBackground v-if="inCursedCore" />
+      <BigCrunchButton v-if="!cursedCore" />
+      <DivinityButton v-if="!cursedCore" />
+      <NullifyButton v-if="!cursedCore" />
       <div
-        v-if="!bigCrunch && !divine && !nullified"
+        v-if="!bigCrunch && !divine && !nullify"
         class="tab-container"
       >
         <HeaderPrestigeGroup />
@@ -100,12 +90,12 @@ export default {
           class="information-header"
           :style="bottomBorder"
         >
-          <HeaderChallengeDisplay v-if="!inCursedCore" />
-          <HeaderChallengeEffects v-if="!inCursedCore" />
-          <GameSpeedDisplay v-if="hasReality && !inCursedCore" />
-          <br v-if="hasReality && !inCursedCore">
-          <HeaderBlackHole v-if="!inCursedCore" />
-          <CursedHeader v-if="inCursedCore" />
+          <HeaderChallengeDisplay v-if="!cursedCore" />
+          <HeaderChallengeEffects v-if="!cursedCore" />
+          <GameSpeedDisplay v-if="hasReality && !cursedCore" />
+          <br v-if="hasReality && !cursedCore">
+          <HeaderBlackHole v-if="!cursedCore" />
+          <CursedHeader v-if="cursedCore" />
         </div>
         <slot />
       </div>

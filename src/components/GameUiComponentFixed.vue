@@ -10,10 +10,7 @@ import ModalProgressBar from "@/components/modals/ModalProgressBar";
 import ModernSidebar from "@/components/ui-modes/modern/ModernSidebar";
 import NewGame from "@/components/tabs/celestial-pelle/NewGame";
 import PopupModal from "@/components/modals/PopupModal";
-import Prologue from "@/components/ui-modes/Prologue";
-import RestartEndgameUpdateDisplay from "@/components/RestartEndgameUpdateDisplay";
 import SaveTimer from "@/components/SaveTimer";
-import ScreenOverlay from "@/components/ui-modes/ScreenOverlay";
 import SpectateGame from "@/components/SpectateGame";
 import SpeedrunStatus from "@/components/SpeedrunStatus";
 import TimeTheoremShop from "@/components/tabs/time-studies/tt-shop/TimeTheoremShop";
@@ -24,6 +21,7 @@ export default {
     HowToPlay,
     TimeTheoremShop,
     EndgameSkillShop,
+    EndgameCreditsDisplay,
     ModernSidebar,
     SaveTimer,
     SpeedrunStatus,
@@ -32,21 +30,13 @@ export default {
     CelestialQuoteModal,
     CelestialQuoteHistoryDisplay,
     FadeAway,
-    ScreenOverlay,
-    Prologue,
     CreditsContainer,
-    EndgameCreditsDisplay,
     SpectateGame,
-    NewGame,
-    RestartEndgameUpdateDisplay
+    NewGame
   },
   data() {
     return {
       ending: false,
-      dark: false,
-      intro: false,
-      warping: false,
-      goodbye: false,
       newCredits: false,
       isCursedCore: false
     };
@@ -64,12 +54,8 @@ export default {
   methods: {
     update() {
       this.ending = GameEnd.endState >= END_STATE_MARKERS.FADE_AWAY && !GameEnd.creditsClosed;
-      this.dark = Alpha.isRunning;
-      this.intro = !player.hasSeenIntro;
-      this.warping = player.celestials.slabdrill.isWarping;
-      this.goodbye = player.celestials.slabdrill.isGoodbye;
       this.newCredits = player.endgame.credits;
-      this.isCursedCore = player.celestials.slabdrill.core.isActive;
+      this.isCursedCore = Slabdrill.coreActive;
     }
   }
 };
@@ -116,14 +102,11 @@ export default {
         :modal="view.modal.current"
       />
       <ModalProgressBar v-if="view.modal.progressBar" />
-      <ScreenOverlay />
-      <Prologue />
-      <FadeAway v-if="ending || dark || intro || warping || goodbye || newCredits" />
       <EndgameCreditsDisplay v-if="newCredits" />
+      <FadeAway v-if="ending" />
       <CreditsContainer v-if="ending" />
       <NewGame v-if="ending" />
       <SpectateGame />
-      <RestartEndgameUpdateDisplay v-if="newCredits" />
     </template>
   </div>
 </template>

@@ -9,12 +9,11 @@ function formatInt(value) {
   return formatWithCommas(typeof value === "number" ? value.toFixed(0) : value.toNumber().toFixed(0));
 }
 
-function formatMachines(realPart, imagPart, dualPart) {
+function formatMachines(realPart, imagPart) {
   const parts = [];
   if (Decimal.neq(realPart, 0)) parts.push(format(realPart, 2));
   if (Decimal.neq(imagPart, 0)) parts.push(`${format(imagPart, 2, 2)}i`);
-  if (Decimal.neq(dualPart, 0)) parts.push(`${format(dualPart, 2, 2)}j`);
-  if (Decimal.eq(realPart, 0) && Decimal.eq(imagPart, 0) && Decimal.eq(dualPart, 0)) return format(0);
+  if (Decimal.eq(realPart, 0) && Decimal.eq(imagPart, 0)) return format(0);
   return parts.join(" + ");
 }
 
@@ -85,7 +84,7 @@ export const discordRichPresence = {
         return `${Laitela.possessiveName} Reality - ${dimStr}`;
       },
       activityToken: () => Laitela.isRunning,
-      resource: () => `${formatPercents(new Decimal(player.celestials.laitela.entropy).toNumber(), 2, 2)} Entropy`,
+      resource: () => `${formatPercents(player.celestials.laitela.entropy, 2, 2)} Entropy`,
     },
     {
       name: () => "Dilation",
@@ -165,8 +164,8 @@ export const discordRichPresence = {
       hasReached: () => player.eternityChalls.eterc1 > 0,
       mainResource: () => `${format(player.eternityPoints, 2)} EP`,
       resourceList: [
-        () => quantify("EC completion",
-          Object.values(player.eternityChalls).reduce((sum, c) => sum + c, 0), 0, 0, formatInt)
+        () => quantify("EC completion", Object.values(player.eternityChalls)
+          .reduce((sum, c) => sum + c, 0), 0, 0, formatInt)
       ]
     },
     {
@@ -181,7 +180,7 @@ export const discordRichPresence = {
       mainResource: () => `${format(player.reality.realityMachines, 2)} RM`,
       resourceList: [
         () => quantify("Reality", player.realities, 0, 0, formatInt),
-        () => `Best Glyph Level: ${formatHybridLarge(player.records.bestReality.glyphLevel, 3)}`
+        () => `Best Glyph Level: ${formatInt(player.records.bestReality.glyphLevel)}`
       ]
     },
     {
@@ -190,7 +189,7 @@ export const discordRichPresence = {
       mainResource: () => `${format(player.reality.realityMachines, 2)} RM`,
       resourceList: [
         () => quantify("Reality", player.realities, 0, 0, formatInt),
-        () => `Best GL: ${formatHybridLarge(player.records.bestReality.glyphLevel, 3)}`,
+        () => `Best GL: ${formatInt(player.records.bestReality.glyphLevel)}`,
         () => `Poured: ${format(player.celestials.teresa.pouredAmount, 2)} RM`
       ]
     },
@@ -199,7 +198,7 @@ export const discordRichPresence = {
       hasReached: () => TeresaUnlocks.effarig.isUnlocked,
       mainResource: () => `${format(player.reality.realityMachines, 2)} RM`,
       resourceList: [
-        () => `Best GL: ${formatHybridLarge(player.records.bestReality.glyphLevel, 3)}`,
+        () => `Best GL: ${formatInt(player.records.bestReality.glyphLevel)}`,
         () => quantify("Relic Shard", player.celestials.effarig.relicShards, 2, 0, format)
       ]
     },
@@ -208,8 +207,8 @@ export const discordRichPresence = {
       hasReached: () => EffarigUnlock.eternity.isUnlocked,
       mainResource: () => `${format(player.reality.realityMachines, 2)} RM`,
       resourceList: [
-        () => `Best GL: ${formatHybridLarge(player.records.bestReality.glyphLevel, 3)}`,
-        () => `Charged: ${format(TimeSpan.fromMilliseconds(new Decimal(player.celestials.enslaved.stored)).totalYears, 2)} years`
+        () => `Best GL: ${formatInt(player.records.bestReality.glyphLevel)}`,
+        () => `Charged: ${format(TimeSpan.fromMilliseconds(player.celestials.enslaved.stored).totalYears, 2)} years`
       ],
     },
     {
@@ -217,7 +216,7 @@ export const discordRichPresence = {
       hasReached: () => Achievement(151).isUnlocked,
       mainResource: () => `${format(player.reality.realityMachines, 2)} RM`,
       resourceList: [
-        () => `Best GL: ${formatHybridLarge(player.records.bestReality.glyphLevel, 3)}`,
+        () => `Best GL: ${formatInt(player.records.bestReality.glyphLevel)}`,
         () => quantify("V-Achievement", player.celestials.v.runUnlocks.sum(), 0, 0, formatInt)],
     },
     {
@@ -225,32 +224,29 @@ export const discordRichPresence = {
       hasReached: () => VUnlocks.raUnlock.isUnlocked,
       mainResource: () => `${format(player.reality.realityMachines, 2)} RM`,
       resourceList: [
-        () => `Best GL: ${formatHybridLarge(player.records.bestReality.glyphLevel, 3)}`,
+        () => `Best GL: ${formatInt(player.records.bestReality.glyphLevel)}`,
         () => `Ra Levels: ${Ra.pets.all.map(p => formatInt(p.level)).join("/")}`],
     },
     {
       // Imaginary Machines unlocked
       name: () => Ra.displayName,
       hasReached: () => MachineHandler.isIMUnlocked,
-      mainResource: () =>
-        `${format(player.reality.realityMachines)} RM + ${format(player.reality.imaginaryMachines, 2)} iM`,
+      mainResource: () => `${formatMachines(player.reality.realityMachines, player.reality.imaginaryMachines)} RM`,
       resourceList: [
-        () => `Best GL: ${formatHybridLarge(player.records.bestReality.glyphLevel, 3)}`,
+        () => `Best GL: ${formatInt(player.records.bestReality.glyphLevel)}`,
         () => `Ra Levels: ${Ra.pets.all.map(p => formatInt(p.level)).join("/")}`
       ],
     },
     {
       name: () => Laitela.displayName,
       hasReached: () => Laitela.isUnlocked,
-      mainResource: () =>
-        `${format(player.reality.realityMachines)} RM + ${format(player.reality.imaginaryMachines, 2)} iM`,
+      mainResource: () => `${formatMachines(player.reality.realityMachines, player.reality.imaginaryMachines)} RM`,
       resourceList: [
-        () => `Best GL: ${formatHybridLarge(player.records.bestReality.glyphLevel, 3)}`,
+        () => `Best GL: ${formatInt(player.records.bestReality.glyphLevel)}`,
         () => quantify("Singularity", player.celestials.laitela.singularities, 2, 0, format)],
     },
     {
-      // We can't use celestial displayName here like the others because that will cause
-      // the text scramble to get put on DRP
+      // We can't use celestial displayName here like the others because text scramble will get put on DRP
       name: "Pelle",
       hasReached: () => Pelle.isDoomed,
       mainResource: () => quantify("Reality Shard", player.celestials.pelle.realityShards, 2),

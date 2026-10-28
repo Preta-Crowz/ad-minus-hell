@@ -16,8 +16,6 @@ export default {
     return {
       isUnlocked: false,
       isPermanent: false,
-      intervalVal: 0,
-      durationVal: 0,
     };
   },
   computed: {
@@ -54,11 +52,6 @@ export default {
       const bh = this.blackHole;
       this.isUnlocked = bh.isUnlocked;
       this.isPermanent = bh.isPermanent;
-      // We pull directly from the black hole data here (and in formatEffect above) because there are other sources
-      // which also affect them, and this is the only place where these values are displayed directly in-game. Then
-      // we use these values as keys so that the buttons are forced to re-render immediately if they're ever changed
-      this.intervalVal = bh.rawInterval;
-      this.durationVal = bh.duration;
     }
   }
 };
@@ -71,13 +64,11 @@ export default {
   >
     <BlackHoleUpgradeButton
       v-if="!isPermanent"
-      :key="intervalVal"
       :config="intervalConfig"
     />
     <BlackHoleUpgradeButton :config="powerConfig" />
     <BlackHoleUpgradeButton
       v-if="!isPermanent"
-      :key="durationVal"
       :config="durationConfig"
     />
   </div>

@@ -37,14 +37,14 @@ export default {
       glyphs: [],
       gainedLevel: new Decimal(),
       canSacrifice: false,
-      realityGlyphBoost: 0,
+      realityGlyphBoost: new Decimal(),
     };
   },
   computed: {
     maxGlyphEffects() {
       let maxEffects = 1;
       for (const glyph of this.glyphs) {
-        maxEffects = Math.max(getGlyphEffectsFromBitmask(glyph.effects).filter(e => e.isGenerated).length, maxEffects);
+        maxEffects = Math.max(getGlyphEffectsFromArray(glyph.effects).length, maxEffects);
       }
       return maxEffects;
     },
@@ -61,12 +61,12 @@ export default {
         ? GlyphSelection.glyphList(GlyphSelection.choiceCount, gainedGlyphLevel(), { isChoosingGlyph: false })
         : this.glyphSet.filter(x => x);
       this.sortGlyphs();
-      this.gainedLevel.copyFrom(gainedGlyphLevel().actualLevel);
-      let totalRealityGlyphBoost = 0;
-      for (let r = 0; r < getActiveGlyphEffects().length; r++) {
-        if (getActiveGlyphEffects()[r].id === "realityglyphlevel") totalRealityGlyphBoost += getActiveGlyphEffects()[r].value.value;
-      }
-      this.realityGlyphBoost = totalRealityGlyphBoost;
+      this.gainedLevel = gainedGlyphLevel().actualLevel;
+      // There should only be one reality glyph; this picks one pseudo-randomly if multiple are cheated/glitched in
+      const realityGlyph = this.glyphs.filter(g => g.type === "reality")[0];
+      this.realityGlyphBoost = realityGlyph
+        ? GlyphEffects.realityglyphlevel.effect(realityGlyph.level)
+        : new Decimal();
     },
     sortGlyphs() {
       const standardOrder = ["reality", "effarig", "power", "infinity", "replication", "time", "dilation",
@@ -83,7 +83,7 @@ export default {
       {{ name }}
     </template>
     <div v-if="isGlyphSelection">
-      Projected Glyph Level: {{ formatHybridLarge(gainedLevel, 3) }}
+      Projected Glyph Level: {{ formatInt(gainedLevel) }}
     </div>
     <GlyphSetName
       v-if="showSetName"

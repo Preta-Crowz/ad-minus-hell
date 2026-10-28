@@ -37,7 +37,7 @@ export default {
   data() {
     return {
       inC1: Boolean,
-      infinities: new Decimal(0)
+      infinities: new Decimal(0),
     };
   },
   computed: {
@@ -46,10 +46,12 @@ export default {
       // It's important to disable the cursor for Normal Challenge 1, challenges that are running, or
       // for challenges unable to be unlocked and not unlocked.
       const challengeNotEnterable = !this.isUnlocked || this.isRunning || this.name === "C1";
+      const isTrapped = this.overrideLabel === "Trapped";
       return {
         "o-challenge-btn": true,
-        "o-challenge-btn--broken": this.overrideLabel.length > 0 && this.name !== "C10",
-        "o-challenge-btn--broken-alt": this.overrideLabel.length > 0 && this.name === "C10",
+        "o-challenge-btn--broken": this.overrideLabel.length > 0 && !isTrapped && this.name !== "C10",
+        "o-challenge-btn--broken-alt": this.overrideLabel.length > 0 && !isTrapped && this.name === "C10",
+        "o-challenge-btn--trapped": isTrapped,
         "o-challenge-btn--running": this.isRunning || this.inC1,
         "o-challenge-btn--completed": this.isCompleted && this.isUnlocked,
         "o-challenge-btn--unlocked": !this.isCompleted && this.isUnlocked,
@@ -64,7 +66,7 @@ export default {
       if (this.isUnlocked) return "Start";
       const lockedText = this.lockedAt === undefined
         ? ""
-        : ` (${formatInt(this.infinities)}/${formatInt(this.lockedAt)})`;
+        : ` (${format(this.infinities)}/${formatInt(this.lockedAt)})`;
       return `Locked${lockedText}`;
     }
   },
@@ -108,5 +110,13 @@ export default {
   background: var(--color-enslaved--base);
   clip-path: polygon(0% 0%, 15% 0%, 25% 40%, 30% 0%, 55% 0%, 85% 30%, 75% 0%, 100% 0%,
     90% 40%, 100% 65%, 90% 95%, 45% 45%, 70% 100%, 25% 100%, 5% 90%, 10% 60%);
+}
+.o-challenge-btn--trapped {
+  color: #ffffff;
+  background: linear-gradient(0deg, #ff4500, #8b0000 60%, #200000);
+  border: var(--var-border-width, 0.2rem) solid #ff7a00;
+  cursor: not-allowed;
+  text-shadow: 0 0 0.4rem #000;
+  box-shadow: 0 0 1rem #ff4500;
 }
 </style>

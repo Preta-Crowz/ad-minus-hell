@@ -23,8 +23,7 @@ export default {
       isAffordable: false,
       isCapped: false,
       isAutoUnlocked: false,
-      isAutobuyerOn: false,
-      isDoomed: false
+      isAutobuyerOn: false
     };
   },
   computed: {
@@ -55,13 +54,15 @@ export default {
   },
   methods: {
     update() {
-      this.isDoomed = Pelle.isDoomed;
       this.isCapped = this.config.upgrade.value === 0;
       this.isAffordable = this.config.upgrade.isAffordable && !this.isCapped;
       const hasAutobuyer = this.config.upgrade.hasAutobuyer;
       const autobuyer = Autobuyer.blackHolePower(this.config.upgrade.id);
       this.isAutoUnlocked = hasAutobuyer && autobuyer.isUnlocked;
       this.isAutobuyerOn = hasAutobuyer && autobuyer.isActive;
+    },
+    bulk(){
+      for(let a=0; a < 20; a++) this.config.upgrade.purchase();
     }
   }
 };
@@ -73,6 +74,7 @@ export default {
       :class="classObject"
       class="l-reality-upgrade-btn c-reality-upgrade-btn"
       @click="config.upgrade.purchase()"
+      @click.shift="bulk()"
     >
       <DescriptionDisplay :config="config" />
       <EffectDisplay
@@ -82,7 +84,7 @@ export default {
       <CostDisplay
         v-if="!isCapped"
         :config="costConfig"
-        :name="isDoomed ? 'Reality Shard' : 'Reality Machine'"
+        name="Reality Machine"
       />
     </button>
     <PrimaryToggleButton

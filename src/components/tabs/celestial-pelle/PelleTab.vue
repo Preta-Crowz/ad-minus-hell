@@ -15,15 +15,23 @@ export default {
   data() {
     return {
       isDoomed: false,
+      joined: false,
       canEnterPelle: false,
       completedRows: 0,
       cappedResources: 0,
       hasStrike: false,
-      hasGalaxyGenerator: false,
-      hasEndgame: false,
+      hasGalaxyGenerator: false
     };
   },
   computed: {
+    sName(){
+      if(player.options.themeModern == "S15") return "Teresa-Pelle";
+      if(player.options.themeModern == "S16") return "Effarig-Pelle";
+      if(player.options.themeModern == "S17") return `The Nameless Pelle`;
+      if(player.options.themeModern == "S14") return "Ra-Pelle";
+      if(player.options.themeModern == "S13") return "V-Pelle";
+      return "Pelle";
+    },
     symbol() {
       return Pelle.symbol;
     },
@@ -37,16 +45,15 @@ export default {
   methods: {
     update() {
       this.isDoomed = Pelle.isDoomed;
+      this.joined = Pelle.joined;
       if (!this.isDoomed) {
         this.completedRows = Achievements.prePelleRows.countWhere(r => r.every(a => a.isUnlocked));
-        this.cappedResources = AlchemyResources.all.countWhere(r => r.amount >= 25000);
+        this.cappedResources = AlchemyResources.all.countWhere(r => r.over25K);
         this.canEnterPelle = this.completedRows === this.totalRows &&
-          this.cappedResources === this.totalAlchemyResources && !Alpha.isRunning && !LHC.voidRunning && !LHC.nullifiedVoidRunning &&
-          !Slabdrill.isCursed && !player.endgame.overcharge.isRunning && !player.compression.active && player.universes.current === 0;
+          this.cappedResources === this.totalAlchemyResources && !Alpha.isRunning && !LHC.voidRunning && !LHC.nullifiedVoidRunning;
       }
       this.hasStrike = PelleStrikes.all.some(s => s.hasStrike);
-      this.hasGalaxyGenerator = PelleRifts.recursion.milestones[2].canBeApplied || GalaxyGenerator.spentGalaxies.gt(0);
-      this.hasEndgame = PlayerProgress.endgameUnlocked();
+      this.hasGalaxyGenerator = (PelleRifts.recursion.milestones[2].canBeApplied || GalaxyGenerator.spentGalaxies.gt(0)) && this.isDoomed;
     },
     toggleBought() {
       Pelle.cel.showBought = !Pelle.cel.showBought;
@@ -56,19 +63,20 @@ export default {
       Modal.pelleEffects.show();
     },
     enterDoomModal() {
-      const confirms = player.options.confirmations;
-      if (confirms.doom) Modal.armageddon.show();
-      else Pelle.initializeRun();
-    }
+      Modal.armageddon.show();
+    },
+    enterDoom() {
+      Pelle.initializeRun();
+    },
   }
 };
 </script>
 
 <template>
   <div class="l-pelle-celestial-tab">
-    <CelestialQuoteHistory celestial="pelle" v-if="isDoomed || hasEndgame" />
-    <div
-      v-if="isDoomed"
+      <CelestialQuoteHistory celestial="pelle" />
+      <div
+      v-if="joined || isDoomed"
       class="l-pelle-all-content-container"
     >
       <div class="button-container">
@@ -76,9 +84,18 @@ export default {
           class="o-pelle-button"
           @click="showModal"
         >
-          Show effects in Doomed Reality
+          Show effects in a Doomed Reality
         </button>
       </div>
+
+      <button
+        v-if="joined && !isDoomed"
+        class="pelle-doom-button-small"
+        @click="enterDoom"
+      >
+        Doom Your Reality
+      </button>
+
       <br>
       <GalaxyGeneratorPanel v-if="hasGalaxyGenerator" />
       <PelleBarPanel v-if="hasStrike" />
@@ -99,7 +116,7 @@ export default {
       class="pelle-unlock-requirements"
     >
       You must have {{ formatInt(totalRows) }} rows of Achievements
-      and all of your Glyph Alchemy Resources capped to unlock Pelle, Celestial of Antimatter.
+      and all of your Glyph Alchemy Resources capped to unlock {{sName}}, Celestial of Antimatter.
       <br>
       <br>
       {{ formatInt(completedRows) }} / {{ formatInt(totalRows) }} Achievement rows completed
@@ -170,6 +187,20 @@ export default {
   border: var(--var-border-width, 0.2rem) solid var(--color-pelle--base);
   border-radius: var(--var-border-radius, 0.5rem);
   padding: 1rem;
+  transition-duration: 0.4s;
+  cursor: pointer;
+}
+
+.pelle-doom-button-small {
+  width: 25rem;
+  height: 5rem;
+  align-self: center;
+  font-family: Typewriter;
+  font-size: 2rem;
+  color: var(--color-pelle--base);
+  background: black;
+  border: var(--var-border-width, 0.2rem) solid var(--color-pelle--base);
+  border-radius: var(--var-border-radius, 0.5rem);
   transition-duration: 0.4s;
   cursor: pointer;
 }

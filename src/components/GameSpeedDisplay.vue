@@ -5,8 +5,8 @@ export default {
   },
   data() {
     return {
-      baseSpeed: new Decimal(0),
-      pulsedSpeed: new Decimal(0),
+      baseSpeed: new Decimal(),
+      pulsedSpeed: new Decimal(),
       hasSeenAlteredSpeed: false,
       isStopped: false,
       isEC12: false,
@@ -29,26 +29,28 @@ export default {
     },
     baseText() {
       if (!this.hasSeenAlteredSpeed) return null;
-      if (this.baseSpeed.eq(1)) return "The game is running at normal speed.";
-      return `Game speed is altered: ${this.baseSpeedText}`;
+      return this.baseSpeed.eq(1)
+        ? "The game is running at normal speed."
+        : `Game speed is altered: ${this.baseSpeedText}`;
     }
   },
   methods: {
     update() {
-      this.baseSpeed.copyFrom(getGameSpeedupFactor());
-      this.pulsedSpeed.copyFrom(getGameSpeedupForDisplay());
-      this.hasSeenAlteredSpeed = PlayerProgress.seenAlteredSpeed();
+      this.baseSpeed = GameCache.gameSpeed.value;
+      this.pulsedSpeed = getGameSpeedupForDisplay();
+      this.hasSeenAlteredSpeed = Hell.isInside || PlayerProgress.seenAlteredSpeed();
       this.isStopped = Enslaved.isStoringRealTime;
-      this.isEC12 = EternityChallenge(12).isRunning || player.endgame.overcharge.isRunning || player.compression.active ||
-        (player.universes.current >= 1 && (player.universes.current === 1 || player.universes.current % 2 === 0));
-      this.isPulsing = (this.baseSpeed.neq(this.pulsedSpeed)) && Enslaved.canRelease(true);
+      this.isEC12 = !Hell.isInside && (EternityChallenge(12).isRunning || player.endgame.overcharge.isRunning ||
+        player.compression.active ||
+        (player.universes.current >= 1 && (player.universes.current === 1 || player.universes.current % 2 === 0)));
+      this.isPulsing = this.baseSpeed.neq(this.pulsedSpeed) && Enslaved.canRelease(true);
     },
     formatNumber(num) {
-      if (num.gte(0.001) && num.lt(10000) && num.neq(1)) {
+      if (num.gte(0.001) && num.lt(1e4) && num.neq(1)) {
         return format(num, 3, 3);
       }
       if (num.lt(0.001)) {
-        return `${formatInt(1)} / ${format(new Decimal(1).div(num), 2)}`;
+        return `${formatInt(1)} / ${format(Decimal.div(1, num), 2)}`;
       }
       return `${format(num, 2)}`;
     }

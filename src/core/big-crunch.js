@@ -1,3 +1,4 @@
+import { DC } from "./constants";
 import FullScreenAnimationHandler from "./full-screen-animation-handler";
 
 export function bigCrunchAnimation() {
@@ -5,7 +6,7 @@ export function bigCrunchAnimation() {
 }
 
 function handleChallengeCompletion() {
-  const challenge = Player.antimatterChallenge;
+  const challenge = Hell.goalAntimatterChallenge;
   if (!challenge && !NormalChallenge(1).isCompleted) {
     NormalChallenge(1).complete();
   }
@@ -37,6 +38,12 @@ export function manualBigCrunchResetRequest() {
 
 export function bigCrunchResetRequest(disableAnimation = false) {
   if (!Player.canCrunch) return;
+
+  if((!realityUGs.all[6].config.hasFailed() && !realityUGs.all[6].isBought) && player.options.confirmations.glitchCL && Glyphs.activeWithoutCompanion.length > 3 && Effarig.currentStage == 1 && Effarig.isRunning){
+    Modal.message.show(`you will fail glitch challenge ${realityUGs.all[6].config.name} <br> which is to ${realityUGs.all[6].config.requirement()} <br> you can disable this for <i>all</i> challenges in confirmations`);
+    return;
+  }
+
   if (!disableAnimation && player.options.animations.bigCrunch && !FullScreenAnimationHandler.isDisplaying) {
     bigCrunchAnimation();
     setTimeout(bigCrunchReset, 1000);
@@ -51,19 +58,23 @@ export function bigCrunchReset(
 ) {
   if (!forced && !Player.canCrunch) return;
 
+  const completesAlphaInfinity = Alpha.isRunning && Alpha.currentStage === 3 && Player.canCrunch;
   if (Player.canCrunch) {
     EventHub.dispatch(GAME_EVENT.BIG_CRUNCH_BEFORE);
+    if (Hell.isInside && player.compression.active) {
+      Currency.hawkingRadiation.bumpTo(getHR(player.records.thisInfinity.maxAM.max(Currency.antimatter.value), true));
+    }
     bigCrunchGiveRewards();
     if (Pelle.isDoomed) PelleStrikes.infinity.trigger();
   }
 
   bigCrunchResetValues(enteringAntimatterChallenge);
-  if (Alpha.isRunning && player.infinities.eq(1) && Alpha.currentStage === 3) {
+  if (completesAlphaInfinity) {
     Alpha.advanceLayer();
     Alpha.quotes.infinity.show();
   }
   if (Slabdrill.isCursed && Slabdrill.currentStage === 2) {
-    player.breakEternityRebuyables = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    player.breakEternityRebuyables = Array.repeat(0, 10);
     Slabdrill.advanceLayer();
     Slabdrill.quotes.infinity.show();
   }
@@ -85,14 +96,16 @@ function bigCrunchUpdateStatistics() {
   player.records.bestInfinity.bestIPminEternity =
     player.records.bestInfinity.bestIPminEternity.clampMin(player.records.thisInfinity.bestIPmin);
   player.records.thisInfinity.bestIPmin = DC.D0;
+  player.records.bestInfinity.trueTime = Math.min(player.records.bestInfinity.trueTime, player.records.thisInfinity.trueTime)
 
   player.records.thisEternity.bestInfinitiesPerMs = player.records.thisEternity.bestInfinitiesPerMs.clampMin(
-    gainedInfinities().round().dividedBy(Math.clampMin(33, player.records.thisInfinity.realTime))
+    gainedInfinities().round().dividedBy(Decimal.clampMin(33, player.records.thisInfinity.realTime))
   );
 
   const infinityPoints = gainedInfinityPoints();
 
   addInfinityTime(
+    player.records.thisInfinity.trueTime,
     player.records.thisInfinity.time,
     player.records.thisInfinity.realTime,
     infinityPoints,
@@ -100,14 +113,15 @@ function bigCrunchUpdateStatistics() {
   );
 
   player.records.bestInfinity.time =
-    Decimal.min(player.records.bestInfinity.time, player.records.thisInfinity.time);
+  Decimal.min(player.records.bestInfinity.time, player.records.thisInfinity.time);
   player.records.bestInfinity.realTime =
-    Math.clamp(player.records.bestInfinity.realTime, 1, player.records.thisInfinity.realTime);
+    Decimal.min(player.records.bestInfinity.realTime, player.records.thisInfinity.realTime);
 
   player.requirementChecks.reality.noInfinities = false;
 
   if (!player.requirementChecks.infinity.maxAll) {
-    const bestIpPerMsWithoutMaxAll = infinityPoints.dividedBy(Math.clampMin(33, player.records.thisInfinity.realTime));
+    const bestIpPerMsWithoutMaxAll = infinityPoints.dividedBy(
+      Decimal.clampMin(33, player.records.thisInfinity.realTime));
     player.records.thisEternity.bestIPMsWithoutMaxAll =
       Decimal.max(bestIpPerMsWithoutMaxAll, player.records.thisEternity.bestIPMsWithoutMaxAll);
   }
@@ -134,12 +148,11 @@ export function bigCrunchResetValues(enteringAntimatterChallenge) {
   secondSoftReset(enteringAntimatterChallenge);
 
   let remainingGalaxies = DC.D0;
-  if (Achievement(95).isUnlocked && (!Pelle.isDoomed || PelleAchievementUpgrade.achievement95.canBeApplied) &&
-      (!player.disablePostReality || SlabdrillUnlocks.eternityChallengeTen.isUnlocked)) {
+  if (Achievement(95).isEffectActive) {
     Replicanti.amount = currentReplicanti;
     remainingGalaxies = remainingGalaxies.add(Decimal.min(currentReplicantiGalaxies, 1));
   }
-  if (TimeStudy(33).isBought && (!Pelle.isDoomed || PelleDestructionUpgrade.timestudy33.canBeApplied)) {
+  if (TimeStudy(33).isEffectActive) {
     remainingGalaxies = remainingGalaxies.add(Decimal.floor(currentReplicantiGalaxies.div(2)));
   }
 
@@ -154,14 +167,14 @@ export function bigCrunchResetValues(enteringAntimatterChallenge) {
 function bigCrunchCheckUnlocks() {
   if (EternityChallenge(4).tryFail()) return;
 
-  if (Effarig.isRunning && !EffarigUnlock.infinity.isUnlocked) {
+  if (Effarig.isRunning && !Hell.isInside && !EffarigUnlock.infinity.isUnlocked) {
     EffarigUnlock.infinity.unlock();
     beginProcessReality(getRealityProps(true));
   }
 }
 
 export function secondSoftReset(enteringAntimatterChallenge) {
-  player.dimensionBoosts = DC.D0;
+  player.dimensionBoosts = (GlitchRealityUpgrades.all[7].isBought ? DC.D5 : DC.D0);
   player.galaxies = DC.D0;
   player.records.thisInfinity.maxAM = DC.D0;
   Currency.antimatter.reset();
@@ -171,31 +184,29 @@ export function secondSoftReset(enteringAntimatterChallenge) {
   player.replicanti.galaxies = DC.D0;
   player.records.thisInfinity.time = DC.D0;
   player.records.thisInfinity.lastBuyTime = DC.D0;
-  player.records.thisInfinity.realTime = 0;
-  player.records.totalInfinityAntimatter = DC.E1;
+  player.records.thisInfinity.realTime = DC.D0;
   Player.resetRequirements("infinity");
   AchievementTimers.marathon2.reset();
+  Hell.applyNGMinus1Reset("infinity");
 }
 
 export function preProductionGenerateIP(diff) {
   if (InfinityUpgrade.ipGen.isBought) {
-    const genPeriod = Alpha.isRunning
-      ? Time.bestInfinityRealTime.totalMilliseconds.clampMin(1e-100).times(10)
-      : Time.bestInfinity.totalMilliseconds.clampMin(1e-100).times(10);
+    const genPeriod = Time.bestInfinity.totalMilliseconds.clampMin(1e-100).times(10);
     let genCount;
-    if (new Decimal(diff).gte(DC.E100)) {
+    if (diff.gte(1e100)) {
       genCount = Decimal.div(diff, genPeriod);
     } else {
       // Partial progress (fractions from 0 to 1) are stored in player.partInfinityPoint
-      const diffnum = Decimal.clamp(new Decimal(diff), 1e-300, 1e300);
-      player.partInfinityPoint = player.partInfinityPoint.add(diffnum.div(genPeriod.clampMax(1e300)));
-      genCount = Decimal.floor(player.partInfinityPoint);
-      player.partInfinityPoint = player.partInfinityPoint.sub(genCount);
+      const idk = diff.toNumber();
+      player.partInfinityPoint += idk / genPeriod.clampMax(1e300).toNumber();
+      genCount = Decimal.max(Decimal.floor(player.partInfinityPoint), 0);
+      player.partInfinityPoint -= genCount.toNumber();
     }
-    let gainedPerGen = player.records.bestInfinity.time.gte(999999999999) ? DC.D0 : InfinityUpgrade.ipGen.effectValue;
-    if (Laitela.isRunning && gainedPerGen.gt(1)) gainedPerGen = dilatedValueOf(gainedPerGen);
-    const gainedThisTick = new Decimal(genCount).times(gainedPerGen);
-    if (Decimal.isFinite(gainedThisTick)) Currency.infinityPoints.add(gainedThisTick);
+    let gainedPerGen = player.records.bestInfinity.time.gte(DC.BEMAX) ? DC.D0 : InfinityUpgrade.ipGen.effectValue;
+    if (Laitela.isRunning) gainedPerGen = dilatedValueOf(gainedPerGen);
+    const gainedThisTick = genCount.times(gainedPerGen);
+    Currency.infinityPoints.add(gainedThisTick);
   }
-  Currency.infinityPoints.add(BreakInfinityUpgrade.ipGen.effectOrDefault(DC.D0).times(diff).div(60000));
+  Currency.infinityPoints.add(BreakInfinityUpgrade.ipGen.effectOrDefault(DC.D0).times(diff.div(60000)));
 }

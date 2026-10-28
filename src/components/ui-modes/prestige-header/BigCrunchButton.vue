@@ -17,7 +17,6 @@ export default {
       headerTextColored: true,
       creditsClosed: false,
       showIPRate: false,
-      isFlipped: false
     };
   },
   computed: {
@@ -51,16 +50,16 @@ export default {
         ],
         [0, 255, 0]
       ];
-      const ratio = this.gainedIP.log10().div(this.currentIP.log10());
+      const ratio = this.gainedIP.max(1).log10().div(this.currentIP.max(1).log10());
       const interFn = index => {
         if (ratio.lt(0.9)) return stepRGB[0][index];
         if (ratio.lt(1)) {
-          const r = (ratio.sub(0.9)).times(10).toNumber();
-          return Math.round(stepRGB[0][index] * (1 - r) + stepRGB[1][index] * r);
+          const r = ratio.sub(0.9).mul(10);
+          return Decimal.round(new Decimal(1).sub(r).mul(stepRGB[0][index]).add(r.mul(stepRGB[1][index])));
         }
         if (ratio.lt(1.1)) {
-          const r = (ratio.sub(1)).times(10).toNumber();
-          return Math.round(stepRGB[1][index] * (1 - r) + stepRGB[2][index] * r);
+          const r = ratio.sub(1).mul(10);
+          return Decimal.round(new Decimal(1).sub(r).mul(stepRGB[1][index]).add(r.mul(stepRGB[2][index])));
         }
         return stepRGB[2][index];
       };
@@ -74,25 +73,27 @@ export default {
   methods: {
     update() {
       this.isVisible = player.break;
-      this.tesseractAffordable = Tesseracts.canBuyTesseract;
+      this.tesseractAffordable = Tesseracts.canBuyTesseract && !DivinityMilestone.divinityOverdrive.isReached;
       if (!this.isVisible) return;
       this.canCrunch = Player.canCrunch;
       this.infinityGoal.copyFrom(Player.infinityGoal);
-      this.inAntimatterChallenge = Player.isInAntimatterChallenge;
+      this.inAntimatterChallenge = Player.hasAntimatterChallengeGoal;
       this.headerTextColored = player.options.headerTextColored;
       this.creditsClosed = GameEnd.creditsEverClosed;
 
       const gainedIP = gainedInfinityPoints();
       this.currentIP.copyFrom(Currency.infinityPoints);
       this.gainedIP.copyFrom(gainedIP);
-      this.currentIPRate.copyFrom(gainedIP.dividedBy(Math.clampMin(0.0005, Time.thisInfinityRealTime.totalMinutes.toNumber())));
+      this.currentIPRate.copyFrom(gainedIP.div(Decimal.max(0.0005, Time.thisInfinityRealTime.totalMinutes)));
       this.peakIPRate.copyFrom(player.records.thisInfinity.bestIPmin);
       this.peakIPRateVal.copyFrom(player.records.thisInfinity.bestIPminVal);
       this.showIPRate = this.peakIPRate.lte(this.rateThreshold);
-      this.isFlipped = player.universes.current === 2;
     },
     switchToInfinity() {
       Tab.dimensions.infinity.show(true);
+    },
+    buytess() {
+      Tesseracts.buyTesseract();
     },
     crunch() {
       if (!Player.canCrunch) return;
@@ -115,7 +116,7 @@ export default {
     <template v-if="!canCrunch">
       Reach {{ format(infinityGoal, 2, 2) }}
       <br>
-      {{ isFlipped ? "matter" : "antimatter" }}
+      antimatter
     </template>
 
     <!-- Can Crunch in challenge -->
@@ -150,7 +151,8 @@ export default {
     v-else-if="tesseractAffordable"
     class="o-prestige-button c-game-header__tesseract-available"
     :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-    @click="switchToInfinity"
+    @click.exact="switchToInfinity"
+    @click.shift.exact="buytess"
   >
     <b>
       You have enough Infinity Points to buy a Tesseract

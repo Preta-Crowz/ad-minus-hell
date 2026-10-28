@@ -21,10 +21,7 @@ export default {
     </div>
     <div class="c-info-body">
       Antimatter Dimensions is an Idle Incremental game created by Finnish developer Hevipelle. Originating as a solo
-      project in 2016, it was expanded upon by a large team of developers and testers from then on. In 2024, American
-      developer Supersonic Seven beat the vanilla game and decided to mod it for additional content and improved lore.
-      The first public release of Antimatter Dimensions: Endgame was issued by Supersonic Seven in 2025, and since
-      then has been updating the game whenever possible.
+      project in 2016, it was expanded upon by a large team of developers and testers from then on.
       <br>
       <br>
       The game has unfolding gameplay and multiple prestige layers. The "How to Play" button contains useful
@@ -37,19 +34,9 @@ export default {
         link="https://github.com/IvarK/AntimatterDimensionsSourceCode"
       />
       <InformationModalButton
-        name="Endgame repository"
-        icon="fa-brands fa-github"
-        link="https://github.com/Supersonic-Seven/AntimatterDimensionsEndgameUpdate"
-      />
-      <InformationModalButton
         name="r/AntimatterDimensions"
         icon="fa-brands fa-reddit-alien"
         link="https://www.reddit.com/r/AntimatterDimensions/"
-      />
-      <InformationModalButton
-        name="r/EndgameAntimatterDims"
-        icon="fa-brands fa-reddit-alien"
-        link="https://www.reddit.com/r/EndgameAntimatterDims/"
       />
       <InformationModalButton
         name="Antimatter Dimensions Discord Server"
@@ -57,22 +44,12 @@ export default {
         link="https://discord.gg/ST9NaXa"
       />
       <InformationModalButton
-        name="Antimatter Dimensions: Endgame Discord Server"
-        icon="fa-brands fa-discord"
-        link="https://discord.gg/yuxrGFcJXc"
-      />
-      <InformationModalButton
         name="Antimatter Dimensions on Google Play"
         icon="fa-brands fa-google-play"
         link="https://play.google.com/store/apps/details?id=kajfosz.antimatterdimensions"
       />
       <InformationModalButton
-        name="Antimatter Dimensions on App Store"
-        icon="fa-brands fa-app-store-ios"
-        link="https://apps.apple.com/us/app/antimatter-dimensions/id6738206800"
-      />
-      <InformationModalButton
-        name="Antimatter Dimensions on Steam"
+        name="<u>Antimatter Dimensions on Steam</u> this is a mod and will not go on Steam"
         icon="fa-brands fa-steam"
         link="https://store.steampowered.com/app/1399720/Antimatter_Dimensions/"
       />

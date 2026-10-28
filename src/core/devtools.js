@@ -1,13 +1,15 @@
+/* eslint-disable */
+// Disabling eslint here is fine, this is developer tools and this file does really matter.
+
+
 import { sha512_256 } from "js-sha512";
-
 import { Player } from "./player";
-
+import { DC } from "./constants";
 import FullScreenAnimationHandler from "./full-screen-animation-handler";
 
-/* eslint-disable no-console */
-// Disabling no-console here seems
-// reasonable, since these are the devtools after all
 export const dev = {};
+
+dev.speedUp = 1
 
 dev.hardReset = function() {
   GameStorage.hardReset();
@@ -18,37 +20,117 @@ dev.giveAllAchievements = function() {
   for (const achievement of allAchievements) achievement.unlock();
 };
 
+dev.completeUpToGlitch = function() {
+  player.celestials.teresa.unlockBits = 255;
+  player.celestials.effarig.unlockBits = 255;
+  player.celestials.enslaved.completed = true;
+  player.celestials.enslaved.unlocks = [0,1];
+  player.celestials.v.unlockBits = 127;
+  player.celestials.v.runUnlocks = [6,8,8,8,9,9,5,6,8,7,0,0,0,0,0];
+  player.celestials.ra.unlockBits = (2**36)-1;
+  player.celestials.ra.pets.teresa.level = 100;
+  player.celestials.ra.pets.effarig.level = 100;
+  player.celestials.ra.pets.enslaved.level = 100;
+  player.celestials.ra.pets.v.level = 100;
+  player.celestials.ra.pets.glitchyfishys.level=100;
+
+  player.reality.imaginaryUpgReqs = (2**26)-1;
+  player.reality.imaginaryUpgradeBits = (2**26)-1;
+
+  player.celestials.laitela.difficultyTier = 8;
+  player.celestials.laitela.singularities = new Decimal(1e60);
+
+  player.glitch.preinfinity.upgradebits=255;
+  player.glitch.breakinfinity.upgradebits=255;
+  player.glitch.eternity.upgradebits=255;
+  player.glitch.reality.upgradebits=16383;
+  
+  dev.completereality();
+}
+
+dev.disableComformations = function() {
+      player.options.confirmations.armageddon = false;
+      player.options.confirmations.sacrifice = false;
+      player.options.confirmations.challenges = false;
+      player.options.confirmations.exitChallenge = false;
+      player.options.confirmations.eternity = false;
+      player.options.confirmations.dilation = false;
+      player.options.confirmations.resetReality = false;
+      player.options.confirmations.glyphReplace = false;
+      player.options.confirmations.glyphSacrifice = false;
+      player.options.confirmations.autoClean = false;
+      player.options.confirmations.sacrificeAll = false;
+      player.options.confirmations.glyphSelection = false;
+      player.options.confirmations.glyphUndo = false;
+      player.options.confirmations.deleteGlyphSetSave = false;
+      player.options.confirmations.glyphRefine = false;
+      player.options.confirmations.bigCrunch = false;
+      player.options.confirmations.replicantiGalaxy = false;
+      player.options.confirmations.antimatterGalaxy = false;
+      player.options.confirmations.dimensionBoost = false;
+      player.options.confirmations.switchAutomatorMode = false;
+      player.options.confirmations.respecIAP = false;
+  };
+
+dev.completeECs = function() {
+  player.eternityChalls.eterc1= Enslaved.isRunning ? 1000 : 5;
+  player.eternityChalls.eterc2=5;
+  player.eternityChalls.eterc3=5;
+  player.eternityChalls.eterc4=5;
+  player.eternityChalls.eterc5=5;
+  player.eternityChalls.eterc6=5;
+  player.eternityChalls.eterc7=5;
+  player.eternityChalls.eterc8=5;
+  player.eternityChalls.eterc9=5;
+  player.eternityChalls.eterc10=5;
+  player.eternityChalls.eterc11=5;
+  player.eternityChalls.eterc12=5;
+}
+dev.disableAnimations = function() {
+  player.options.animations.bigCrunch = false;
+  player.options.animations.eternity = false;
+  player.options.animations.dilation = false;
+  player.options.animations.tachyonParticles = false;
+  player.options.animations.reality = false;
+  player.options.animations.background = false;
+};
+
+dev.disableOptions = function() {
+  dev.disableComformations();
+  dev.disableAnimations();
+  player.options.automaticTabSwitching = false;
+}
+dev.unlockAllRealityUpgrades = function() {
+  player.reality.upgReqs=(2**28)-1;
+  player.reality.upgradeBits = (2**28)-1;
+  player.blackHole[0].unlocked=true;
+  player.blackHole[1].unlocked=true;
+  Currency.realities.add(1);
+}
+dev.getAllPerks = function() {
+  player.reality.perkPoints = player.reality.perkPoints.add(100);
+  dev.buyAllPerks();
+  player.realities = player.realities.add(1);
+}
+dev.completereality = function() {
+  dev.getAllPerks();
+  dev.unlockAllRealityUpgrades();
+}
+
+dev.giveLongAchievements = function() {
+  player.achievementBits[2] |= 16;
+  player.achievementBits[3] |= 4;
+  player.achievementBits[6] |= 32;
+  player.achievementBits[7] |= 64;
+}
+
 // Know that both dev.doubleEverything and dev.tripleEverything are both broken
 // with this error https://i.imgur.com/ZMEBNTv.png
 
-dev.doubleEverything = function() {
-  Object.keys(player).forEach(key => {
-    if (typeof player[key] === "number") player[key] *= 2;
-    if (typeof player[key] === "object" && player[key].constructor !== Object) player[key] = player[key].times(2);
-    if (typeof player[key] === "object" && !isFinite(player[key])) {
-      Object.keys(player[key]).forEach(key2 => {
-        if (typeof player[key][key2] === "number") player[key][key2] *= 2;
-        if (typeof player[key][key2] === "object" && player[key][key2].constructor !== Object)
-          player[key][key2] = player[key][key2].times(2);
-      });
-    }
-  });
-};
-
-dev.tripleEverything = function() {
-  Object.keys(player).forEach(key => {
-    if (typeof player[key] === "number") player[key] *= 3;
-    if (typeof player[key] === "object" && player[key].constructor !== Object) player[key] = player[key].times(3);
-    if (typeof player[key] === "object" && !isFinite(player[key])) {
-      Object.keys(player[key]).forEach(key3 => {
-        if (typeof player[key][key3] === "number") player[key][key3] *= 3;
-        if (typeof player[key][key3] === "object" && player[key][key3].constructor !== Object)
-          player[key][key3] = player[key][key3].times(3);
-      });
-    }
-  });
-};
-
+dev.boostEverything = function() {
+  
+}
+    
 dev.barrelRoll = function() {
   FullScreenAnimationHandler.display("a-barrel-roll", 5);
 };
@@ -114,8 +196,8 @@ dev.resetDilation = function() {
   player.dilation.rebuyables[1] = 0;
   player.dilation.rebuyables[2] = 0;
   player.dilation.rebuyables[3] = 0;
-  player.dilation.baseTachyonGalaxies = DC.D0;
-  player.dilation.totalTachyonGalaxies = DC.D0;
+  player.dilation.baseTachyonGalaxies = 0;
+  player.dilation.totalTachyonGalaxies = 0;
 };
 
 // We want to give a large degree of options
@@ -136,14 +218,14 @@ dev.giveGlyph = function(level, rawLevel = level) {
 
 dev.giveRealityGlyph = function(level) {
   if (GameCache.glyphInventorySpace.value === 0) return;
-  Glyphs.addToInventory(GlyphGenerator.realityGlyph(level));
+  Glyphs.addToInventory(GlyphGenerator.realityGlyph());
 };
 
 dev.setCompanionGlyphEP = function(eternityPoints) {
   const glyph = player.reality.glyphs.active
     .concat(player.reality.glyphs.inventory)
     .filter(g => g.type === "companion")[0];
-  glyph.strength = rarityToStrength(Decimal.min(eternityPoints.log10().div(1e6), 100).toNumber());
+  glyph.strength = rarityToStrength(eternityPoints.max(1).log10().div(1e6).toNumber());
 };
 
 dev.decriminalize = function() {
@@ -225,17 +307,17 @@ dev.buyAllPerks = function() {
 
 // This should help for balancing different glyph types, strong rounding of values is intentional
 dev.printResourceTotals = function() {
-  console.log(`Antimatter: e${Currency.antimatter.value.log10().toPrecision(3)}`);
-  console.log(`RM: e${Decimal.round(MachineHandler.gainedRealityMachines.log10())}`);
-  console.log(`Glyph level: ${100 * Math.floor(gainedGlyphLevel().actualLevel / 100 + 0.5)}`);
+  console.log(`Antimatter: e${Currency.antimatter.exponent.toPrecision(3)}`);
+  console.log(`RM: e${MachineHandler.gainedRealityMachines.log10().round().toNumber()}`);
+  console.log(`Glyph level: ${gainedGlyphLevel().actualLevel.div(100).add(0.5).floor().times(100)}`);
 
-  console.log(`Tickspeed: e${-Tickspeed.current.log10().toPrecision(3)}`);
-  console.log(`Gamespeed: ${Decimal.pow(getGameSpeedupFactor(), 1.2).toPrecision(1)}`);
-  const aGalaxy = Decimal.floor(player.galaxies.div(100).add(0.5)).times(100);
-  const rGalaxy = Decimal.floor(Replicanti.galaxies.total.div(100).add(0.5)).times(100);
-  const dGalaxy = Decimal.floor(player.dilation.totalTachyonGalaxies.div(100).add(0.5)).times(100);
+  console.log(`Tickspeed: e${-Tickspeed.current.exponent.toPrecision(3)}`);
+  console.log(`Gamespeed: ${Decimal.pow(GameCache.gameSpeed.value, 1.2).toPrecision(1)}`);
+  const aGalaxy = player.galaxies.div(100).add(0.5).floor().times(100).toNumber();
+  const rGalaxy = Replicanti.galaxies.total.div(100).add(0.5).floor().times(100).toNumber();
+  const dGalaxy = player.dilation.totalTachyonGalaxies.div(100).add(0.5).floor().times(100).toNumber();
   console.log(`Galaxies: ${aGalaxy}+${rGalaxy}+${dGalaxy} (${aGalaxy + rGalaxy + dGalaxy})`);
-  console.log(`Tick reduction: e${-Decimal.round(getTickSpeedMultiplier().log10())}`);
+  console.log(`Tick reduction: e${-getTickSpeedMultiplier().log10().round().toNumber()}`);
 
   let ADmults = DC.D1;
   for (let i = 1; i <= 8; i++) {
@@ -252,15 +334,15 @@ dev.printResourceTotals = function() {
     TDmults = TDmults.times(TimeDimension(i).multiplier);
   }
   console.log(`TD mults: e${TDmults.log10().toPrecision(3)}`);
-  console.log(`Tickspeed from TD: ${formatWithCommas(1000 * Math.floor(player.totalTickGained / 1000 + 0.5))}`);
+  console.log(`Tickspeed from TD: ${formatWithCommas(Decimal.floor(player.totalTickGained.div(1000).add(0.5)).mul(1000))}`);
 
-  console.log(`Infinities: e${Decimal.round(player.infinities.log10())}`);
-  console.log(`Eternities: e${Decimal.round(player.eternities.log10())}`);
-  console.log(`Replicanti: e${formatWithCommas(Decimal.floor(Replicanti.amount.log10().div(1e5).add(0.5)).times(1e5))}`);
+  console.log(`Infinities: e${player.infinities.log10().round().toNumber()}`);
+  console.log(`Eternities: e${player.eternities.log10().round().toNumber()}`);
+  console.log(`Replicanti: e${formatWithCommas(Replicanti.amount.log10().div(1e5).add(0.5).floor().times(1e5))}`);
 
-  console.log(`TT: e${Decimal.round(player.timestudy.theorem.log10())}`);
-  console.log(`DT: e${Decimal.round(player.dilation.dilatedTime.log10())}`);
-  console.log(`TP: e${Decimal.round(player.dilation.tachyonParticles.log10())}`);
+  console.log(`TT: e${player.timestudy.theorem.log10().round().toNumber()}`);
+  console.log(`DT: e${player.dilation.dilatedTime.log10().round().toNumber()}`);
+  console.log(`TP: e${player.dilation.tachyonParticles.log10().round().toNumber()}`);
 };
 
 dev.unlockCelestialQuotes = function(celestial) {
@@ -361,11 +443,11 @@ dev.testReplicantiCode = function(singleId, useDebugger = false) {
     ],
     [
       function() {
-        player.replicanti.boughtGalaxyCap = new Decimal(100);
+        player.replicanti.boughtGalaxyCap = 100;
       },
       function() {
-        player.replicanti.boughtGalaxyCap = new Decimal(100);
-        player.replicanti.galaxies = new Decimal(50);
+        player.replicanti.boughtGalaxyCap = 100;
+        player.replicanti.galaxies = 50;
       }
     ],
     [
@@ -424,7 +506,7 @@ dev.testReplicantiCode = function(singleId, useDebugger = false) {
   console.log(hash);
   if (useDebugger) {
     // eslint-disable-next-line no-debugger
-    debugger;
+    // debugger; remeber to undo this
   }
   return hash;
 };
@@ -456,9 +538,9 @@ dev.testGlyphs = function(config) {
     withFirst.forEach(e => e.push(elements[0]));
     return withFirst.concat(withoutFirst);
   }
-  const sets5 = makeCombinationsWithRepeats(5, BASIC_GLYPH_TYPES)
+  const sets5 = makeCombinationsWithRepeats(5, GlyphInfo.basicGlyphTypes)
     .map(s => s.map(t => makeAllEffectGlyph(t)));
-  const sets4 = makeCombinationsWithRepeats(4, BASIC_GLYPH_TYPES)
+  const sets4 = makeCombinationsWithRepeats(4, GlyphInfo.basicGlyphTypes)
     .map(s => s.map(t => makeAllEffectGlyph(t)));
   const effarigSets = effarigGlyphs.map(g => sets4.map(s => [g].concat(s)));
   const glyphSets = sets5.concat(...effarigSets);
@@ -484,11 +566,11 @@ dev.testGlyphs = function(config) {
     const done = padString(`${Math.floor(100 * (index + 1) / glyphSets.length)}%`, 4, true);
     const rm = padString(MachineHandler.gainedRealityMachines.toPrecision(2), 9);
     const gl = padString(gainedGlyphLevel().actualLevel, 4);
-    const ep = padString(player.eternityPoints.log10().toString(), 6);
-    const ip = padString(player.infinityPoints.log10().toString(), 8);
-    const am = padString(Currency.antimatter.value.log10().toString(), 12);
+    const ep = padString(player.eternityPoints.exponent.toString(), 6);
+    const ip = padString(player.infinityPoints.exponent.toString(), 8);
+    const am = padString(Currency.antimatter.exponent.toString(), 12);
     const dimboosts = DimBoost.purchasedBoosts;
-    const galaxies = Replicanti.galaxies.total.add(player.galaxies).add(player.dilation.totalTachyonGalaxies);
+    const galaxies = Replicanti.galaxies.total + player.galaxies + player.dilation.totalTachyonGalaxies;
     const glyphData = glyphSets[index].map(glyphToShortString).sum();
     console.log(`${done} ${glyphData} rm=${rm} gl=${gl} ep=${ep} ip=${ip} am=${am} ` +
       `dimboosts=${dimboosts} galaxies=${galaxies}`);
@@ -530,51 +612,82 @@ dev.unlockAllCosmeticSets = function() {
   player.reality.glyphs.cosmetics.unlockedFromNG = Object.keys(GameDatabase.reality.glyphCosmeticSets);
 };
 
-function nanFuckIteration(value, value2) {
+// You would never guess what these are for
+dev.beTests = {}
+
+dev.beTests.speed = (speed) =>  {
+  dev.speedUp = new Decimal(speed);
+}
+
+dev.beTests.consecutiveInfinities = function(amnt) {
+  player.infinityPoints = player.infinityPoints.add(gainedInfinityPoints().times(amnt))
+  player.infinities = player.infinities.add(gainedInfinities().round())
+}
+
+dev.beTests.completeChalleges = {}
+
+dev.beTests.completeChalleges.normal = function() {
+  for (let i = 1; i < 13; i++) NormalChallenge(i).complete()
+}
+
+dev.beTests.completeChalleges.infinity = function() {
+  for (let i = 1; i < 9; i++) InfinityChallenge(i).complete()
+}
+
+dev.beTests.completeChalleges.eternity = function () {
+  for (let i = 1; i < 13; i++) EternityChallenge(i).completions = (i == 1 && Enslaved.isRunning) ? 1000: 5
+}
+
+dev.beTests.completeChalleges.all = function () {
+  dev.beTests.completeChalleges.normal()
+  dev.beTests.completeChalleges.infinity()
+  dev.beTests.completeChalleges.eternity()
+}
+
+dev.beTests.nanFuckIteration = function (value, value2) {
   for (const item in value) {
-    console.log(value[item]);
-    console.log(value2[item]);
-    if (value[item] instanceof Decimal && value2[item] !== undefined) {
+    console.log(value[item])
+    console.log(value2[item])
+    if (value[item] instanceof Decimal && value2[item] != undefined) {
       if (value2[item].neq(0)) {
         if (value[item].lt(0) || value[item].layer > 8e15)
-          value[item] = value2[item];
-      } else if (value[item].layer > 8e15)
-        value[item] = value2[item];
+          value[item] = value2[item]
+      } else {
+        if (value[item].layer > 8e15)
+          value[item] = value2[item]
+      }
     }
-    if (value[item] instanceof Number && value2[item] !== undefined) {
-      if (value2[item] === 0) {
+    if (value[item] instanceof Number && value2[item] != undefined) {
+      if (value2[item] == 0) {
         if (value[item] > 1e300) {
-          value[item] = value2[item];
+          value[item] = value2[item]
         }
-      } else if (value[item] > 1e300 || value[item] < 0);
-      value[item] = value2[item];
+      } else {
+        if (value[item] > 1e300 || value[item] < 0) {
+          value[item] = value2[item]
+        }
+      }
     }
-    if ((value[item] instanceof Object || value[item] instanceof Array) &&
-      !(value[item] instanceof Decimal) && value2[item] !== undefined)
-      value[item] = dev.beTests.nanFuckIteration(value[item], value2[item]);
-    if (value[item] === undefined && value2[item] !== undefined)
-      value[item] = value2[item];
+    if ((value[item] instanceof Object || value[item] instanceof Array) && !(value[item] instanceof Decimal) && value2[item] != undefined)
+      value[item] = dev.beTests.nanFuckIteration(value[item], value2[item])
+    if (value[item] == undefined  && value2[item] != undefined)
+      value[item] = value2[item]
   }
-  return value;
-};
+  return value
+}
 
-dev.nanFuck = function() {
-  player = nanFuckIteration(player, Player.defaultStart);
-  GameStorage.save();
-};
+dev.beTests.nanFuck = function () {
+  player = dev.beTests.nanFuckIteration(player, Player.defaultStart)
+  GameStorage.save()
+}
 
-dev.skipIntro = function() {
-  player.hasSeenIntro = true;
-  player.introTick = 90000;
-  player.introFrozen = true;
-  player.expanse.elemental.quotes.push(0);
-  player.expanse.elemental.quotes.push(1);
-  player.expanse.elemental.quotes.push(2);
-};
+dev.beTests.prepare = function (completeAllChallenges = false) {
+  if(completeAllChallenges) dev.beTests.completeChalleges.all()
+  else dev.beTests.completeChalleges.normal()
 
-dev.restartIntro = function() {
-  player.hasSeenIntro = false;
-  player.introTick = 0;
-  player.introFrozen = true;
-  player.expanse.elemental.quotes = player.expanse.elemental.quotes.filter(q => q >= 3);
-};
+  dev.beTests.consecutiveInfinities(new Decimal("1e350"))
+  dev.beTests.speed()
+  GameStorage.import("blob")
+  Notation.scientific.setAsCurrent()
+  Achievement(61).unlock()
+}

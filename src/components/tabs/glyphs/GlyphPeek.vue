@@ -9,7 +9,7 @@ export default {
   data() {
     return {
       glyphs: [],
-      level: new Decimal(),
+      level: 0,
       canPeek: false,
       isVisible: false,
       canSacrifice: false,
@@ -26,7 +26,7 @@ export default {
       // and due to pre-selected first glyph might well be incorrect anyway.
       this.isVisible = !Pelle.isDoomed && PlayerProgress.realityUnlocked();
       this.canPeek = TimeStudy.reality.isBought;
-      if (gainedGlyphLevel().actualLevel.neq(this.level)) {
+      if (gainedGlyphLevel().actualLevel !== this.level) {
         this.refreshGlyphs();
       }
     },

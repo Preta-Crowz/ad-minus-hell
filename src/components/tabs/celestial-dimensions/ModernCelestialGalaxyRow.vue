@@ -52,7 +52,7 @@ export default {
     costScalingText() {
       switch (this.type) {
         case CELESTIAL_GALAXY_TYPE.DISTANT:
-          return `Each Celestial Galaxy is more expensive past ${quantifyHybridLarge("Galaxy", this.distantStart)}`;
+          return `Each Celestial Galaxy is more expensive past ${quantify("Galaxy", this.distantStart)}`;
         case CELESTIAL_GALAXY_TYPE.REMOTE: {
           const scalings = [
             { type: "distant", function: "quadratic", amount: this.distantStart },

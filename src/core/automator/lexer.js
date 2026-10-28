@@ -3,6 +3,8 @@
 /* eslint-disable camelcase */
 import { createToken, Lexer } from "chevrotain";
 
+import { DC } from "../constants";
+
 const createCategory = name => createToken({ name, pattern: Lexer.NA, longer_alt: Identifier });
 
 // Shorthand for creating tokens and adding them to a list
@@ -115,7 +117,7 @@ createInCategory(AutomatorCurrency, "DT", /dt/i, { $getter: () => Currency.dilat
 createInCategory(AutomatorCurrency, "TP", /tp/i, { $getter: () => Currency.tachyonParticles.value });
 createInCategory(AutomatorCurrency, "RG", /rg/i, { $getter: () => new Decimal(Replicanti.galaxies.total) });
 createInCategory(AutomatorCurrency, "RM", /rm/i, { $getter: () => Currency.realityMachines.value });
-createInCategory(AutomatorCurrency, "RS", /rs/i, { $getter: () => Currency.realityShards.value });
+createInCategory(AutomatorCurrency, "CP", /cp/i, { $getter: () => Currency.celestialPoints.value });
 
 createInCategory(AutomatorCurrency, "infinities", /infinities/i, { $getter: () => Currency.infinities.value });
 createInCategory(AutomatorCurrency, "bankedInfinities", /banked[ \t]+infinities/i, {
@@ -124,10 +126,6 @@ createInCategory(AutomatorCurrency, "bankedInfinities", /banked[ \t]+infinities/
 });
 createInCategory(AutomatorCurrency, "eternities", /eternities/i, { $getter: () => Currency.eternities.value });
 createInCategory(AutomatorCurrency, "realities", /realities/i, { $getter: () => Currency.realities.value });
-createInCategory(AutomatorCurrency, "remnants", /remnants/i, {
-  $autocomplete: "remnants",
-  $getter: () => new Decimal(Currency.remnants.value)
-});
 
 createInCategory(AutomatorCurrency, "PendingIP", /pending[ \t]+ip/i, {
   $autocomplete: "pending IP",
@@ -145,17 +143,9 @@ createInCategory(AutomatorCurrency, "PendingRM", /pending[ \t]+rm/i, {
   $autocomplete: "pending RM",
   $getter: () => (isRealityAvailable() ? MachineHandler.gainedRealityMachines : DC.D0)
 });
-createInCategory(AutomatorCurrency, "PendingRS", /pending[ \t]+rs/i, {
-  $autocomplete: "pending RS",
-  $getter: () => (Pelle.isDoomed ? Pelle.nextRealityShardGain : DC.D0)
-});
 createInCategory(AutomatorCurrency, "PendingGlyphLevel", /pending[ \t]+glyph[ \t]+level/i, {
   $autocomplete: "pending Glyph level",
   $getter: () => new Decimal(isRealityAvailable() ? gainedGlyphLevel().actualLevel : 0),
-});
-createInCategory(AutomatorCurrency, "PendingRemnants", /pending[ \t]+remnants/i, {
-  $autocomplete: "pending remnants",
-  $getter: () => new Decimal(Pelle.isDoomed ? Pelle.remnantsGain : 0)
 });
 
 createInCategory(AutomatorCurrency, "Rep", /rep(licanti)?/i, {
@@ -169,10 +159,6 @@ createInCategory(AutomatorCurrency, "TT", /(tt|time theorems?)/i, {
 createInCategory(AutomatorCurrency, "TotalTT", /total[ \t]+tt/i, {
   $autocomplete: "total TT",
   $getter: () => player.timestudy.theorem.plus(TimeTheorems.calculateTimeStudiesCost()),
-});
-createInCategory(AutomatorCurrency, "SpentTT", /spent[ \t]+tt/i, {
-  $autocomplete: "spent TT",
-  $getter: () => new Decimal(GameCache.currentStudyTree.value.spentTheorems[0]),
 });
 
 createInCategory(AutomatorCurrency, "TotalCompletions", /total[ \t]+completions/i, {
@@ -209,12 +195,12 @@ createInCategory(AutomatorCurrency, "FilterScore", /filter[ \t]+score/i, {
 createInCategory(AutomatorCurrency, "ST", /space[ \t]+theorems/i, {
   $autocomplete: "space theorems",
   $getter: () => V.availableST,
-  $unlocked: () => V.spaceTheorems > 0,
+  $unlocked: () => V.spaceTheorems.gt(0),
 });
 createInCategory(AutomatorCurrency, "TotalST", /total[ \t]+space[ \t]+theorems/i, {
   $autocomplete: "total space theorems",
   $getter: () => V.spaceTheorems,
-  $unlocked: () => V.spaceTheorems > 0,
+  $unlocked: () => V.spaceTheorems.gt(0),
 });
 
 for (let i = 1; i <= 12; ++i) {
@@ -269,19 +255,13 @@ createInCategory(PrestigeEvent, "Doom", /doom/i, {
   $prestigeLevel: 4,
   $prestige: () => Pelle.initializeRun(),
 });
-createInCategory(PrestigeEvent, "Armageddon", /armageddon/i, {
-  $prestigeAvailable: () => Pelle.canArmageddon,
-  $prestigeLevel: 5,
-  $prestigeCurrency: "RS",
-  $prestige: () => Pelle.armageddon(true),
-});
 createInCategory(PrestigeEvent, "Endgame", /endgame/i, {
   $autobuyer: () => Autobuyer.endgame,
-  $autobuyerCurrencyMode: AUTO_ENDGAME_MODE.CP,
-  $prestigeAvailable: () => isEndgameAvailable(),
+  $autobuyerCurrencyMode: AUTO_ENDGAME_MODE.AMOUNTCP,
+  $prestigeAvailable: () => Pelle.isDoomed && player.antimatter.gte(DC.E9E15) && isEndgameAvailable(),
   $prestigeLevel: 6,
   $prestigeCurrency: "CP",
-  $prestige: () => Endgame.newEndgame(),
+  $prestige: () => Endgame.hotkeyReset(),
   $respec: () => {
     player.endgame.respec = true;
   },

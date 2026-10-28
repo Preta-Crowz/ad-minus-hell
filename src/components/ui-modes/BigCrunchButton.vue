@@ -5,8 +5,7 @@ export default {
     return {
       isModern: false,
       smallCrunch: false,
-      shouldDisplay: false,
-      isFlipped: false
+      shouldDisplay: false
     };
   },
   methods: {
@@ -14,8 +13,7 @@ export default {
       this.shouldDisplay = !player.break && Player.canCrunch;
       if (!this.shouldDisplay) return;
       this.isModern = player.options.newUI;
-      this.smallCrunch = Time.bestInfinityRealTime.totalMinutes.toNumber() <= 1;
-      this.isFlipped = player.universes.current === 2;
+      this.smallCrunch = Time.bestInfinityRealTime.totalMinutes.lte(1);
     },
     handleClick() {
       if (PlayerProgress.infinityUnlocked()) bigCrunchResetRequest();
@@ -26,18 +24,18 @@ export default {
 </script>
 
 <template>
-  <span v-if="shouldDisplay">
+  <span  v-if="shouldDisplay" class="abs">
     <div v-if="isModern">
       <h3
         v-if="!smallCrunch"
-        class="l-spacing"
+        class="uper"
       >
-        The world has collapsed due to excess {{ isFlipped ? "matter" : "antimatter" }}.
+        The world has collapsed due to excess antimatter.
       </h3>
       <button
         :class="{
           'btn-big-crunch': true,
-          'btn-big-crunch--small': smallCrunch
+          'btn-big-crunch-s': smallCrunch
         }"
         @click="handleClick"
       >
@@ -60,14 +58,29 @@ export default {
         v-if="!smallCrunch"
         class="o-emptiness"
       >
-        The world has collapsed due to excess of {{ isFlipped ? "matter" : "antimatter" }}.
+        The world has collapsed due to excess of antimatter.
       </div>
     </div>
   </span>
 </template>
 
 <style scoped>
-.l-spacing {
+.uper{
   margin-top: 1rem;
+}
+  
+.abs{
+  display: block;
+  position: sticky;
+  z-index: 6;
+  top: 0px;
+}
+  
+.btn-big-crunch-s {
+  font-size: 3rem;
+  margin-top: 20px;
+  width: 23rem;
+  position: absolute;
+  transform: translateX(-50%);
 }
 </style>

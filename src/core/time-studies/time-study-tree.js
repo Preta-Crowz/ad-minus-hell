@@ -14,7 +14,7 @@
  *   object itself and should not depend on the actual current game state
  * - All study entries must be Strings because numbers (normal TS) and EC# (ECs) need to be supported
  *
- * @member {Number[]} spentTheorems      Two-element array containing TT/ST totals for studies which were actually
+ * @member {Decimal[]} spentTheorems      Two-element array containing TT/ST totals for studies which were actually
  *  purchased after accounting for various conditions which would forbid some being bought (eg. cost or tree structure)
  * @member {String[]} invalidStudies     Array of studies from the initial string which are correctly formatted
  *  but don't actually exist; used for informational purposes elsewhere
@@ -27,7 +27,7 @@
 export class TimeStudyTree {
   // The first parameter will either be an import string or an array of studies (possibly with an EC at the end)
   constructor(studies) {
-    this.spentTheorems = [0, 0];
+    this.spentTheorems = [new Decimal(0), new Decimal(0)];
     this.invalidStudies = [];
     this.purchasedStudies = [];
     this.selectedStudies = [];
@@ -106,7 +106,7 @@ export class TimeStudyTree {
       ["idle", [123, 133, 143]],
       ["light", [221, 223, 225, 227, 231, 233]],
       ["dark", [222, 224, 226, 228, 232, 234]],
-      ...((Ra.unlocks.unlockHardV.canBeApplied && !player.disablePostReality)
+      ...(Ra.unlocks.unlockHardV.canBeApplied
         ? [["triad", [301, 302, 303, 304].slice(0, Ra.unlocks.unlockHardV.effectOrDefault(0))]]
         : [])
     ]);
@@ -218,16 +218,17 @@ export class TimeStudyTree {
       ? this.purchasedStudies.includes(TimeStudy(req))
       : req());
     const config = study.config;
+    const requirement = study.requirement ?? config.requirement;
     let reqSatisfied;
     switch (config.reqType) {
       case TS_REQUIREMENT_TYPE.AT_LEAST_ONE:
-        reqSatisfied = config.requirement.some(r => check(r));
+        reqSatisfied = requirement.some(r => check(r));
         break;
       case TS_REQUIREMENT_TYPE.ALL:
-        reqSatisfied = config.requirement.every(r => check(r));
+        reqSatisfied = requirement.every(r => check(r));
         break;
       case TS_REQUIREMENT_TYPE.DIMENSION_PATH:
-        reqSatisfied = config.requirement.every(r => check(r)) && this.currDimPathCount < this.allowedDimPathCount;
+        reqSatisfied = requirement.every(r => check(r)) && this.currDimPathCount < this.allowedDimPathCount;
         break;
       default:
         throw Error(`Unrecognized TS requirement type: ${this.reqType}`);
@@ -253,22 +254,23 @@ export class TimeStudyTree {
     const config = study.config;
     const stDiscount = VUnlocks.raUnlock.effectOrDefault(0);
     const stNeeded = config.STCost && config.requiresST.some(s => this.purchasedStudies.includes(TimeStudy(s)))
-      ? Math.clampMin(config.STCost - stDiscount, 0)
-      : 0;
+      ? Decimal.clampMin(config.STCost.sub(stDiscount), 0)
+      : new Decimal(0);
     // Took these out of the checkCosts check as these aren't available early game
-    const maxST = Pelle.isDoomed && !PelleDestructionUpgrade.spaceTheorems.canBeApplied ? 0 : V.spaceTheorems;
-    const hasST = this.spentTheorems[1] + stNeeded <= maxST;
+    const maxST = Pelle.isDoomed && !PelleDestructionUpgrade.spaceTheorems.canBeApplied
+      ? new Decimal(0)
+      : V.spaceTheorems;
+    const hasST = this.spentTheorems[1].add(stNeeded).lte(maxST);
     if (checkCosts) {
-      const maxTT = Currency.timeTheorems.value.add(GameCache.currentStudyTree.value.spentTheorems[0])
-        .clampMax(Number.MAX_VALUE).toNumber();
-      const hasTT = this.spentTheorems[0] + config.cost <= maxTT;
+      const maxTT = Currency.timeTheorems.value.add(GameCache.currentStudyTree.value.spentTheorems[0]);
+      const hasTT = this.spentTheorems[0].add(config.cost.gte(maxTT));
       if (!hasTT || !hasST) return;
     }
 
     // Don't add the costs nor add the study if it is one using ST and there are none
-    if (maxST === 0 && stNeeded > 0) return;
-    this.spentTheorems[0] += config.cost;
-    this.spentTheorems[1] += stNeeded;
+    if (maxST.eq(0) && stNeeded.gt(0)) return;
+    this.spentTheorems[0] = this.spentTheorems[0].add(config.cost);
+    this.spentTheorems[1] = this.spentTheorems[1].add(stNeeded);
 
     this.purchasedStudies.push(study);
   }

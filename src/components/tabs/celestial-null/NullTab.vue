@@ -31,8 +31,8 @@ export default {
       return this.isRunning ? "c-null-run-button__inner--running" : "c-null-run-button__inner--not-running";
     },
     runDescription() {
-      return `${GameDatabase.celestials.descriptions[8].effects()}\n
-      ${GameDatabase.celestials.descriptions[8].description()}`;
+      return `${GameDatabase.celestials.descriptions[10].effects()}\n
+      ${GameDatabase.celestials.descriptions[10].description()}`;
     },
     isDoomed: () => Pelle.isDoomed,
     posRad(){

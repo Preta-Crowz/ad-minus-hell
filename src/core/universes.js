@@ -1,4 +1,8 @@
 export const Universes = {
+  // Hell traps the player in the Transient and Tangible Universes at once
+  isIn(id) {
+    return player.universes.current === id || (Hell.isInside && (id === 1 || id === 2));
+  },
   get areUnlocked() {
     for (let u = 1; u < 9; u++) {
       if (this.isUnlocked(u)) return true;
@@ -112,12 +116,12 @@ export function exitUniverse(id) {
 };
 
 export function getRelativisticParticlesPerSecond() {
-  if (player.universes.current !== 1) return DC.D0;
+  if (!Universes.isIn(1)) return DC.D0;
   return player.antimatter.max(10).log10().times(Time.thisEndgameRealTime.totalSeconds).pow(2.5);
 }
 
 export function getMolecularMassPerSecond() {
-  if (player.universes.current !== 2) return DC.D0;
+  if (!Universes.isIn(2)) return DC.D0;
   return player.antimatter.max(10).log10().times(Time.thisEndgameRealTime.totalSeconds).pow(2);
 }
 

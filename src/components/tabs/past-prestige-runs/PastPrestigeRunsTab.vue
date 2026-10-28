@@ -9,6 +9,13 @@ export default {
   data() {
     return {
       layers: {
+        meta: {
+          name: "Meta",
+          plural: "Metas",
+          currency: "MR",
+          condition: () => PlayerProgress.metaUnlocked(),
+          getRuns: () => player.records.recentMetas,
+        },
         reality: {
           name: "Reality",
           plural: "Realities",
@@ -17,7 +24,7 @@ export default {
           getRuns: () => player.records.recentRealities,
           extra: ["Glyph Level", "Relic Shards"],
           showExtra: [() => true, () => TeresaUnlocks.effarig.canBeApplied],
-          formatExtra: [x => formatHybridLarge(x, 3), x => format(x, 2)],
+          formatExtra: [x => formatInt(x), x => format(x, 2)],
           allowRate: [false, true],
           rateString: ["", "Relic Shard Rate"],
         },

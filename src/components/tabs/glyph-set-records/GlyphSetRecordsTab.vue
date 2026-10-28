@@ -9,28 +9,26 @@ export default {
   data() {
     return {
       recordGlyphInfo: [],
-      isFlipped: false
     };
   },
   methods: {
     update() {
       const bestReality = player.records.bestReality;
       const laitelaDim = 8 - Laitela.difficultyTier;
-      this.isFlipped = player.universes.current === 2;
       this.recordGlyphInfo = [
         [true, cloneDeep(Glyphs.copyForRecords(bestReality.RMSet)), "Best Reality Machines gained",
           `${format(bestReality.RM, 2, 2)} RM`],
         [true, cloneDeep(Glyphs.copyForRecords(bestReality.RMminSet)), "Best Reality Machines per minute",
           `${format(bestReality.RMmin, 2, 2)} RM/min`],
         [true, cloneDeep(Glyphs.copyForRecords(bestReality.glyphLevelSet)), "Best Glyph Level",
-          `Level ${formatHybridLarge(bestReality.glyphLevel, 3)}`],
+          `Level ${formatInt(bestReality.glyphLevel)}`],
         [true, cloneDeep(Glyphs.copyForRecords(bestReality.bestEPSet)), "Highest Eternity Points",
           `${format(bestReality.bestEP, 2, 2)} EP`],
         [true, cloneDeep(Glyphs.copyForRecords(bestReality.speedSet)), "Fastest Reality (real time)",
-          `${TimeSpan.fromMilliseconds(new Decimal(bestReality.realTime)).toStringShort()}`],
+          `${TimeSpan.fromMilliseconds(bestReality.realTime).toStringShort()}`],
         [player.celestials.teresa.bestRunAM.gt(1), cloneDeep(Glyphs.copyForRecords(player.celestials.teresa.bestAMSet)),
-          `Highest ${this.isFlipped ? "Matter" : "Antimatter"} in ${Teresa.possessiveName} Reality`,
-          `${format(player.celestials.teresa.bestRunAM, 2, 2)} ${this.isFlipped ? "Matter" : "Antimatter"}`],
+          `Highest Antimatter in ${Teresa.possessiveName} Reality`,
+          `${format(player.celestials.teresa.bestRunAM, 2, 2)} Antimatter`],
         [Currency.imaginaryMachines.gt(0), cloneDeep(Glyphs.copyForRecords(bestReality.iMCapSet)),
           "Highest Imaginary Machine cap",
           `${format(MachineHandler.currentIMCap, 2, 2)} iM`],

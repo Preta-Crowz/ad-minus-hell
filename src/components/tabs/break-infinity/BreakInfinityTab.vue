@@ -6,13 +6,14 @@ import PrimaryButton from "@/components/PrimaryButton";
 export default {
   name: "BreakInfinityTab",
   components: {
-    PrimaryButton,
     BreakInfinityButton,
-    InfinityUpgradeButton
+    InfinityUpgradeButton,
+    PrimaryButton
   },
   data() {
     return {
       isUnlocked: false,
+      inHell: false,
       chargeUnlocked: false,
       totalCharges: 0,
       chargesUsed: 0,
@@ -20,6 +21,12 @@ export default {
     };
   },
   computed: {
+    disChargeClassObject() {
+      return {
+        "o-primary-btn--subtab-option": true,
+        "o-primary-btn--charged-respec-active": this.disCharge
+      };
+    },
     grid() {
       return [
         [
@@ -41,14 +48,29 @@ export default {
           BreakInfinityUpgrade.tickspeedCostMult,
           BreakInfinityUpgrade.dimCostMult,
           BreakInfinityUpgrade.ipGen
-        ]
+        ],
+        ...(this.inHell
+          ? [
+            [
+              BreakInfinityUpgrade.hellDimboostCost,
+              BreakInfinityUpgrade.hellGalaxyCost,
+              BreakInfinityUpgrade.hellDimboostCost2
+            ],
+            [
+              BreakInfinityUpgrade.hellGalaxyStrength,
+              BreakInfinityUpgrade.hellGalaxyCost2,
+              BreakInfinityUpgrade.hellIDCostDiv
+            ],
+            [
+              BreakInfinityUpgrade.hellRemoteStart
+            ],
+            [
+              BreakInfinityUpgrade.hellGameSpeed1,
+              BreakInfinityUpgrade.hellGameSpeed2
+            ]
+          ]
+          : [])
       ];
-    },
-    disChargeClassObject() {
-      return {
-        "o-primary-btn--subtab-option": true,
-        "o-primary-btn--charged-respec-active": this.disCharge
-      };
     }
   },
   watch: {
@@ -59,6 +81,7 @@ export default {
   methods: {
     update() {
       this.isUnlocked = Autobuyer.bigCrunch.hasMaxedInterval;
+      this.inHell = Hell.isInside;
       this.chargeUnlocked = Ascensions.ocA.isUnlocked;
       this.totalCharges = player.endgame.overcharge.completions.bi;
       this.chargesUsed = player.endgame.overcharge.completions.bi - player.endgame.overcharge.chargesLeft.infinite;

@@ -10,9 +10,9 @@ export default {
     return {
       mult: new Decimal(0),
       tickspeed: new Decimal(0),
-      galaxyCount: new Decimal(0),
+      galaxyCount: new Decimal(),
       purchasedTickspeed: new Decimal(0),
-      freeTickspeed: new Decimal(0),
+      freeTickspeed: new Decimal(),
     };
   },
   computed: {
@@ -21,14 +21,14 @@ export default {
     },
     perUpgrade() {
       if (InfinityChallenge(3).isRunning) return `Tickspeed upgrades give
-        ${formatX(this.galaxyCount.times(0.005).add(1.05), 3, 3)} to all ADs`;
+        ${formatX(this.galaxyCount.times(Hell.ic3PerGalaxy).add(1.05))} to all ADs`;
       return `ADs produce ${formatX(this.mult.reciprocal(), 2, 3)} faster per Tickspeed upgrade`;
     },
   },
   methods: {
     update() {
       this.mult.copyFrom(Tickspeed.multiplier);
-      this.tickspeed.copyFrom(Tickspeed.perSecond);
+      this.tickspeed.copyFrom(GameCache.tickspeedPerSecond.value);
       this.galaxyCount.copyFrom(player.galaxies);
       this.purchasedTickspeed.copyFrom(player.totalTickBought);
       this.freeTickspeed.copyFrom(FreeTickspeed.amount);

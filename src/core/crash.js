@@ -1,5 +1,3 @@
-import { DEV } from "@/env";
-
 window.NotImplementedError = class NotImplementedError extends Error {
   constructor() {
     super("The method is not implemented.");
@@ -18,7 +16,7 @@ window.GlobalErrorHandler = {
       requestAnimationFrame(() => this.crash(event));
       return;
     }
-    if (!player.DEV) this.stopGame();
+    this.stopGame();
     this.crash(event);
   },
   stopGame() {
@@ -37,8 +35,7 @@ window.GlobalErrorHandler = {
   },
   crash(message) {
     if (window.GameUI !== undefined && GameUI.initialized) {
-      Modal.message.show(`Huh. Looks like whatever you just did crashed the game. All good, just send this message to me, Supersonic Seven, in the Discord, along with whatever you did to trigger it:
-      "${message}".<br>Thanks for playing AD: Endgame! We'll fix your issue as soon as we can!`, {}, 3);
+      Modal.message.show(`${messages[Math.floor(Math.random() * messages.length)]} <br>${message} <br>Check the console for more details`, {}, 3);
     }
     // eslint-disable-next-line no-debugger
     debugger;
@@ -49,3 +46,7 @@ window.onerror = (event, source) => {
   if (!source.endsWith(".js")) return;
   GlobalErrorHandler.onerror(event);
 };
+
+const messages = ['Bruh', 'Did you do that?', 'What were you thinking', 'The dev made an oopsy and crashed your game', 'My bad',
+  'Umm', 'Are you gonna send me that so i can fix it?', 'LOL', 'You should probably stop trying to do that', "That's not my falt",
+]

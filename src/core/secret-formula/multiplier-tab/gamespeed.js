@@ -1,3 +1,4 @@
+import { DC } from "../../constants";
 import { MultiplierTabHelper } from "./helper-functions";
 import { MultiplierTabIcons } from "./icons";
 
@@ -7,8 +8,8 @@ export const gamespeed = {
     name: "Game speed",
     displayOverride: () => {
       if (Enslaved.isStoringRealTime) return `Set to ${format(0)} (storing real time)`;
-      if (EternityChallenge(12).isRunning) return `${formatX(1)}/${formatInt(1000)} (fixed)`;
-      const curr = getGameSpeedupFactor();
+      if (EternityChallenge(12).isRunning && !Hell.isInside) return `${formatX(1)}/${formatInt(1000)} (fixed)`;
+      const curr = GameCache.gameSpeed.value;
 
       const bh = MultiplierTabHelper.blackHoleSpeeds();
       const currBH = bh.current;
@@ -16,13 +17,13 @@ export const gamespeed = {
 
       const avgSpeed = Enslaved.isAutoReleasing
         ? getGameSpeedupForDisplay()
-        : curr / currBH * avgBH;
+        : curr.div(currBH).mul(avgBH);
       const avgString = ` (current) | ${formatX(avgSpeed, 2, 2)} (average)`;
       return `${formatX(curr, 2, 2)}${curr === avgSpeed ? "" : avgString}`;
     },
     multValue: () => getGameSpeedupForDisplay(),
     isActive: () => PlayerProgress.seenAlteredSpeed(),
-    dilationEffect: () => (Effarig.isRunning ? Effarig.multDilation : 1),
+    dilationEffect: () => (Effarig.isRunning ? Effarig.multDilation : DC.D1),
     isDilated: true,
     overlay: ["Δ", `<i class="fas fa-clock" />`, `<i class="fas fa-circle" />`],
   },
@@ -30,52 +31,54 @@ export const gamespeed = {
     name: "Equipped Glyphs",
     multValue: () => getAdjustedGlyphEffect("timespeed"),
     powValue: () => getAdjustedGlyphEffect("effarigblackhole"),
-    isActive: () => PlayerProgress.realityUnlocked() && !EternityChallenge(12).isRunning,
+    isActive: () => PlayerProgress.realityUnlocked() && (Hell.isInside || !EternityChallenge(12).isRunning),
     icon: MultiplierTabIcons.GENERIC_GLYPH,
   },
   blackHoleCurr: {
     name: "Current Black Hole Speedup",
     multValue: () => MultiplierTabHelper.blackHoleSpeeds().current,
-    isActive: () => BlackHole(1).isUnlocked && !BlackHoles.arePaused && !EternityChallenge(12).isRunning,
+    isActive: () => BlackHole(1).isUnlocked && !BlackHoles.arePaused && (Hell.isInside || !EternityChallenge(12).isRunning),
     icon: MultiplierTabIcons.BLACK_HOLE,
   },
   blackHoleAvg: {
     name: "Average Black Hole Speedup",
     multValue: () => MultiplierTabHelper.blackHoleSpeeds().average,
-    isActive: () => BlackHole(1).isUnlocked && !BlackHoles.arePaused && !EternityChallenge(12).isRunning,
+    isActive: () => BlackHole(1).isUnlocked && !BlackHoles.arePaused && (Hell.isInside || !EternityChallenge(12).isRunning),
     icon: MultiplierTabIcons.BLACK_HOLE,
   },
   achievementMult: {
     name: "30 V-Achievement Milestone - Achievement Multiplier",
-    multValue: () => Math.pow(VUnlocks.achievementBH.effectOrDefault(1),
+    multValue: () => Decimal.pow(VUnlocks.achievementBH.effectOrDefault(1),
       BlackHoles.list.countWhere(bh => bh.isUnlocked)),
-    isActive: () => !BlackHoles.arePaused && VUnlocks.achievementBH.canBeApplied && !EternityChallenge(12).isRunning,
+    isActive: () => !BlackHoles.arePaused && VUnlocks.achievementBH.canBeApplied &&
+      (Hell.isInside || !EternityChallenge(12).isRunning),
     icon: MultiplierTabIcons.ACHIEVEMENT,
   },
   pulsing: {
     name: "Auto-Discharging Stored Time",
     multValue: () => (Enslaved.isAutoReleasing
-      ? Math.max(Enslaved.autoReleaseSpeed / getGameSpeedupFactor(), 1)
-      : getGameSpeedupFactor()),
-    isActive: () => Enslaved.canRelease() && Enslaved.isAutoReleasing && !EternityChallenge(12).isRunning,
+      ? Decimal.max(Enslaved.autoReleaseSpeed.div(GameCache.gameSpeed.value), 1)
+      : GameCache.gameSpeed.value),
+    isActive: () => Enslaved.canRelease() && Enslaved.isAutoReleasing && (Hell.isInside || !EternityChallenge(12).isRunning),
     icon: MultiplierTabIcons.BH_PULSE,
   },
   singularity: {
     name: "Singularity Milestone - Game speed based on Singularities",
     multValue: () => SingularityMilestone.gamespeedFromSingularities.effectOrDefault(1),
-    isActive: () => SingularityMilestone.gamespeedFromSingularities.canBeApplied && !EternityChallenge(12).isRunning,
+    isActive: () => SingularityMilestone.gamespeedFromSingularities.canBeApplied &&
+      (Hell.isInside || !EternityChallenge(12).isRunning),
     icon: MultiplierTabIcons.SINGULARITY,
   },
   pelle: {
     name: "Pelle Upgrade - Repeatable Game speed",
-    multValue: () => PelleUpgrade.timeSpeedMult.effectValue.toNumber(),
-    isActive: () => Pelle.isDoomed && !EternityChallenge(12).isRunning,
+    multValue: () => PelleUpgrade.timeSpeedMult.effectValue,
+    isActive: () => Pelle.isDoomed && (Hell.isInside || !EternityChallenge(12).isRunning),
     icon: MultiplierTabIcons.PELLE,
   },
 
   ec12: {
     name: "Eternity Challenge 12",
-    multValue: () => 0.001 / getGameSpeedupForDisplay(),
+    multValue: () => (Hell.isInside ? new Decimal(Hell.gameSpeedMult) : Decimal.div(0.001, getGameSpeedupForDisplay())),
     isActive: () => EternityChallenge(12).isRunning,
     icon: MultiplierTabIcons.CHALLENGE("eternity"),
   },
@@ -94,8 +97,14 @@ export const gamespeed = {
   },
   nerfLaitela: {
     name: "Lai'tela's Reality",
-    powValue: () => Math.clampMax(Time.thisRealityRealTime.totalMinutes / 10, 1),
+    powValue: () => Decimal.clampMax(Time.thisRealityRealTime.totalMinutes.div(10), 1),
     isActive: () => Laitela.isRunning,
     icon: MultiplierTabIcons.GENERIC_LAITELA,
-  }
+  },
+  glitchRiftPI: {
+    name: "Glitch Rift (PI)",
+    multValue: () => GlitchRifts.alpha.milestones[2].effectOrDefault(1),
+    isActive: () => true,
+    icon: MultiplierTabIcons.GLITCH_CHALLENGE,
+  },
 };

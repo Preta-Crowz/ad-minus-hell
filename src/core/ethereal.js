@@ -9,10 +9,12 @@ export const Ethereal = {
     return Decimal.pow(this.cosmicSector, this.cosmicSector);
   },
   get sectorBoost() {
-    if (Slabdrill.isCursed && SlabdrillUnlocks.replicanti.isUnlocked) return Decimal.pow(2, this.cosmicSector - 1);
+    if (Slabdrill.isCursed && SlabdrillUnlocks.replicanti.isUnlocked) {
+      return Decimal.pow(2, this.cosmicSector.sub(1));
+    }
     if (player.disablePostReality && !Alpha.isRunning) return DC.D1;
-    if (Alpha.isRunning) return Decimal.pow(2, this.cosmicSector - 1);
-    return Decimal.pow(2, Math.pow(this.cosmicSector - 1, 2));
+    if (Alpha.isRunning) return Decimal.pow(2, this.cosmicSector.sub(1));
+    return Decimal.pow(2, Decimal.pow(this.cosmicSector.sub(1), 2));
   },
   get isExtended() {
     return player.endgame.ethereal.isExtended;
@@ -118,9 +120,9 @@ export function tryAdvanceSector() {
   if (DivinityMilestone.ascendedSurge.isReached) {
     const highestPossibleSector = Decimal.floor(Currency.etherealPower.value.ln().div(
       Decimal.lambertw(Currency.etherealPower.value.ln()))).add(1);
-    player.endgame.ethereal.sector += highestPossibleSector.sub(player.endgame.ethereal.sector).toNumber();
+    player.endgame.ethereal.sector = player.endgame.ethereal.sector.max(highestPossibleSector);
   }
-  else player.endgame.ethereal.sector++;
+  else player.endgame.ethereal.sector = player.endgame.ethereal.sector.add(1);
 }
 
 export function resetForStar(id) {
@@ -130,7 +132,7 @@ export function resetForStar(id) {
   if (Currency.etherealPower.lt(resetReq) || !gainedStarType.isUnlocked) return;
   const resetFormula = Decimal.pow(Currency.etherealPower.value.div(resetReq), 0.5 - id / 20).times(Ethereal.allStarBoost);
   player.endgame.ethereal.power = DC.D0;
-  player.endgame.ethereal.sector = 1;
+  player.endgame.ethereal.sector = DC.D1;
   player.endgame.ethereal.stars[starName] = player.endgame.ethereal.stars[starName].add(resetFormula);
 }
 

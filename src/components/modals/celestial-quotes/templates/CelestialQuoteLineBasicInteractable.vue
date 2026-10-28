@@ -43,8 +43,11 @@ export default {
     };
   },
   computed: {
-    totalLines() {
-      return this.quote.totalLines;
+    displayedLines(){
+      return this.quote._lines.filter(x => x.isDisplayed);
+    },
+    totalLines(){
+      return this.displayedLines.length;
     },
     currentLine: {
       get() {
@@ -65,7 +68,7 @@ export default {
     this.$nextTick(() => {
       this.on$(GAME_EVENT.ARROW_KEY_PRESSED, arrow => this.progressIn(arrow[0]));
       this.on$(GAME_EVENT.ENTER_PRESSED, () => {
-        if (this.isQuoteEnd) this.close();
+        this.close();
       });
     });
   },
@@ -79,15 +82,8 @@ export default {
       }
     },
     close() {
-      if (ui.$viewModel.quotes.current === Quotes.elemental.intro1) {
-        player.introFrozen = false;
-      }
-      if (ui.$viewModel.quotes.current === Quotes.elemental.intro2) {
-        player.introFrozen = false;
-      }
-      if (ui.$viewModel.quotes.current === Quotes.elemental.intro3) {
-        player.introFrozen = false;
-      }
+      if (!this.isFocused) return;
+      this.index = 0;
       if (ui.$viewModel.quotes.current === Quotes.slabdrill.curse) {
         Slabdrill.realityWarp();
         player.celestials.slabdrill.warpTick = 3000;
@@ -98,8 +94,6 @@ export default {
       if (ui.$viewModel.quotes.current === Quotes.slabdrill.glitch) {
         player.celestials.slabdrill.goodbyeTick = 10000;
       }
-      if (!this.isFocused) return;
-      this.index = 0;
       Quote.advanceQueue();
     },
   },

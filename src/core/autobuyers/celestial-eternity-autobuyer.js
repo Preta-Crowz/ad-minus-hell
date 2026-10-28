@@ -73,7 +73,7 @@ export class CelestialEternityAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get canTick() {
-    return Currency.celestialInfinityPoints.gte(DC.NUMMAX) && super.canTick;
+    return super.canTick && Currency.celestialInfinityPoints.gte(DC.NUMMAX);
   }
 
   /*get resetTickOn() {

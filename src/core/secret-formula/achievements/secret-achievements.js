@@ -1,3 +1,5 @@
+import { DC } from "../../constants";
+
 export const secretAchievements = [
   {
     id: 11,
@@ -55,8 +57,8 @@ export const secretAchievements = [
   {
     id: 22,
     name: "Deep fried",
-    get description() { return `Buy ${formatInt(1e5)} ${player.universes.current === 2 ? "Matter" : "Antimatter"} Galaxies in total while using emoji notation.`; },
-    checkRequirement: () => player.requirementChecks.permanent.emojiGalaxies >= 1e5,
+    get description() { return `Buy ${formatInt(1e5)} Antimatter Galaxies in total while using emoji notation.`; },
+    checkRequirement: () => player.requirementChecks.permanent.emojiGalaxies.gte(1e5),
     checkEvent: GAME_EVENT.GALAXY_RESET_AFTER
   },
   {
@@ -96,6 +98,7 @@ export const secretAchievements = [
   },
   {
     id: 28,
+    displayId: 69,
     name: "Nice.",
     description: "Don't act like you don't know what you did."
   },
@@ -191,5 +194,47 @@ export const secretAchievements = [
     id: 48,
     name: "Stack overflow",
     description: "Have more Automator errors than lines."
+  },
+  {
+    id: 51,
+    name: "I hate this Theme",
+    description: "Import one of the Celestial Themes",
+  },
+  {
+    id: 52,
+    name: "ERROR",
+    description: "you shold not have this yet",
+    checkRequirement: () => Glyphs.activeToChar().toLowerCase() == "error",
+    checkEvent: GAME_EVENT.GLYPHS_EQUIPPED_CHANGED
+  },
+  {
+    id: 53,
+    name: "do",
+    description: "???"
+  },
+  {
+    id: 54,
+    name: "i",
+    description: "???"
+  },
+  {
+    id: 55,
+    name: "name",
+    description: "???"
+  },
+  {
+    id: 56,
+    name: "this",
+    description: "???"
+  },
+  {
+    id: 57,
+    name: "one",
+    description: "???"
+  },
+  {
+    id: 58,
+    name: "I am a Developer",
+    get description() { return `Save the game ${formatInt(5000)} times without refreshing.`; }
   },
 ];

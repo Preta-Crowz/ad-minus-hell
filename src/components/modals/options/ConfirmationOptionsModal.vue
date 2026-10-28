@@ -14,6 +14,9 @@ export default {
     },
     noConfirmations() {
       return ConfirmationTypes.index.every(x => !x.isUnlocked());
+    },
+    isInHell() {
+      return Hell.isInside;
     }
   }
 };
@@ -24,7 +27,16 @@ export default {
     <template #header>
       Confirmation Options
     </template>
-    <div class="c-modal-options__button-container">
+    <div
+      v-if="isInHell"
+      class="c-hell-options-note"
+    >
+      Confirmations are disabled inside of Hell.
+    </div>
+    <div
+      class="c-modal-options__button-container"
+      :class="{ 'c-hell-options-locked': isInHell }"
+    >
       <span v-if="noConfirmations">
         You do not have anything that requires confirmation,
         but if you did it would appear here.
@@ -37,3 +49,14 @@ export default {
     </div>
   </ModalWrapperOptions>
 </template>
+
+<style scoped>
+.c-hell-options-locked {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.c-hell-options-note {
+  margin-bottom: 1rem;
+}
+</style>

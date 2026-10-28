@@ -18,8 +18,7 @@ export default {
       subtabVisibilities: [],
       showSubtabs: false,
       hasNotification: false,
-      tabName: "",
-      uiClass: ""
+      tabName: ""
     };
   },
   computed: {
@@ -42,7 +41,6 @@ export default {
       this.subtabVisibilities = this.tab.subtabs.map(x => x.isAvailable);
       this.showSubtabs = this.isAvailable && this.subtabVisibilities.length >= 1;
       this.hasNotification = this.tab.hasNotification;
-      this.uiClass = (typeof this.tab.config.UIClass === "function") ? this.tab.config.UIClass() : this.tab.config.UIClass;
       if (this.tabPosition < Pelle.endTabNames.length) {
         this.tabName = Pelle.transitionText(
           this.tab.name,
@@ -63,7 +61,7 @@ export default {
 <template>
   <div
     v-if="!isHidden && isAvailable"
-    :class="[classObject, uiClass]"
+    :class="[classObject, tab.config.UIClass]"
   >
     <div
       class="l-tab-btn-inner"
@@ -87,7 +85,7 @@ export default {
           :key="index"
           class="o-tab-btn o-tab-btn--subtab"
           :class="
-            [uiClass,
+            [tab.config.UIClass,
              {'o-subtab-btn--active': isCurrentSubtab(subtab.id)}]
           "
           @click="subtab.show(true)"
@@ -137,29 +135,17 @@ export default {
 .o-tab-btn--celestial::before {
   background-color: var(--color-celestials);
 }
-
-.o-tab-btn--endgame::before {
-  background-color: var(--color-endgame);
-}
-
-.o-tab-btn--cd-expansion::before {
-  background: linear-gradient(var(--color-infinity), var(--color-eternity), var(--color-reality), var(--color-celestials));
-}
-
-.o-tab-btn--divinity::before {
-  background-color: var(--color-pelle--base);
-}
   
-.o-tab-btn--universes::before {
-  animation: a-universes-glow-hover 10s infinite;
+.o-tab-btn--glitch::before {
+  background-color: var(--color-glitch);
 }
 
-.o-tab-btn--universes__transient::before {
-  animation: a-universes--transient-glow-hover 10s infinite;
+.o-tab-btn--meta::before {
+  background-color: var(--color-meta);
 }
 
-.o-tab-btn--universes__tangible::before {
-  animation: a-universes--tangible-glow-hover 10s infinite;
+.o-tab-btn--fools::before {
+  background-color: var(--color-fools);
 }
 
 .o-subtab-btn--active {

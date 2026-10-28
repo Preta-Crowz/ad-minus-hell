@@ -15,6 +15,9 @@ const MULT_TAB_OPTIONS = [
   { id: 9, key: "eternities", text: "Eternities" },
   { id: 10, key: "DT", text: "Dilated Time" },
   { id: 11, key: "gamespeed", text: "Game Speed" },
+  { id: 12, key: "TP", text: "Tachyon Particles" },
+  { id: 13, key: "galaxies", text: "Galaxies" },
+  { id: 14, key: "tickspeedUpgrades", text: "Tickspeed Upgrades" },
 ];
 
 export default {
@@ -45,6 +48,10 @@ export default {
         ...opt,
         isActive: this.checkActiveKey(opt.key)
       })).filter(opt => opt.isActive);
+      if (!this.availableOptions.some(option => option.id === this.currentID)) {
+        this.currentID = this.availableOptions[0]?.id ?? 0;
+        player.options.multiplierTab.currTab = this.currentID;
+      }
     },
     checkActiveKey(key) {
       const act = GameDatabase.multiplierTabValues[key].total.isActive;
@@ -53,15 +60,8 @@ export default {
     accessProp(prop) {
       return typeof prop === "function" ? prop() : prop;
     },
-    subtabClassObject(option) {
-      return {
-        "c-multiplier-subtab-btn": true,
-        "c-multiplier-subtab-btn--active": option.key === this.currentKey,
-      };
-    },
-    clickSubtab(index) {
-      this.currentID = this.availableOptions[index].id;
-      player.options.multiplierTab.currTab = MULT_TAB_OPTIONS.find(opt => opt.key === this.currentKey).id;
+    changeSubtab() {
+      player.options.multiplierTab.currTab = this.currentID;
     }
   }
 };
@@ -69,15 +69,22 @@ export default {
 
 <template>
   <div class="c-stats-tab">
-    <div class="l-multiplier-subtab-btn-container">
-      <button
-        v-for="(option, index) in availableOptions"
-        :key="option.key + option.isActive"
-        :class="subtabClassObject(option)"
-        @click="clickSubtab(index)"
+    <div class="l-multiplier-selector">
+      <label for="multiplier-breakdown-select">Show breakdown:</label>
+      <select
+        id="multiplier-breakdown-select"
+        v-model.number="currentID"
+        class="c-multiplier-breakdown-select"
+        @change="changeSubtab"
       >
-        {{ option.text }}
-      </button>
+        <option
+          v-for="option in availableOptions"
+          :key="option.key"
+          :value="option.id"
+        >
+          {{ option.text }}
+        </option>
+      </select>
     </div>
     <div class="c-list-container">
       <span
@@ -115,34 +122,26 @@ export default {
   width: 100rem;
 }
 
-.l-multiplier-subtab-btn-container {
+.l-multiplier-selector {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 100rem;
-  height: calc(4rem - var(--var-border-radius, 0.2rem));
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1rem;
 }
 
-.c-multiplier-subtab-btn {
-  width: 100%;
+.c-multiplier-breakdown-select {
+  min-width: 24rem;
   height: 4rem;
-  margin: 0 0.5rem -0.1rem;
-  z-index: 1;
-  text-align: center;
   font-family: Typewriter;
   font-size: 1rem;
   font-weight: bold;
   color: var(--color-text);
   background-color: var(--color-base);
   border: var(--var-border-width, 0.2rem) solid;
-  border-radius: var(--var-border-radius, 0.5rem) var(--var-border-radius, 0.5rem) 0 0;
+  border-radius: var(--var-border-radius, 0.5rem);
   cursor: pointer;
-}
-
-.c-multiplier-subtab-btn--active {
-  border-bottom: none;
-  padding-bottom: 0.2rem;
-  cursor: default;
 }
 
 .c-multiplier-tab-text-line {

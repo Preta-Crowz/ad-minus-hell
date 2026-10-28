@@ -18,7 +18,7 @@ export default {
       pauseText: "",
       canCharge: false,
       isCharging: false,
-      storedTime: new Decimal(0),
+      storedTime: new Decimal(),
       canAutoRelease: false,
       isAutoReleasing: false,
       isEndgameUnlocked: false,
@@ -30,7 +30,7 @@ export default {
       return this.blackHole.id;
     },
     dischargeText() {
-      return `Discharge: ${timeDisplayShort(new Decimal(this.storedTime))}`;
+      return `Discharge: ${timeDisplayShort(this.storedTime)}`;
     },
     hasLongText() {
       return this.dischargeText.length > 15;
@@ -45,23 +45,24 @@ export default {
     update() {
       // Technically not entirely accurate (you can still invert within Laitela), but it's cleaner to just hide it all
       // because Laitela disables everything else and it technically still displays as pulsing even if it isn't
-      this.canModifyBlackHoles = BlackHoles.areUnlocked && !Laitela.isRunning;
+      this.canModifyBlackHoles = BlackHoles.areUnlocked && (!Laitela.isRunning || GlitchRealityUpgrade(11).isBought);
       this.displaySingle = BlackHoles.arePermanent;
       if (this.displaySingle) this.singleState = BlackHole(1).displayState;
       this.pauseText = this.pauseButtonText();
       this.canCharge = Enslaved.isUnlocked;
       this.isCharging = Enslaved.isStoringGameTime;
       this.storedTime.copyFrom(player.celestials.enslaved.stored);
-      this.canAutoRelease = Ra.unlocks.autoPulseTime.canBeApplied && !player.disablePostReality;
+      this.canAutoRelease = Ra.unlocks.autoPulseTime.canBeApplied;
       this.isAutoReleasing = player.celestials.enslaved.isAutoReleasing;
       this.isEndgameUnlocked = PlayerProgress.endgameUnlocked();
     },
     pauseButtonText() {
-      if (BlackHoles.arePaused && player.blackHoleNegative < 1) return "Uninvert BH";
+      const canInvert = player.blackHoleNegative.gt(1) && (!Laitela.isRunning || GlitchRealityUpgrade(11).isBought);
+      if (BlackHoles.arePaused && canInvert) return "Uninvert BH";
       if (BlackHoles.arePaused) return "Unpause BH";
       const accel = BlackHoles.unpauseAccelerationFactor;
-      if (accel !== 1) return `${formatPercents(accel, 1)} speed`;
-      if (player.blackHoleNegative < 1) return "Invert BH";
+      if (accel.lt(1)) return `${formatPercents(new Decimal(accel), 1)} speed`;
+      if (canInvert) return "Invert BH";
       return "Pause BH";
     },
     timeDisplayShort(ms) {

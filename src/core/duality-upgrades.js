@@ -90,7 +90,8 @@ class DualityUpgradeState extends BitPurchasableMechanicState {
       TabNotification.hadrons.tryTrigger();
     }
     if (this.id === 25) {
-      TabNotification.hypercubes.tryTrigger();
+      if (DivinityMilestone.divinityOverdrive.isReached) TabNotification.hypercubes.clearTrigger();
+      else TabNotification.hypercubes.tryTrigger();
     }
   }
 }
@@ -122,23 +123,23 @@ class RebuyableDualityUpgradeState extends RebuyableMechanicState {
     if (!this.isAffordable) return false;
     this.boughtAmount += getInverseHybridCostScaling(
       Currency.dualMachines.value,
-      1e20,
-      this.config.initialCost,
-      this.config.costMult,
-      this.config.costMult,
+      new Decimal(1e20),
+      new Decimal(this.config.initialCost),
+      new Decimal(this.config.costMult),
+      new Decimal(this.config.costMult),
       DC.E309,
-      1e3,
-      this.config.costMult
+      new Decimal(1e3),
+      new Decimal(this.config.costMult)
     ).sub(player.reality.dualityRebuyables[this.id]).toNumber();
     Currency.dualMachines.subtract(getHybridCostScaling(
-      player.reality.dualityRebuyables[this.id] - 1,
-      1e20,
-      this.config.initialCost,
-      this.config.costMult,
-      this.config.costMult,
+      new Decimal(player.reality.dualityRebuyables[this.id] - 1),
+      new Decimal(1e20),
+      new Decimal(this.config.initialCost),
+      new Decimal(this.config.costMult),
+      new Decimal(this.config.costMult),
       DC.E309,
-      1e3,
-      this.config.costMult
+      new Decimal(1e3),
+      new Decimal(this.config.costMult)
     ));
     return true;
   }

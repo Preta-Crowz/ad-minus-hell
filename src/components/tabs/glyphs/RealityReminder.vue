@@ -29,10 +29,10 @@ export default {
       if (this.unpurchasedDilationUpgrades > 0) {
         arr.push(`Purchase the remaining Dilation Upgrades (${formatInt(this.unpurchasedDilationUpgrades)} left)`);
       }
-      if (this.currLog10EP.gt(this.cheapestLog10TD.times(1.3)) && !(Laitela.continuumActive && Alpha.currentStage >= 17)) {
+      if (this.currLog10EP.gt(this.cheapestLog10TD.mul(1.3))) {
         arr.push(`Purchase more TDs (cheapest: ${format(Decimal.pow10(this.cheapestLog10TD))} EP)`);
       }
-      if (this.currLog10EP.gt(this.multEPLog10Cost.times(1.3))) {
+      if (this.currLog10EP.gt(this.multEPLog10Cost.mul(1.3))) {
         arr.push(`Purchase more ${formatX(5)} EP (cost: ${format(Decimal.pow10(this.multEPLog10Cost))} EP)`);
       }
       if (this.ecCount < 60) {
@@ -83,10 +83,10 @@ export default {
       this.missingAchievements = Achievements.preReality.countWhere(a => !a.isUnlocked);
       // Repeatable dilation upgrades don't have isBought, but do have boughtAmount
       this.unpurchasedDilationUpgrades = DilationUpgrade.all
-        .countWhere(u => (u.isBought === undefined ? u.boughtAmount === 0 : !u.isBought) && !u.config.pelleOnly);
-      this.currLog10EP = player.eternityPoints.add(1).log10();
-      this.cheapestLog10TD = Decimal.min(...TimeDimensions.all.map(x => x.cost.add(1).log10()));
-      this.multEPLog10Cost = EternityUpgrade.epMult.cost.add(1).log10();
+        .countWhere(u => (u.isBought === undefined ? u.boughtAmount === 0 : !u.isBought) && !u.config.pelleOnly && !u.config.hellOnly);
+      this.currLog10EP = player.eternityPoints.max(1).log10();
+      this.cheapestLog10TD = Decimal.min(...TimeDimensions.all.map(x => x.cost.max(1).log10()));
+      this.multEPLog10Cost = EternityUpgrade.epMult.cost.max(1).log10();
       this.purchasableTS = NormalTimeStudyState.studies.countWhere(s => s && s.canBeBought && !s.isBought);
       this.hasDilated = Perk.startTP.canBeApplied ? player.dilation.lastEP.gt(0)
         : player.dilation.tachyonParticles.gt(0);

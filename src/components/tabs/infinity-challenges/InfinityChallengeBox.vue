@@ -20,8 +20,7 @@ export default {
     return {
       isUnlocked: false,
       isRunning: false,
-      isCompleted: false,
-      isFlipped: false
+      isCompleted: false
     };
   },
   computed: {
@@ -30,6 +29,11 @@ export default {
     },
     name() {
       return `IC${this.challenge.id}`;
+    },
+    overrideLabel() {
+      if (!Hell.isInside) return "";
+      return Hell.trappedInfinityChallenge === this.challenge.id || Hell.isBigRipChallenge(this.challenge.id)
+        ? "Trapped" : "";
     }
   },
   methods: {
@@ -38,7 +42,6 @@ export default {
       this.isUnlocked = challenge.isUnlocked;
       this.isRunning = challenge.isRunning;
       this.isCompleted = challenge.isCompleted;
-      this.isFlipped = player.universes.current === 2;
     }
   }
 };
@@ -50,6 +53,7 @@ export default {
     :is-unlocked="isUnlocked"
     :is-running="isRunning"
     :is-completed="isCompleted"
+    :override-label="overrideLabel"
     class="c-challenge-box--infinity"
     @start="challenge.requestStart()"
   >
@@ -62,7 +66,7 @@ export default {
     </template>
     <template #bottom>
       <div class="l-challenge-box__bottom--infinity">
-        <span>Goal: {{ format(config.goal()) }} {{ isFlipped ? "matter" : "antimatter" }}</span>
+        <span>Goal: {{ format(config.goal) }} antimatter</span>
         <DescriptionDisplay
           :config="config.reward"
           title="Reward:"

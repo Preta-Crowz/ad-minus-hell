@@ -24,12 +24,15 @@ export default {
       of your Glyphs.`;
     },
     explanation() {
-      if (this.harsh) return `Harsh Purging deletes Glyphs that are strictly worse than any other Glyph in your
-        inventory. For example, if a Glyph has all the same effects as another Glyph, but the values
-        of ALL of the effects are worse, then it will be deleted.`;
-      return `Purging deletes Glyphs that are strictly worse than other Glyphs, while keeping enough to equip a full
-        set with those effects. This behaves like Harsh Purge, except that regular Purge will not delete any given
-        Glyph unless it finds five Glyphs which are better (instead of only one).`;
+      const requiredBetterGlyphs = Math.max(this.harsh ? 1 : 5, Glyphs.normalGlyphCleanupReserve);
+      const cleanupReserve = Glyphs.normalGlyphCleanupReserve;
+      const purgeName = this.harsh ? "Harsh Purging" : "Purging";
+      return `${purgeName} removes normal Glyphs only when at least ${formatInt(requiredBetterGlyphs)} same-type Glyphs
+        with the same effects are better in every way. For Effarig, Reality, and Glitch Glyphs, it instead requires
+        enough better same-type copies to match the highest equip limit across regular and Doomed Reality. Extra
+        normal slots and the regular purge threshold do not increase the special Glyph cap.${cleanupReserve > 0
+        ? ` At least ${formatInt(cleanupReserve)} normal Glyphs are kept for the highest equip capacity across both modes.`
+        : ""}`;
     },
     topLabel() {
       return `You are about to ${this.harsh ? `Harsh Purge` : `Purge`} your Glyphs`;

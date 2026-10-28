@@ -24,18 +24,18 @@ export default {
     return {
       isUnlocked: false,
       isCapped: false,
+      isoverloaded: false,
       multiplier: new Decimal(0),
       amount: new Decimal(0),
       bought: new Decimal(0),
       rateOfChange: new Decimal(0),
       cost: new Decimal(0),
       isAvailableForPurchase: false,
-      isContinuumActive: false,
-      continuumValue: new Decimal(0),
       isAutobuyerOn: false,
       requirementReached: false,
       realityUnlocked: false,
       showTTCost: false,
+      isoverloaded: false,
       ttCost: 0,
       ttGen: new Decimal(),
       currTT: new Decimal(),
@@ -54,9 +54,9 @@ export default {
     },
     tooltipContents() {
       if (this.showTTCost) return `${this.formattedEPCost}<br>${this.timeEstimate}`;
+      // if (this.isoverloaded) return `You can not purchase any more than ${format(1e15)} Time Dimensions`;
       if (this.isCapped) return `Nameless prevents the purchase of more than ${format(1)} Time Dimension`;
-      if (this.isContinuumActive) return "Continuum produces all your Time Dimensions";
-      return `Purchased ${quantifyHybridLarge("time", this.bought)}`;
+      return `Purchased ${quantifyInt("time", this.bought)}`;
     },
     showRow() {
       return this.realityUnlocked || this.isUnlocked || this.requirementReached;
@@ -65,18 +65,13 @@ export default {
       return `Unlock: ${format(this.ttCost)} TT`;
     },
     formattedEPCost() {
-      if (this.isCapped) return "Capped";
-      if (this.isContinuumActive) return `Continuum: ${this.continuumString}`;
-      return `${this.showCostTitle ? "Cost: " : ""}${format(this.cost, 2)} EP`;
-    },
-    continuumString() {
-      return formatHybridFloat(this.continuumValue, 2);
+      return this.isCapped ? "Capped" : `${this.showCostTitle ? "Cost: " : ""}${format(this.cost, 2)} ${Hell.isInside ? "AM" : "EP"}`;
     },
     hasLongText() {
       return this.buttonContents.length > 20;
     },
     showCostTitle() {
-      return this.cost.log10().lt(1e5);
+      return this.cost.max(1).log10().lte(1e6);
     },
     timeEstimate() {
       if (!this.showTTCost || this.ttGen.eq(0)) return "";
@@ -94,6 +89,7 @@ export default {
       const tier = this.tier;
       const dimension = TimeDimension(tier);
       this.isCapped = Enslaved.isRunning && dimension.bought.gt(0);
+      // this.isoverloaded = dimension.bought.gte(1e15);
       this.isUnlocked = dimension.isUnlocked;
       this.multiplier.copyFrom(dimension.multiplier);
       this.amount.copyFrom(dimension.amount);
@@ -106,41 +102,24 @@ export default {
       if (!this.isUnlocked) {
         this.isAvailableForPurchase = dimension.requirementReached;
       }
-      this.isContinuumActive = Laitela.continuumActive && Alpha.currentStage >= 17 && !player.disablePostReality;
-      if (this.isContinuumActive) this.continuumValue.copyFrom(dimension.continuumValue);
       this.requirementReached = dimension.requirementReached;
       this.isAutobuyerOn = Autobuyer.timeDimension(this.tier).isActive;
       this.realityUnlocked = PlayerProgress.realityUnlocked();
       this.showTTCost = !this.isUnlocked && !this.shiftDown;
       if (this.tier > 4) this.ttCost = TimeStudy.timeDimension(this.tier).cost;
       this.currTT.copyFrom(Currency.timeTheorems.value);
-      this.ttGen.copyFrom(getTTPerSecond().times(Alpha.isRunning ? 1 : getGameSpeedupForDisplay()));
+      this.ttGen.copyFrom(getTTPerSecond().times(GameCache.gameSpeed.value));
     },
     buyTimeDimension() {
       if (!this.isUnlocked) {
         TimeDimension(this.tier).tryUnlock();
         return;
       }
-      if (this.isContinuumActive) return;
       buySingleTimeDimension(this.tier);
     },
     buyMaxTimeDimension() {
-      if (this.isContinuumActive) return;
       buyMaxTimeDimension(this.tier);
     },
-    buttonClass() {
-      return {
-        "o-primary-btn--buy-td o-primary-btn o-primary-btn--new o-primary-btn--buy-dim": true,
-        "l-dim-row-small-text": this.hasLongText,
-        "o-non-clickable o-continuum": this.isContinuumActive
-      };
-    },
-    maxButtonClass() {
-      return {
-        "o-primary-btn--buy-td-auto": true,
-        "o-non-clickable o-continuum": this.isContinuumActive
-      };
-    }
   }
 };
 </script>
@@ -160,8 +139,9 @@ export default {
     />
     <div class="l-dim-row-multi-button-container">
       <PrimaryButton
-        :enabled="isAvailableForPurchase && !isCapped"
-        :class="buttonClass()"
+        :enabled="isAvailableForPurchase && !isCapped && !isoverloaded"
+        class="o-primary-btn--buy-td o-primary-btn--buy-dim c-dim-tooltip-container"
+        :class="{ 'l-dim-row-small-text': hasLongText }"
         @click="buyTimeDimension"
       >
         {{ buttonContents }}
@@ -177,8 +157,8 @@ export default {
       />
       <PrimaryButton
         v-else
-        :enabled="isAvailableForPurchase && !isCapped"
-        :class="maxButtonClass()"
+        :enabled="isAvailableForPurchase && !isCapped && !isoverloaded"
+        class="o-primary-btn--buy-td-auto"
         @click="buyMaxTimeDimension"
       >
         Buy Max
@@ -186,21 +166,3 @@ export default {
     </div>
   </div>
 </template>
-
-<style scoped>
-.o-non-clickable {
-  cursor: auto;
-}
-
-.o-continuum {
-  border-color: var(--color-laitela--accent);
-  color: var(--color-laitela--accent);
-  background: var(--color-laitela--base);
-}
-
-.o-continuum:hover {
-  border-color: var(--color-laitela--accent);
-  color: var(--color-laitela--base);
-  background: var(--color-laitela--accent);
-}
-</style>

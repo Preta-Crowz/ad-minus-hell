@@ -135,8 +135,11 @@ class NullCycleState extends DimensionState {
 
   get multiplier() {
     let mult = this.rawMultiplier;
+    if (this.amount.eq(0)) return mult;
 
-    mult = mult.div(this.amount.pow((Corrupt.corrupts.gt(0) ? 0.2 : 0.25) * NullUpgrades.all[14].effectOrDefault(1))); // this should be last
+    const decayExponent = new Decimal(Corrupt.corrupts.gt(0) ? 0.2 : 0.25)
+      .times(NullUpgrades.all[14].effectOrDefault(1));
+    mult = mult.div(this.amount.pow(decayExponent)); // this should be last
 
     return mult;
   }

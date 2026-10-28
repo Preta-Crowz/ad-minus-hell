@@ -6,7 +6,7 @@ export default {
   name: "HeaderInfinityContainer",
   components: {
     BigCrunchButton,
-    CelestialCrunchButton
+    CelestialCrunchButton,
   },
   data() {
     return {
@@ -23,15 +23,15 @@ export default {
     update() {
       this.showContainer = player.break || PlayerProgress.infinityUnlocked();
       this.infinityPoints.copyFrom(Currency.infinityPoints.value.floor());
-      this.isTesseractUnlocked = Enslaved.isCompleted && !player.disablePostReality;
+      this.isTesseractUnlocked = Enslaved.isCompleted;
       this.tesseractCost = Tesseracts.nextCost;
       this.tesseractText = this.tesseractProgress();
       this.hasCelestial = PlayerProgress.celestialInfinityUnlocked() && !Slabdrill.isCursed;
       this.celInfinityPoints.copyFrom(Currency.celestialInfinityPoints.value.floor());
     },
     tesseractProgress() {
-      const progress = this.infinityPoints.add(1).log10().div(this.tesseractCost.log10()).toNumber();
-      if (progress > 1) return `<b>(${formatPercents(1)})</b>`;
+      const progress = this.infinityPoints.add(1).log10().div(this.tesseractCost.max(1).log10());
+      if (progress.gt(1)) return `<b>(${formatPercents(1)})</b>`;
       return `(${formatPercents(progress, 2, 2)})`;
     },
   },

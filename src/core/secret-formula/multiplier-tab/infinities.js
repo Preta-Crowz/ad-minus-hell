@@ -1,3 +1,5 @@
+import { DC } from "../../constants";
+
 import { MultiplierTabIcons } from "./icons";
 
 // See index.js for documentation
@@ -15,7 +17,6 @@ export const infinities = {
     name: "Achievements",
     multValue: () => DC.D1.timesEffectsOf(
       Achievement(87),
-      Achievement(131).effects.infinitiesGain,
       Achievement(164)
     ),
     isActive: () => Achievement(87).isUnlocked,
@@ -25,12 +26,6 @@ export const infinities = {
     name: "Time Study 32",
     multValue: () => TimeStudy(32).effectOrDefault(1),
     isActive: () => TimeStudy(32).isBought,
-    icon: MultiplierTabIcons.TIME_STUDY,
-  },
-  timeStudy2: {
-    name: "Time Study 191",
-    multValue: 2,
-    isActive: () => TimeStudy(191).isBought,
     icon: MultiplierTabIcons.TIME_STUDY,
   },
   amplifierInf: {

@@ -8,10 +8,10 @@ export default {
   },
   methods: {
     returnedSTDCount() {
-      let std = 0;
+      let std = new Decimal();
       for (const purchase of ShopPurchase.all) {
         if (purchase.config.instantPurchase) continue;
-        std += purchase.purchases * purchase.cost;
+        std = std.add(purchase.purchases.mul(purchase.cost));
       }
       return std;
     },
@@ -35,7 +35,7 @@ export default {
       Are you sure you want to respec your Shop Purchases? This will not cost anything and
       return the {{ returnedSTDCount() }}
       <img
-        src="images/std_coin.png"
+        src="/images/std_coin.png"
         class="o-shop-button-button__img"
       > you spent on all purchases which give permanent multipliers.
       <br>

@@ -24,9 +24,7 @@ export default {
       isQuickResetAvailable: false,
       isSacrificeUnlocked: false,
       buy10Mult: new Decimal(0),
-      buyOoMPow: new Decimal(0),
       currentSacrifice: new Decimal(0),
-      currentPower: new Decimal(0),
       hasRealityButton: false,
       multiplierText: ""
     };
@@ -37,19 +35,12 @@ export default {
       this.isQuickResetAvailable = Player.isInAntimatterChallenge && Player.antimatterChallenge.isQuickResettable;
       this.isSacrificeUnlocked = Sacrifice.isVisible;
       this.buy10Mult.copyFrom(AntimatterDimensions.buyTenMultiplier);
-      this.buyOoMPow.copyFrom(AntimatterDimensions.buyOoMPower);
       this.currentSacrifice.copyFrom(Sacrifice.totalBoost);
-      this.currentPower.copyFrom(Sacrifice.totalPower);
       this.hasRealityButton = PlayerProgress.realityUnlocked() || TimeStudy.reality.isBought;
       const sacText = this.isSacrificeUnlocked
-        ? (Ascensions.sacA.isUnlocked
-          ? ` | Dimensional Sacrifice power: ${formatPow(this.currentPower, 2, 3)}`
-          : ` | Dimensional Sacrifice multiplier: ${formatX(this.currentSacrifice, 2, 2)}`)
+        ? ` | Dimensional Sacrifice multiplier: ${formatX(this.currentSacrifice, 2, 2)}`
         : "";
-      const multText = Ascensions.b10mA.isUnlocked
-        ? `Buy OoM purchase power: +${formatPow(this.buyOoMPow, 2, 3)}`
-        : `Buy 10 Dimension purchase multiplier: ${formatX(this.buy10Mult, 2, 2)}`;
-      this.multiplierText = `${multText}${sacText}`;
+      this.multiplierText = `Buy 10 Dimension purchase multiplier: ${formatX(this.buy10Mult, 2, 2)}${sacText}`;
     },
     quickReset() {
       softReset(-1, true, true);

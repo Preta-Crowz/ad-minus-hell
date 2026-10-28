@@ -1,3 +1,5 @@
+import { DC } from "../constants";
+
 import { UpgradeableAutobuyerState } from "./autobuyer";
 
 export class AntimatterDimensionAutobuyerState extends UpgradeableAutobuyerState {
@@ -10,7 +12,7 @@ export class AntimatterDimensionAutobuyerState extends UpgradeableAutobuyerState
   }
 
   get fullName() {
-    return `${this.name} ${player.universes.current === 2 ? "Matter" : "Antimatter"} Dimension`;
+    return `${this.name} Antimatter Dimension`;
   }
 
   get data() {
@@ -23,7 +25,7 @@ export class AntimatterDimensionAutobuyerState extends UpgradeableAutobuyerState
 
   get isUnlocked() {
     if (Pelle.isDisabled(`antimatterDimAutobuyer${this.tier}`)) return false;
-    return this.data.isBought || this.canBeUpgraded || (LHC.voidRunning && NullUpgrade.limerick5.isBought);
+    return this.data.isBought || this.canBeUpgraded || (LHC.voidRunning && LHCNullUpgrade.limerick5.isBought);
   }
 
   get isBought() {
@@ -88,6 +90,8 @@ export class AntimatterDimensionAutobuyerState extends UpgradeableAutobuyerState
   // unmodifiable in some conditions. This is basically the lowest-effort solution to support legacy behavior
   // because the proper alternatve of an AD autobuyer refactor to untangle this mess is likely not worth the effort
   get canTick() {
+
+    if (Laitela.continuumActive) return false;
     // AD autobuyer-specific logic; if the UI is collapsed then we are unable to toggle groupSetting.
     // In terms of UX for this case it makes the most sense to ignore it and pretend it's true
     const settingConfig = player.auto.antimatterDims;
@@ -136,9 +140,7 @@ export class AntimatterDimensionAutobuyerState extends UpgradeableAutobuyerState
   }
 
   get resetTickOn() {
-    return (Perk.antimatterNoReset.canBeApplied &&
-      (!player.disablePostReality || (LHC.voidRunning && player.endgame.largeHadronCollider.void.nullified)))
-      ? PRESTIGE_EVENT.ANTIMATTER_GALAXY : PRESTIGE_EVENT.DIMENSION_BOOST;
+    return Perk.antimatterNoReset.canBeApplied ? PRESTIGE_EVENT.ANTIMATTER_GALAXY : PRESTIGE_EVENT.DIMENSION_BOOST;
   }
 
   reset() {
@@ -151,7 +153,7 @@ export class AntimatterDimensionAutobuyerState extends UpgradeableAutobuyerState
   }
 
   static get entryCount() { return 8; }
-  static get autobuyerGroupName() { return `${player.universes.current === 2 ? "Matter" : "Antimatter"} Dimension`; }
+  static get autobuyerGroupName() { return "Antimatter Dimension"; }
 
   // These are toggled on and off from the group autobuyer checkbox
   static get isActive() { return player.auto.antimatterDims.isActive; }

@@ -4,17 +4,16 @@ export default {
   data() {
     return {
       darkMatter: new Decimal(0),
-      darkMatterMult: new Decimal(0),
-      darkMatterMultGain: new Decimal(0),
+      darkMatterMult: new Decimal(),
+      darkMatterMultGain: new Decimal(),
       autobuyerUnlocked: false,
       annihilationButtonVisible: false,
       matterRequirement: 0,
-      darkMatterMultRatio: new Decimal(0),
-      autoAnnihilationInput: player.auto.annihilation.multiplier,
+      darkMatterMultRatio: 0,
+      autoAnnihilationInput: new Decimal(),
       isEnabled: true,
       modeUnlocked: false,
       annihilationMode: 0,
-      isBasic: true,
     };
   },
   computed: {
@@ -30,38 +29,31 @@ export default {
       this.autobuyerUnlocked = Autobuyer.annihilation.isUnlocked;
       this.annihilationButtonVisible = Laitela.canAnnihilate || this.autobuyerUnlocked;
       this.matterRequirement = Laitela.annihilationDMRequirement;
-      this.darkMatterMultRatio.copyFrom(Laitela.darkMatterMultRatio);
+      this.darkMatterMultRatio = Laitela.darkMatterMultRatio;
       this.isEnabled = player.auto.annihilation.isActive;
       this.modeUnlocked = ExpansionPack.laitelaPack.isBought && !player.disablePostReality;
       this.annihilationMode = player.auto.annihilation.mode;
-      this.isBasic = this.annihilationMode === 0;
     },
     annihilate() {
       Laitela.annihilate();
     },
-    modeToggle() {
+    toggleMode() {
       player.auto.annihilation.mode = (player.auto.annihilation.mode + 1) % 2;
     },
     handleAutoAnnihilationInputChange() {
-      const float = parseFloat(this.autoAnnihilationInput);
-      if (isNaN(float)) {
-        this.autoAnnihilationInput = player.auto.annihilation.multiplier;
+      const float = new Decimal(this.autoAnnihilationInput);
+      if (float.isNan()) {
+        this.autoAnnihilationInput.copyFrom(player.auto.annihilation.multiplier);
       } else {
         player.auto.annihilation.multiplier = float;
       }
-    },
-    classObject() {
-      return {
-        "l-laitela-annihilation-container": true,
-        "l-laitela-annihilation-container--large": this.modeUnlocked
-      };
     }
   }
 };
 </script>
 
 <template>
-  <div :class="classObject()">
+  <div class="l-laitela-annihilation-container">
     <button
       v-if="darkMatter.lt(matterRequirement)"
       class="l-laitela-annihilation-button"
@@ -88,12 +80,7 @@ export default {
       <span v-if="autobuyerUnlocked">
         <br>
         <br>
-        <span v-if="isBasic">
-          Auto-Annihilate when adding
-        </span>
-        <span v-if="!isBasic">
-          Auto-Annihilate when the pending multiplier is
-        </span>
+        {{ annihilationMode === 0 ? "Auto-Annihilate when adding" : "Auto-Annihilate when the pending multiplier is" }}
         <input
           v-model="autoAnnihilationInput"
           type="text"
@@ -101,26 +88,19 @@ export default {
           class="c-small-autobuyer-input c-laitela-annihilation-input"
           @change="handleAutoAnnihilationInputChange()"
         >
-        <span v-if="isBasic">
-          to the multiplier.
-        </span>
-        <span v-if="!isBasic">
-          times higher than the current multiplier.
-        </span>
+        {{ annihilationMode === 0 ? "to the multiplier." : "times higher than the current multiplier." }}
       </span>
     </span>
     <span v-else>
       Annihilation will reset your Dark Matter and Dark Matter Dimension amounts, but will give a permanent
       multiplier of <b>{{ formatX(darkMatterMultGain.add(1), 2, 2) }}</b> to all Dark Matter Dimensions.
     </span>
-    <br>
-    <br>
     <button
       v-if="modeUnlocked"
       class="l-laitela-annihilation-button c-laitela-annihilation-button"
-      @click="modeToggle"
+      @click="toggleMode"
     >
-      <b>Toggle Autobuyer Mode</b>
+      Toggle Autobuyer Mode
     </button>
   </div>
 </template>

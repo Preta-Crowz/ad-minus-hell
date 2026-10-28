@@ -1,5 +1,7 @@
 import { BitPurchasableMechanicState, RebuyableMechanicState } from "./game-mechanics";
 
+const E30 = new Decimal(1e30);
+
 class RealityUpgradeState extends BitPurchasableMechanicState {
   constructor(config) {
     super(config);
@@ -68,7 +70,7 @@ class RealityUpgradeState extends BitPurchasableMechanicState {
   // Note we don't actually show the modal if we already failed or unlocked it
   tryShowWarningModal(specialLockText) {
     if (this.isPossible && !this.isAvailableForPurchase) {
-      Modal.upgradeLock.show({ upgrade: this, isImaginary: false, isDual: false, isEndgame: false, specialLockText });
+      Modal.upgradeLock.show({ upgrade: this, isImaginary: false, specialLockText });
     }
   }
 
@@ -99,7 +101,7 @@ class RealityUpgradeState extends BitPurchasableMechanicState {
       playerInfinityUpgradesOnReset();
       EventHub.dispatch(GAME_EVENT.REALITY_UPGRADE_TEN_BOUGHT);
     }
-    if (id === 20 && player.blackHole[0].unlocked) {
+    if (id === 20) {
       player.blackHole[1].unlocked = true;
     }
     GameCache.staticGlyphWeights.invalidate();
@@ -107,6 +109,10 @@ class RealityUpgradeState extends BitPurchasableMechanicState {
 }
 
 class RebuyableRealityUpgradeState extends RebuyableMechanicState {
+  constructor(config){
+    super(config)
+    this._infinityAmount = findFirstInfiniteCostPurchase(1e30, this.config.initialCost.toNumber(), this.config.costMult.toNumber(), this.config.costMult.toNumber() / 10 );
+  }
   get currency() {
     return Currency.realityMachines;
   }
@@ -119,30 +125,34 @@ class RebuyableRealityUpgradeState extends RebuyableMechanicState {
     player.reality.rebuyables[this.id] = value;
   }
 
-  bulkPurchase() {
-    if (!this.isAffordable) return false;
-    this.boughtAmount += getInverseHybridCostScaling(
-      Currency.realityMachines.value,
-      1e30,
-      this.config.initialCost,
-      this.config.costMult,
-      this.config.costMult / 10,
-      DC.E309,
-      1e3,
-      this.config.initialCost * this.config.costMult
-    ).sub(player.reality.rebuyables[this.id]).toNumber();
-    Currency.realityMachines.subtract(getHybridCostScaling(
-      player.reality.rebuyables[this.id] - 1,
-      1e30,
-      this.config.initialCost,
-      this.config.costMult,
-      this.config.costMult / 10,
-      DC.E309,
-      1e3,
-      this.config.initialCost * this.config.costMult
-    ));
-    return true;
+  purchaseHybrid(){
+    if(this.currency.lt('e310')){
+      const amount = E30.div(this.config.initialCost).log(this.config.costMult).add(1).floor();
+      if(amount.gt(this.boughtAmount)) {
+        const cost = this.config.hybridCostScaling(amount);
+        if(this.currency.gt(cost)) {
+          this.boughtAmount = amount;
+        }
+      }
+      if(this.boughtAmount.lt(this._infinityAmount)) {
+        const infinityCost = this.config.hybridCostScaling(amount);
+        if(this.currency.gt(infinityCost)) {
+          this.boughtAmount = new Decimal(this._infinityAmount);
+        }
+      }
+    }
+
+    const expoCost = new ExponentialCostScaling({
+        baseCost: new Decimal('e309'),
+        baseIncrease: new Decimal(1000),
+        costScale: this.config.initialCost.times(this.config.costMult),
+        scalingCostThreshold: Decimal.NUMBER_MAX_VALUE
+      });
+    const amo = expoCost.getMaxBought(new Decimal(0), this.currency.value, 1)
+    if(amo != null) this.boughtAmount = amo.quantity.add(this._infinityAmount);
+
   }
+
 }
 
 RealityUpgradeState.index = mapGameData(

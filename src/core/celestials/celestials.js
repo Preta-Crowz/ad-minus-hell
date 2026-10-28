@@ -7,6 +7,10 @@ import { Ra } from "./ra/ra";
 import { Slabdrill } from "./slabdrill";
 import { Teresa } from "./teresa";
 import { V } from "./V";
+import { Glitch } from "./glitch/glitch";
+import { Cante } from "./cante/cante";
+import { Null } from "./null/null";
+import { SquareCubic } from "./squarecubic";
 
 export const Celestials = {
   teresa: Teresa,
@@ -17,7 +21,11 @@ export const Celestials = {
   laitela: Laitela,
   pelle: Pelle,
   alpha: Alpha,
-  slabdrill: Slabdrill
+  slabdrill: Slabdrill,
+  glitch: Glitch,
+  cante: Cante,
+  null: Null,
+  squarecubic: SquareCubic
 };
 
 GameDatabase.celestials.descriptions = [
@@ -43,8 +51,8 @@ GameDatabase.celestials.descriptions = [
     name: "The Nameless Ones",
     effects() {
       return `Glyph levels are boosted to a minimum of ${formatInt(5000)}.
-      Infinity, Time, and 8th ${player.universes.current === 2 ? "Matter" : "Antimatter"} Dimension purchases are limited to ${formatInt(1)} each.
-      ${player.universes.current === 2 ? "Matter" : "Antimatter"} Dimension multipliers are always Dilated (the Glyph effect still only applies in actual Dilation).
+      Infinity, Time, and 8th Antimatter Dimension purchases are limited to ${formatInt(1)} each.
+      Antimatter Dimension multipliers are always Dilated (the Glyph effect still only applies in actual Dilation).
       Time Study 192 (uncapped Replicanti) is locked.
       The Black Hole is disabled.
       Tachyon Particle production and Dilated Time production are severely reduced.
@@ -65,6 +73,26 @@ GameDatabase.celestials.descriptions = [
       return Ra.unlocks.unlockGlyphAlchemy.canBeApplied
         ? vEffect + vEffectAdditional
         : vEffect;
+    },
+    extremeEffectsShort() {
+      const vEffect = `All Dimension multipliers, Eternity points,Infinity Points,\
+      Dilated Time gained, Tachyon Particles, Replicanti interval and Tickspeed \
+      are Dilated
+      Chaos Cores, Rift Force, bonus Dimension Boosts are disabled.
+      Exponential Glyph Alchemy is not disabled.
+      `;
+      return vEffect;
+    },
+    extremeEffects() {
+      const vEffect = `All Dimension multipliers are ^0.001, Eternity and Infinity Points gained are ^0.01
+      Dilated Time gained is ^0.2 and Tachyon Particles gained are square-rooted. 
+      Replicanti interval is ^32.
+      And Tickspeed is ^0.00025.
+      Chaos Cores, Rift Force, bonus Dimension Boosts are disabled.
+      Exponential Glyph Alchemy is not disabled.
+      Glitch upgrade augmented Infinity is disabled.
+      `;
+      return vEffect;
     }
   },
   {
@@ -106,19 +134,34 @@ GameDatabase.celestials.descriptions = [
       ${disabledText}`;
     },
     description() {
-      return `${player.universes.current === 2 ? "Matter" : "Antimatter"} generates entropy inside of this Reality.\
+      return `Antimatter generates entropy inside of this Reality.\
       At ${formatPercents(1)} entropy, the Reality becomes destabilized\
       and you gain a reward based on how quickly you reached ${formatPercents(1)}.
       Destabilizing the Reality in less than ${formatInt(30)} seconds makes it become significantly more difficult,\
       in exchange for giving a much stronger reward.\
-      Doing this ${formatInt(8)} times will also give a ${formatX(Math.pow(8, Laitela.hadronizes + 1))} to Dark Energy gain.`;
+      Doing this ${formatInt(8)} times will also give a ${formatX(8)} to Dark Energy gain.`;
     }
   },
   {
-    name: "Pelle",
+    name: "Glitch",
     effects() {
-      return `Your Reality will become Doomed. This will have various effects on gameplay.`;
-    }
+        if(Glitch.tier == 0){
+        return `AD's ^0.95
+        ID's ^0.15
+        TD's ^0.33
+        You only start with break/infinity upgrades and you can not charge them.
+        Some reality/celestials effects don't work.
+        You are forced to have ${Glitch.forceGlyphs} cursed glyphs equipped.
+        Plus the effects you have chosen.`;
+      }
+      
+      return "null";
+    },
+    description() {
+      if(Glitch.tier == 0){
+        return "While in glitch's Reality you can gain Rift Force (all effects active) witch can unlock upgrades after completing their goals.";
+      }
+    },
   },
   {
     name: "Alpha",
@@ -149,7 +192,25 @@ GameDatabase.celestials.descriptions = [
   {
     name: "Slabdrill",
     effects() {
-      return `Your Reality will become Cursed. This will have various effects on gameplay.`;
+      return "Your Reality will become Cursed. This will have various effects on gameplay.";
     }
-  }
+  },
+  {
+    name: "Cante",
+    effects() {
+        return `You will fail.`;
+    },
+    description() {
+      return `Enjoy.`;
+    },
+  },
+  {
+    name: "Null",
+    effects() {
+        return `You will fail.`;
+    },
+    description() {
+      return `Enjoy.`;
+    },
+  },
 ];

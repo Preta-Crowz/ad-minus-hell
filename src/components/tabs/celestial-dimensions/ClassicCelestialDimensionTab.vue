@@ -20,7 +20,7 @@ export default {
       dimMultiplier: new Decimal(0),
       matterPerSecond: new Decimal(0),
       incomeType: "",
-      conversionExponent: 0,
+      conversionExponent: new Decimal(0),
       nextDimCapIncrease: 0,
       totalDimCap: new Decimal(0),
       creditsClosed: false,

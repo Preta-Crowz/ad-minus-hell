@@ -51,47 +51,22 @@ Vue.mixin({
     on$(event, fn) {
       EventHub.ui.on(event, fn, this);
     },
-    format(value, places, placesUnder1000) {
-      return format(value, places, placesUnder1000);
-    },
-    formatInt(value) {
-      return formatInt(value);
-    },
-    formatPercents(value, places) {
-      return formatPercents(value, places);
-    },
-    formatDecimalPercents(value, places) {
-      return formatDecimalPercents(value, places);
-    },
-    formatRarity(value) {
-      return formatRarity(value);
-    },
-    formatX(value, places, placesUnder1000) {
-      return formatX(value, places, placesUnder1000);
-    },
-    formatPow(value, places, placesUnder1000) {
-      return formatPow(value, places, placesUnder1000);
-    },
-    formatPostBreak(value, places, placesUnder1000) {
-      return formatPostBreak(value, places, placesUnder1000);
-    },
+    format,
+    formatHybridLarge,
     formatHybridSmall(value, places, placesUnder1000) {
       return formatHybridSmall(value, places, placesUnder1000);
     },
-    formatHybridLarge(value, places, placesUnder1000) {
-      return formatHybridLarge(value, places, placesUnder1000);
-    },
-    formatDimboostParts(value, places, placesUnder1000) {
-      return formatDimboostParts(value, places, placesUnder1000);
-    },
-    formatHybridFloat(value, places) {
-      return formatHybridFloat(value, places);
-    },
+    formatInt,
+    formatSmall,
+    formatPercents,
+    formatDecimalPercents,
+    formatRarity,
+    formatX,
+    formatPow,
+    formatPostBreak,
     pluralize,
     quantify,
     quantifyInt,
-    quantifyHybridSmall,
-    quantifyHybridLarge
   }
 });
 
@@ -112,8 +87,9 @@ const ReactivityComplainer = {
     if (obj === undefined || obj === null) {
       return;
     }
-    // If you are not a developer just ignore it. I guess it's used to tell devs there may be lagging when pressing buttons
-    if (obj.__ob__ !== undefined && player.DEV) throw new Error(`Boi you fukked up - ${path} became REACTIVE (oh shite)`);
+    if (obj.__ob__ !== undefined) {
+      throw new Error(`Boi you fukked up - ${path} became REACTIVE (oh shite)`);
+    }
     for (const key in obj) {
       if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
       const prop = obj[key];

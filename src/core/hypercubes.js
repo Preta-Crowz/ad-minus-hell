@@ -139,7 +139,7 @@ export const Octeracts = {
     return this.bought + this.extra;
   },
 
-  buyOcteracts() {
+  buyOcteract() {
     if (!this.canBuyOcteract) return;
     if (GameEnd.creditsEverClosed) return;
     player.endgame.hypercubes.octeracts++;
@@ -168,3 +168,15 @@ export const Octeracts = {
     return 1.1;
   }
 };
+
+export function autoBuyHypercubes() {
+  if (!DivinityMilestone.divinityOverdrive.isReached || !DualityUpgrade(25).isBought ||
+    player.disablePostReality) {
+    return;
+  }
+  Tesseracts.buyMaxTesseract();
+  Penteracts.buyPenteract();
+  Hexeracts.buyHexeract();
+  Hepteracts.buyHepteract();
+  if (TabNotification.hypercubes.triggered) TabNotification.hypercubes.clearTrigger();
+}

@@ -1,4 +1,6 @@
 <script>
+import { GlyphInfo } from "../core/secret-formula/reality/core-glyph-info";
+
 import GlyphTooltipEffect from "@/components/GlyphTooltipEffect";
 
 export default {
@@ -12,15 +14,15 @@ export default {
       required: true
     },
     strength: {
-      type: Number,
+      type: Decimal | String,
       required: true
     },
     level: {
-      type: Decimal,
+      type: Decimal | String,
       required: true
     },
     effects: {
-      type: Number,
+      type: Array,
       required: true
     },
     id: {
@@ -31,17 +33,17 @@ export default {
     sacrificeReward: {
       type: Decimal,
       required: false,
-      default: new Decimal(0),
+      default: new Decimal(),
     },
     refineReward: {
-      type: Number,
+      type: Decimal,
       required: false,
-      default: 0,
+      default: new Decimal(),
     },
     uncappedRefineReward: {
-      type: Number,
+      type: Decimal,
       required: false,
-      default: 0,
+      default: new Decimal(),
     },
     currentAction: {
       type: String,
@@ -59,7 +61,7 @@ export default {
     displayLevel: {
       type: Decimal,
       required: false,
-      default: new Decimal(0),
+      default: new Decimal(),
     },
     changeWatcher: {
       type: Number,
@@ -80,9 +82,7 @@ export default {
       return this.displayLevel.neq(0) ? this.displayLevel : this.level;
     },
     sortedEffects() {
-      return getGlyphEffectValuesFromBitmask(this.effects, this.effectiveLevel, this.strength, this.type)
-        .filter(effect =>
-          GlyphEffects[effect.id].isGenerated === generatedTypes.includes(this.type));
+      return getGlyphEffectValuesFromArray(this.effects, this.effectiveLevel, this.strength, this.type);
     },
     rarityInfo() {
       return getRarity(this.strength);
@@ -98,10 +98,11 @@ export default {
       return GlyphAppearanceHandler.getBorderColor(this.type);
     },
     descriptionStyle() {
-      const color = GlyphAppearanceHandler.getRarityColor(this.strength, this.type);
+      const nColor = GlyphAppearanceHandler.getRarityColor(this.strength, this.type);
       const cursedColor = GlyphAppearanceHandler.isLightBG ? "white" : "black";
+      const color = this.type === "cursed" ? cursedColor : ( this.type == "glitch" ? 'lime' : nColor)
       return {
-        color: this.type === "cursed" ? cursedColor : color,
+        color: color,
         animation: this.type === "reality" ? "a-reality-glyph-name-cycle 10s infinite" : undefined
       };
     },
@@ -114,6 +115,8 @@ export default {
           return "Cursed Glyph";
         case "reality":
           return `Pure Glyph of ${glyphName}`;
+        case "glitch":
+          return `Corrupt Glyph of ${glyphName}`;
         default:
           return `${this.rarityInfo.name} Glyph of ${glyphName}`;
       }
@@ -125,9 +128,8 @@ export default {
       return this.displayLevel.neq(0) && this.displayLevel.gt(this.level);
     },
     rarityText() {
-      if (!GlyphTypes[this.type].hasRarity) return "";
-      const strength = Slabdrill.isCursed ? rarityToStrength(Math.clamp((Slabdrill.currentStage - 4) * 20, 0, 100)) :
-        (Pelle.isDoomed && !PelleDestructionUpgrade.glyphRarity.canBeApplied ? Pelle.glyphStrength : this.strength);
+      if (!GlyphInfo[this.type].hasRarity) return "";
+      const strength = Pelle.isDoomed ? Pelle.glyphStrength : this.strength;
       return `| Rarity:
         <span style="color: ${this.descriptionStyle.color}">${formatRarity(strengthToRarity(strength))}</span>`;
     },
@@ -142,7 +144,7 @@ export default {
         ? "#ff4444"
         : (this.isLevelBoosted ? "#44FF44" : undefined);
       return `Level: <span style="color: ${color}">
-              ${arrow}${formatHybridLarge(this.effectiveLevel, 3)}${arrow}
+              ${arrow}${formatInt(this.effectiveLevel)}${arrow}
               </span>`;
     },
     eventHandlers() {
@@ -161,7 +163,7 @@ export default {
         "border-color": borderColor,
         "box-shadow": `0 0 0.5rem ${borderColor}, 0 0 0.5rem ${borderColor} inset`,
         animation: this.type === "reality" ? "a-reality-glyph-tooltip-cycle 10s infinite" : undefined,
-        color: this.textColor,
+        color: this.type == "glitch" ? 'lime' : this.textColor,
         background: this.baseColor
       };
     },
@@ -175,8 +177,8 @@ export default {
       return {
         "border-color": color,
         "box-shadow": `0 0 0.5rem 0.1rem ${color}, 0 0 0.8rem ${color} inset`,
-        animation: isReality ? "a-reality-glyph-tooltip-header-cycle 10s infinite" : undefined,
-        color: this.textColor,
+        animation: isReality ? "a-reality-glyph-tooltip-header-cycle 2s infinite" : undefined,
+        color: this.type == "glitch" ? 'lime' : this.textColor,
         background: this.baseColor
       };
     }
@@ -202,7 +204,7 @@ export default {
   },
   methods: {
     update() {
-      this.showChaosText = Pelle.specialGlyphEffect.isUnlocked || Pelle.isGlyphTypeDisabled(this.type);
+      this.showChaosText = Pelle.specialGlyphEffect.isUnlocked;
       if (this.showChaosText) {
         this.chaosDescription = Pelle.getSpecialGlyphEffectDescription(this.type);
       }
@@ -236,11 +238,12 @@ export default {
               </span>`;
     },
     refineText() {
-      if (this.type === "companion" || this.type === "cursed" || this.type === "reality") return "";
+      if (this.type === "companion" || this.type === "cursed" || this.type === "reality" || this.type === "glitch") return "";
       if (!AlchemyResource[this.type].isUnlocked) return "";
-      let refinementText = `${format(this.uncappedRefineReward, 2, 2)} ${GLYPH_SYMBOLS[this.type]}`;
-      if (this.uncappedRefineReward !== this.refineReward) {
-        refinementText += ` (Actual value due to cap: ${format(this.refineReward, 2, 2)} ${GLYPH_SYMBOLS[this.type]})`;
+      let refinementText = `${format(this.uncappedRefineReward, 2, 2)} ${GlyphInfo[this.type].regularGlyphSymbol}`;
+      if (this.uncappedRefineReward.neq(this.refineReward)) {
+        // eslint-disable-next-line max-len
+        refinementText += ` (Actual value due to cap: ${format(this.refineReward, 2, 2)} ${GlyphInfo[this.type].regularGlyphSymbol})`;
       }
       const isCurrentAction = this.currentAction === "refine";
       return `<span style="font-weight: ${isCurrentAction ? "bold" : ""};">
@@ -248,7 +251,7 @@ export default {
               </span>`;
     },
     scoreText() {
-      if (this.type === "companion" || this.type === "cursed" || this.type === "reality") return "";
+      if (this.type === "companion" || this.type === "cursed" || this.type === "reality" || this.type === "glitch") return "";
       const showFilterScoreModes = [AUTO_GLYPH_SCORE.SPECIFIED_EFFECT, AUTO_GLYPH_SCORE.EFFECT_SCORE];
       if (!showFilterScoreModes.includes(this.scoreMode)) return "";
       return `Score: ${format(AutoGlyphProcessor.filterValue(this.$parent.glyph), 1, 1)}`;

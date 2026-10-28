@@ -1,60 +1,6 @@
 // Deepmerge library modified for Antimatter Dimensions usage (mainly Decimal integration)
 // Source: https://github.com/TehShrike/deepmerge
 
-export function matchOnlyDeepmerge(firstObject, secondObject, ignoreKey = "") {
-  if (!firstObject || !secondObject || typeof firstObject !== 'object' || typeof secondObject !== 'object') {
-    return secondObject !== undefined ? secondObject : firstObject;
-  }
-  if (Array.isArray(secondObject) && Array.isArray(firstObject)) {
-    return secondObject.map((item, index) => {
-      if (index in firstObject) {
-        return matchOnlyDeepmerge(firstObject[index], item, ignoreKey);
-      }
-      return simpleClone(item);
-    });
-  }
-  return Object.keys(secondObject).reduce((acc, key) => {
-    if (key === ignoreKey) {
-      if (key in firstObject) {
-        acc[key] = simpleClone(firstObject[key]);
-      }
-      return acc;
-    }
-    if (key in firstObject) {
-      if (secondObject[key] instanceof Decimal) {
-        acc[key] = new Decimal(firstObject[key]);
-      } else if (secondObject[key] instanceof Set) {
-        acc[key] = new Set(firstObject[key]);
-      } else {
-        acc[key] = (typeof secondObject[key] === 'object' && typeof firstObject[key] === 'object' &&
-          !(secondObject[key] instanceof Array))
-          ? matchOnlyDeepmerge(firstObject[key], secondObject[key], ignoreKey)
-          : simpleClone(firstObject[key]);
-      }
-    } else {
-      acc[key] = simpleClone(secondObject[key]);
-    }
-    return acc;
-  }, {});
-}
-
-function simpleClone(value) {
-  if (!value || typeof value !== 'object') return value;
-  if (value instanceof Decimal) {
-    return new Decimal(value);
-  }
-  if (value instanceof Set) {
-    return new Set(value);
-  }
-  if (Array.isArray(value)) {
-    return value.map(item => simpleClone(item));
-  }
-  return Object.keys(value).reduce((acc, key) => {
-    acc[key] = simpleClone(value[key]);
-    return acc;
-  }, {});
-}
-
 function emptyTarget(val) {
   return Array.isArray(val) ? [] : {};
 }
@@ -94,6 +40,53 @@ function mergeObject(target, source, options) {
     }
   });
   return destination;
+}
+
+export function matchOnlyDeepmerge(firstObject, secondObject, ignoreKey = "") {
+  if (firstObject && secondObject && typeof firstObject === "object" && typeof secondObject === "object") {
+    if (Array.isArray(firstObject) && Array.isArray(secondObject)) {
+      return secondObject.map((item, index) => (index in firstObject
+        ? matchOnlyDeepmerge(firstObject[index], item, ignoreKey)
+        : cloneValue(item)));
+    }
+    return Object.keys(secondObject).reduce((merged, key) => {
+      if (key === ignoreKey) {
+        if (key in firstObject) merged[key] = cloneValue(firstObject[key]);
+        return merged;
+      }
+      if (!(key in firstObject)) {
+        merged[key] = cloneValue(secondObject[key]);
+        return merged;
+      }
+      if (secondObject[key] instanceof Decimal) {
+        merged[key] = new Decimal(firstObject[key]);
+      } else if (secondObject[key] instanceof Set) {
+        merged[key] = new Set(firstObject[key]);
+      } else if (typeof secondObject[key] === "object" && typeof firstObject[key] === "object") {
+        merged[key] = Array.isArray(secondObject[key])
+          ? cloneValue(firstObject[key])
+          : matchOnlyDeepmerge(firstObject[key], secondObject[key], ignoreKey);
+      } else {
+        merged[key] = cloneValue(firstObject[key]);
+      }
+      return merged;
+    }, {});
+  }
+  if (secondObject === undefined) return firstObject;
+  return secondObject;
+}
+
+function cloneValue(value) {
+  if (value && typeof value === "object") {
+    if (value instanceof Decimal) return new Decimal(value);
+    if (value instanceof Set) return new Set(value);
+    if (Array.isArray(value)) return value.map(item => cloneValue(item));
+    return Object.keys(value).reduce((cloned, key) => {
+      cloned[key] = cloneValue(value[key]);
+      return cloned;
+    }, {});
+  }
+  return value;
 }
 
 export function deepmerge(target, source, options = {}) {

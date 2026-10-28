@@ -26,8 +26,9 @@ export const progressStages = [
     hasReached: () => true,
     suggestedResource: "Antimatter",
     // Galaxies are worth 1/3 each, boosts break ties within galaxies, and antimatter breaks ties within boosts
-    subProgressValue: save => 0.33 * save.galaxies + 0.02 * save.dimensionBoosts +
-      new Decimal(save.antimatter).log10().toNumber() / 16000,
+    subProgressValue: save => 0.33 * new Decimal(save.galaxies).toNumber() +
+      0.02 * new Decimal(save.dimensionBoosts).toNumber() +
+      new Decimal(save.antimatter).log10().div(16000).toNumber(),
   },
   {
     id: PROGRESS_STAGE.EARLY_INFINITY,
@@ -43,14 +44,14 @@ export const progressStages = [
     name: "Broken Infinity",
     hasReached: save => save.auto.bigCrunch.interval <= 100,
     suggestedResource: "Infinity Points",
-    subProgressValue: save => Math.sqrt(new Decimal(save.infinityPoints).log10().toNumber() / 145),
+    subProgressValue: save => new Decimal(save.infinityPoints).log10().div(145).sqrt().toNumber(),
   },
   {
     id: PROGRESS_STAGE.REPLICANTI,
     name: "Replicanti",
     hasReached: save => save.replicanti.unl,
     suggestedResource: "Infinity Points",
-    subProgressValue: save => Math.sqrt((new Decimal(save.infinityPoints).log10().toNumber() - 140) / 170),
+    subProgressValue: save => new Decimal(save.infinityPoints).log10().sub(140).div(170).sqrt().toNumber(),
   },
   {
     id: PROGRESS_STAGE.EARLY_ETERNITY,
@@ -66,26 +67,27 @@ export const progressStages = [
     suggestedResource: "Eternity Challenge Completions and Eternity Points",
     // Half from ECs, half from EP (up to e1300)
     subProgressValue: save => 0.008 * Object.values(save.eternityChalls).reduce((sum, c) => sum + c, 0) +
-      new Decimal(save.eternityPoints).log10().toNumber() / 2500,
+      new Decimal(save.eternityPoints).log10().div(2500).toNumber(),
   },
   {
     id: PROGRESS_STAGE.EARLY_DILATION,
     name: "Time Dilation",
     hasReached: save => new Decimal(save.dilation.dilatedTime).gt(0),
     suggestedResource: "Dilated Time",
-    subProgressValue: save => new Decimal(save.dilation.dilatedTime).log10().toNumber() / 15,
+    subProgressValue: save => new Decimal(save.dilation.dilatedTime).log10().div(15).toNumber(),
   },
   {
     id: PROGRESS_STAGE.LATE_ETERNITY,
     name: "Late Eternity",
     hasReached: save => new Decimal(save.dilation.dilatedTime).gt(1e15),
-    suggestedResource: () => (new Decimal(player.eternityPoints).log10().toNumber() > 4000
+    suggestedResource: () => (new Decimal(player.eternityPoints).log10().gt(4000)
       ? "Eternity Points and/or Dilated Time. Alternatively, you can unlock and perform your first Reality"
       : "Eternity Points and/or Dilated Time"
     ),
     // Tracks up to e8000 even though many players will reality well before that; we still want to distinguish
     // which saves are farther all the way up to the zeroth-reality RM cap
-    subProgressValue: save => Math.clampMax(Math.sqrt((new Decimal(save.eternityPoints).log10().toNumber() - 1300) / 6700), 1),
+    subProgressValue: save => Math.clampMax(
+      new Decimal(save.eternityPoints).log10().sub(1300).div(6700).sqrt().toNumber(), 1),
   },
   {
     id: PROGRESS_STAGE.EARLY_REALITY,
@@ -100,33 +102,33 @@ export const progressStages = [
       if (player.dilation.dilatedTime.eq(0)) return `Eternity Points ${suffix}`;
       return `Eternity Points and/or Dilated Time ${suffix}`;
     },
-    subProgressValue: save => Math.clampMax(new Decimal(save.realities).toNumber() / 100, 1),
+    subProgressValue: save => Math.clampMax(new Decimal(save.realities).div(100).toNumber(), 1),
   },
   {
     id: PROGRESS_STAGE.TERESA,
     name: "Teresa (1st Celestial)",
-    hasReached: save => save.celestials?.teresa?.quoteBits > 0 || save.celestials?.teresa?.quotes.length > 0,
+    hasReached: save => save.celestials?.teresa?.quoteBits > 0 || save.celestials?.teresa?.quotes?.length > 0,
     suggestedResource: "Reality Machines",
-    subProgressValue: save => Decimal.log10(save.celestials.teresa.pouredAmount.plus(1)).toNumber() / 21,
+    subProgressValue: save => Decimal.log10(new Decimal(save.celestials.teresa.pouredAmount).plus(1)).div(21).toNumber(),
   },
   {
     id: PROGRESS_STAGE.EFFARIG,
     name: "Effarig (2nd Celestial)",
-    hasReached: save => save.celestials?.effarig?.quoteBits > 0 || save.celestials?.effarig?.quotes.length > 0,
+    hasReached: save => save.celestials?.effarig?.quoteBits > 0 || save.celestials?.effarig?.quotes?.length > 0,
     suggestedResource: "Reality Machines and Relic Shards",
-    subProgressValue: save => Decimal.log10(new Decimal(save.celestials.effarig.relicShards).add(1)).toNumber() / 14,
+    subProgressValue: save => new Decimal(save.celestials.effarig.relicShards).plus(1).log10().div(14).toNumber(),
   },
   {
     id: PROGRESS_STAGE.ENSLAVED,
     name: "The Nameless Ones (3rd Celestial)",
-    hasReached: save => save.celestials?.enslaved?.quoteBits > 0 || save.celestials?.enslaved?.quotes.length > 0,
+    hasReached: save => save.celestials?.enslaved?.quoteBits > 0 || save.celestials?.enslaved?.quotes?.length > 0,
     suggestedResource: "Reality Machines and Glyph Level",
-    subProgressValue: save => Math.sqrt((new Decimal(save.reality.realityMachines).log10().toNumber() - 30) / 30),
+    subProgressValue: save => new Decimal(save.reality.realityMachines).log10().sub(30).div(30).sqrt().toNumber(),
   },
   {
     id: PROGRESS_STAGE.V,
     name: "V (4th Celestial)",
-    hasReached: save => save.celestials?.v?.quoteBits > 0 || save.celestials?.v?.quotes.length > 0,
+    hasReached: save => save.celestials?.v?.quoteBits > 0 || save.celestials?.v?.quotes?.length > 0,
     suggestedResource: "Number of V-Achievements",
     subProgressValue: save => 0.0277 * Object.values(save.celestials.v.runUnlocks)
       .reduce((total, ach) => total + ach, 0),
@@ -134,29 +136,36 @@ export const progressStages = [
   {
     id: PROGRESS_STAGE.RA,
     name: "Ra (5th Celestial)",
-    hasReached: save => save.celestials?.ra?.quoteBits > 0 || save.celestials?.ra?.quotes.length > 0,
+    hasReached: save => save.celestials?.ra?.quoteBits > 0,
     suggestedResource: "Celestial Memories",
     subProgressValue: save => Object.values(save.celestials.ra.pets).reduce((sum, pet) => sum + pet.level, 0) / 100,
   },
   {
     id: PROGRESS_STAGE.IMAGINARY_MACHINES,
     name: "Imaginary Machines",
-    hasReached: save => new Decimal(save.reality?.iMCap).gt(0),
+    hasReached: save => new Decimal(save.reality?.iMCap ?? 0).gt(0),
     suggestedResource: "Imaginary Machines",
-    subProgressValue: save => Decimal.log10(new Decimal(save.reality.iMCap).add(1)).toNumber() / 9,
+    subProgressValue: save => new Decimal(save.reality.iMCap).plus(1).log10().div(9).toNumber(),
   },
   {
     id: PROGRESS_STAGE.LAITELA,
     name: "Lai'tela (6th Celestial)",
-    hasReached: save => save.celestials?.laitela?.quoteBits > 0 || save.celestials?.laitela?.quotes.length > 0,
+    hasReached: save => save.celestials?.laitela?.quoteBits > 0,
     suggestedResource: "Dark Matter and Singularities",
-    subProgressValue: save => new Decimal(save.celestials.laitela.darkMatter).log10().toNumber() / 308.25,
+    subProgressValue: save => new Decimal(save.celestials.laitela.darkMatter).log10().div(308.25).toNumber(),
   },
   {
     id: PROGRESS_STAGE.PELLE,
     name: "Pelle (7th Celestial)",
-    hasReached: save => save.celestials?.pelle?.doomed || save.celestials?.pelle?.quotes.length > 0,
+    hasReached: save => save.celestials?.pelle?.doomed,
     suggestedResource: "Remnants",
-    subProgressValue: save => Decimal.log10(new Decimal(save.celestials.pelle.remnants).add(1)).toNumber() / 9,
+    subProgressValue: save => new Decimal(save.celestials.pelle.remnants).plus(1).log10().div(9).toNumber(),
+  },
+  {
+    id: 18,
+    name: "Glitch (8th Celestial)",
+    hasReached: save => save.celestials?.glitch?.rifts?.epsilon?.reducedTo == 1,
+    suggestedResource: "RiftForce and Glitch's Upgrades",
+    subProgressValue: save => new Decimal(save.celestials.glitch.riftForce).plus(1).log10().div(444).toNumber(),
   },
 ];

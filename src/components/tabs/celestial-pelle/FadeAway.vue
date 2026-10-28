@@ -3,38 +3,12 @@ export default {
   name: "FadeAway",
   data() {
     return {
-      opacity: 0,
-      warping: false,
-      goodbye: false,
-      isDarker: false,
-      hasSeenIntro: false,
-      forceStars: false,
-      forceDark: false,
-      newCredits: false
+      opacity: 0
     };
-  },
-  computed: {
-    classObject() {
-      return {
-        "c-background-overlay": !this.forceStars && !this.forceDark && !this.isDarker,
-        "c-background-overlay--force-stars": this.forceStars,
-        "c-background-overlay--force-dark": this.forceDark || this.isDarker
-      };
-    }
   },
   methods: {
     update() {
-      this.isDarker = Alpha.isRunning;
-      this.warping = player.celestials.slabdrill.isWarping;
-      this.goodbye = player.celestials.slabdrill.isGoodbye;
-      this.hasSeenIntro = player.hasSeenIntro;
-      this.opacity = (!this.hasSeenIntro || this.newCredits) ? 1.1 :
-        (this.goodbye ? ((-Math.abs(Math.min(player.celestials.slabdrill.goodbyeTick, 4000) / 2000 - 1) * 2) + 2) :
-        (this.warping ? ((-Math.abs(player.celestials.slabdrill.warpTick / 2500 - 1) * 1.25) + 1.25) :
-        (this.isDarker ? (player.options.brightAlpha ? 0.2 : 0.5) : (GameEnd.endState - END_STATE_MARKERS.FADE_AWAY) / 2)));
-      this.forceStars = player.introTick > 35000 && player.introTick <= 45000;
-      this.forceDark = player.introTick > 45000 && player.introTick <= 60000;
-      this.newCredits = player.endgame.credits;
+      this.opacity = (GameEnd.endState - END_STATE_MARKERS.FADE_AWAY) / 2;
     }
   }
 };
@@ -42,7 +16,7 @@ export default {
 
 <template>
   <div
-    :class="classObject"
+    class="c-background-overlay"
     :style="{
       opacity,
       pointerEvents: opacity > 1 ? 'auto' : 'none'
@@ -150,36 +124,5 @@ export default {
   background-repeat: no-repeat;
   background-size: cover;
   filter: brightness(0.5);
-}
-
-.t-s13 .c-background-overlay {
-  background: url("../../../../public/images/s13-bg.jpg");
-  background-position-x: 50%;
-  background-position-y: 50%;
-  background-size: 150%;
-}
-
-.c-background-overlay--force-stars {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 8;
-  background-color: #ffffff;
-  background: black;
-  background-image: url("../../../../public/images/stars-bg.png");
-  background-position: center;
-  background-size: 100%;
-}
-
-.c-background-overlay--force-dark {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 8;
-  background-color: black;
 }
 </style>

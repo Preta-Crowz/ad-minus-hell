@@ -12,11 +12,12 @@ export default {
     return {
       isDoomed: false,
       autobuyersOn: false,
+      ADbulk: false,
+      ADs: [],
+      maxed: false,
       showContinuum: false,
       disableContinuum: false,
-      allAutobuyersDisabled: false,
-      antimatterAutobuyersBuyMax: false,
-      isFlipped: false
+      allAutobuyersDisabled: false
     };
   },
   watch: {
@@ -28,10 +29,6 @@ export default {
         ImaginaryUpgrade(21).tryShowWarningModal();
         return;
       }
-      if (DualityUpgrade(21).isLockingMechanics && !newValue) {
-        DualityUpgrade(21).tryShowWarningModal();
-        return;
-      }
       Laitela.setContinuum(!newValue);
     }
   },
@@ -39,25 +36,44 @@ export default {
     update() {
       this.isDoomed = Pelle.isDoomed;
       this.autobuyersOn = player.auto.autobuyersOn;
+      this.ADbulk = player.auto.antimatterDims.all.filter(auto => auto.mode == 1).length > 0;
+      this.ADs = Autobuyer.antimatterDimension.zeroIndexed;
       this.showContinuum = Laitela.isUnlocked;
       this.disableContinuum = player.auto.disableContinuum;
       this.allAutobuyersDisabled = Autobuyers.unlocked.every(autobuyer => !autobuyer.isActive);
-      this.antimatterAutobuyersBuyMax = Autobuyer.antimatterDimension.zeroIndexed.every(
-        autobuyer => autobuyer.mode === AUTOBUYER_MODE.BUY_10
-      );
-      this.isFlipped = player.universes.current === 2;
+      
+      this.maxed = true;
+      let m = 0;
+
+      this.ADs.forEach(ad => {
+        if(m === 0 && Autobuyer.tickspeed.interval <= 100) m++;
+        if(ad.bulk >= 512 && ad.interval <= 100) m++;
+        if(m == 9) this.maxed = false;
+      })
+    },
+    bulk() {
+      if(this.ADbulk) {
+       player.auto.antimatterDims.all.every(x => x.mode = 10)
+      }
+      else{
+        player.auto.antimatterDims.all.every(x => x.mode = 1)
+      }
+    },
+    upmax() {
+      for (const adb of this.ADs) {
+        if(adb.isUnlocked && adb.canBeUpgraded) {
+          if(adb.interval > 100) adb.upgradeInterval();
+          if(adb.interval <= 100 && adb.bulk < 512) adb.upgradeBulk();
+        }
+      }
+      if(Autobuyer.tickspeed.canBeBought && Autobuyer.tickspeed.interval > 100) Autobuyer.tickspeed.upgradeInterval();
     },
     toggleAllAutobuyers() {
       for (const autobuyer of Autobuyers.unlocked) {
         autobuyer.isActive = this.allAutobuyersDisabled;
       }
-    },
-    toggleAntimatterSingles() {
-      for (const autobuyer of Autobuyer.antimatterDimension.zeroIndexed) {
-        autobuyer.mode = this.antimatterAutobuyersBuyMax ? AUTOBUYER_MODE.BUY_SINGLE : AUTOBUYER_MODE.BUY_10;
-      }
     }
-  },
+  }
 };
 </script>
 
@@ -75,13 +91,14 @@ export default {
     >
       {{ allAutobuyersDisabled ? "Enable" : "Disable" }} all autobuyers
     </PrimaryButton>
-    <PrimaryButton
+    
+      <PrimaryButton
       class="o-primary-btn--subtab-option"
-      @click="toggleAntimatterSingles()"
-    >
-      Set {{ isFlipped ? "MD" : "AD" }} autobuyers to buy {{ antimatterAutobuyersBuyMax ? "singles" : "max" }}
+      @click="bulk()">
+        Switch ADs to buy {{ ADbulk ? "max" : "single" }}
     </PrimaryButton>
-    <span v-if="false">
+    
+    <span v-if="isDoomed">
       <PrimaryButton
         v-if="showContinuum"
         class="o-primary-btn--subtab-option"
@@ -97,6 +114,14 @@ export default {
         off="Disable Continuum"
         class="o-primary-btn--subtab-option"
       />
+    </span>
+
+    <span v-if="maxed">
+        <PrimaryButton
+          class="o-primary-btn--subtab-option"
+          @click="upmax()">
+          Upgrade all AD autobuyers
+        </PrimaryButton>
     </span>
   </div>
 </template>

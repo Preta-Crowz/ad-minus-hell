@@ -1,4 +1,5 @@
 import { DimensionState } from "./dimension";
+import { DC } from "../constants";
 
 export function divineDimensionCommonMultiplier() {
   let mult = DC.D1;
@@ -30,7 +31,7 @@ class DivineDimensionState extends DimensionState {
   }
 
   get cost() {
-    return this.costScale.calculateCostDecimal(Decimal.floor(this.baseAmount));
+    return this.costScale.calculateCost(Decimal.floor(this.baseAmount));
   }
 
   get baseAmount() {
@@ -135,7 +136,7 @@ class DivineDimensionState extends DimensionState {
     const dimension = DivineDimension(this.tier);
     if (!this.isAvailableForPurchase) return false;
 
-    const maxBought = dimension.costScale.getMaxBoughtDecimal(
+    const maxBought = dimension.costScale.getMaxBought(
       Decimal.floor(dimension.baseAmount), Currency.divineMatter.value, 1
     );
     if (maxBought === null) {
@@ -204,7 +205,7 @@ export const DivineDimensions = {
     if (!player.celestials.pelle.divinity.isProducingEnergy || DivinityUpgrade.divineL1U9.isBought ||
       DivinityUpgrade.divineL2U10.isBought) {
       for (let tier = 8; tier > 1; tier--) {
-        DivineDimension(tier).produceDimensions(DivineDimension(tier - 1), realDiff / 10);
+        DivineDimension(tier).produceDimensions(DivineDimension(tier - 1), realDiff.div(10));
       }
       if (!player.celestials.pelle.divinity.isProducingEnergy || DivinityUpgrade.divineL2U10.isBought) {
         DivineDimension(1).produceCurrency(Currency.divineMatter, realDiff);
@@ -241,7 +242,7 @@ export const DivineDimensions = {
     if (player.disablePostReality) return 1;
     let logD = Decimal.log10(Decimal.log10(DivinityUpgrade.divineL2U10.isBought
       ? player.records.totalDivineMatter : Currency.divineMatter.value.max(10)));
-    return logD.div(10).add(1).toNumber();
+    return logD.div(10).add(1);
   },
 
   get conversionFormula3() {
@@ -249,6 +250,14 @@ export const DivineDimensions = {
     let logD = Decimal.log10(Decimal.log10(DivinityUpgrade.divineL2U10.isBought
       ? player.records.totalDivineMatter : Currency.divineMatter.value.max(10)));
     return DC.D1.sub(Decimal.pow(0.8, logD)).toNumber();
+  },
+
+  // Equals 1 - conversionFormula3, but stays nonzero once conversionFormula3 rounds to exactly 1
+  get conversionFormula3Remainder() {
+    if (player.disablePostReality) return DC.D1;
+    const logD = Decimal.log10(Decimal.log10(DivinityUpgrade.divineL2U10.isBought
+      ? player.records.totalDivineMatter : Currency.divineMatter.value.max(10)));
+    return Decimal.pow(0.8, logD);
   }
 };
 

@@ -1,3 +1,4 @@
+import { DC } from "./constants";
 import { deepmergeAll } from "@/utility/deepmerge";
 import { GameMechanicState } from "./game-mechanics";
 
@@ -8,7 +9,7 @@ export function startEternityChallenge() {
   InfinityDimensions.fullReset();
   Replicanti.reset();
   resetChallengeStuff();
-  AntimatterDimensions.resetUpToNine();
+  AntimatterDimensions.reset();
   player.replicanti.galaxies = DC.D0;
   Currency.infinityPoints.reset();
   InfinityDimensions.resetAmount();
@@ -128,33 +129,24 @@ export class EternityChallengeState extends GameMechanicState {
   }
 
   get initialGoal() {
-    if (Slabdrill.isCursed && this.config.slabGoal) {
-      return this.config.slabGoal;
-    }
-    if (Alpha.isRunning && this.config.alphaGoal) {
-      return this.config.alphaGoal;
-    }
-    if (Pelle.isDoomed && this.config.pelleGoal && this.config.hasPelleGoal()) {
+    if (Pelle.isDoomed && this.config.pelleGoal && this.config.hasPelleGoal?.()) {
       return this.config.pelleGoal;
     }
+    const hellGoal = Hell.ecGoals[this.id];
+    if (hellGoal) return DC.D10.pow(hellGoal[0]);
     return this.config.goal;
   }
 
   get goalIncrease() {
-    if (Slabdrill.isCursed && this.config.slabGoalIncrease) {
-      return this.config.slabGoalIncrease;
-    }
-    if (Alpha.isRunning && this.config.alphaGoalIncrease) {
-      return this.config.alphaGoalIncrease;
-    }
-    if (Pelle.isDoomed && this.config.pelleGoalIncrease && this.config.hasPelleGoal()) {
+    if (Pelle.isDoomed && this.config.pelleGoalIncrease && this.config.hasPelleGoal?.()) {
       return this.config.pelleGoalIncrease;
     }
+    const hellGoal = Hell.ecGoals[this.id];
+    if (hellGoal) return DC.D10.pow(hellGoal[1]);
     return this.config.goalIncrease;
   }
 
   get currentGoal() {
-    if (this.id === 11 && Alpha.isRunning && Alpha.currentStage >= 22) return this.goalAtCompletions(4);
     return this.goalAtCompletions(this.completions);
   }
 
@@ -174,7 +166,7 @@ export class EternityChallengeState extends GameMechanicState {
 
   completionsAtIP(ip) {
     if (ip.lt(this.initialGoal)) return 0;
-    const completions = (ip.dividedBy(this.initialGoal)).log10().div(this.goalIncrease.log10()).add(1);
+    const completions = (ip.dividedBy(this.initialGoal)).max(1).log10().div(this.goalIncrease.max(1).log10()).add(1);
     return Decimal.min(Decimal.floor(completions), this.maxCompletions).toNumber();
   }
 
@@ -192,6 +184,7 @@ export class EternityChallengeState extends GameMechanicState {
   }
 
   requestStart() {
+    if (Hell.isTrapped) return;
     if (!Tab.challenges.eternity.isUnlocked || this.isRunning) return;
     if (GameEnd.creditsEverClosed) return;
     if (!player.options.confirmations.challenges) {
@@ -202,9 +195,10 @@ export class EternityChallengeState extends GameMechanicState {
   }
 
   start(auto) {
+    if (Hell.isTrapped) return false;
     if (EternityChallenge.isRunning) return false;
     if (!this.isUnlocked) return false;
-    const maxInversion = player.requirementChecks.reality.slowestBH <= 1e-300;
+    const maxInversion = player.requirementChecks.reality.slowestBH.gte(1e300);
     if (this.id === 12 && ImaginaryUpgrade(24).isLockingMechanics && Ra.isRunning && maxInversion) {
       if (!auto) ImaginaryUpgrade(24).tryShowWarningModal("enter Eternity Challenge 12");
       return false;
@@ -221,8 +215,8 @@ export class EternityChallengeState extends GameMechanicState {
     if (Player.canEternity) eternity(false, auto, { enteringEC: true });
     player.challenge.eternity.current = this.id;
     if (this.id === 12) {
-      if (enteringGamespeed.lt(0.001)) SecretAchievement(42).unlock();
-      player.requirementChecks.reality.slowestBH = 1;
+      if (enteringGamespeed.lt(1e-3)) SecretAchievement(42).unlock();
+      player.requirementChecks.reality.slowestBH = DC.D1;
     }
     if (Enslaved.isRunning) {
       if (this.id === 6 && this.completions === 5) EnslavedProgress.ec6.giveProgress();
@@ -286,6 +280,8 @@ export class EternityChallengeState extends GameMechanicState {
   }
 
   tryFail(auto = false) {
+    // Hell's trapped Eternity Challenge can never be failed out of
+    if (Hell.isInside && this.id === 12) return false;
     if (this.isRunning && !this.isWithinRestriction) {
       this.fail(auto);
       return true;
@@ -322,32 +318,33 @@ export const EternityChallenges = {
   get completions() {
     return EternityChallenges.all
       .map(ec => ec.completions)
-      .sum();
+      .nSum();
   },
 
   get maxCompletions() {
     return EternityChallenges.all
       .map(ec => ec.maxCompletions)
-      .sum();
+      .nSum();
   },
 
   get remainingCompletions() {
     return EternityChallenges.all
       .map(ec => ec.remainingCompletions)
-      .sum();
+      .nSum();
   },
 
   autoComplete: {
     tick() {
+      if(Glitch.isRunning) return;
       const shouldPreventEC7 = TimeDimension(1).amount.gt(0);
       const hasUpgradeLock = RealityUpgrade(12).isLockingMechanics ||
         (ImaginaryUpgrade(15).isLockingMechanics && shouldPreventEC7 &&
           !Array.range(1, 6).some(ec => !EternityChallenge(ec).isFullyCompleted));
-      if (!player.reality.autoEC || (Pelle.isDisabled("autoec") && (!PellePerkUpgrade.perkPEC1.canBeApplied || player.disablePostReality)) || hasUpgradeLock) {
-        player.reality.lastAutoEC = Math.clampMax(player.reality.lastAutoEC, this.interval);
+      if (!player.reality.autoEC || Pelle.isDisabled("autoec") || hasUpgradeLock) {
+        player.reality.lastAutoEC = Decimal.clampMax(player.reality.lastAutoEC, this.interval);
         return;
       }
-      if ((Ra.unlocks.instantECAndRealityUpgradeAutobuyers.canBeApplied || EndgameMilestone.startRa.isReached) && !player.disablePostReality) {
+      if (Ra.unlocks.instantECAndRealityUpgradeAutobuyers.canBeApplied) {
         let next = this.nextChallenge;
         while (next !== undefined) {
           while (!next.isFullyCompleted) {
@@ -360,12 +357,12 @@ export const EternityChallenges = {
       }
       const interval = this.interval;
       let next = this.nextChallenge;
-      while (player.reality.lastAutoEC - interval > 0 && next !== undefined) {
-        player.reality.lastAutoEC -= interval;
+      while (player.reality.lastAutoEC.sub(interval).gt(0) && next !== undefined) {
+        player.reality.lastAutoEC = player.reality.lastAutoEC.sub(interval);
         next.addCompletion(true);
         next = this.nextChallenge;
       }
-      player.reality.lastAutoEC %= interval;
+      player.reality.lastAutoEC = player.reality.lastAutoEC.mod(interval);
     },
 
     get nextChallenge() {
@@ -373,21 +370,15 @@ export const EternityChallenges = {
     },
 
     get interval() {
-      if ((!Perk.autocompleteEC1.canBeApplied && !EndgameMastery(22).isBought) || player.disablePostReality) return Infinity;
-      let startingmin = 1e300;
-      if (EndgameMastery(22).isBought) startingmin = 60;
-      let minutes = new Decimal(Effects.min(
-        startingmin,
+      if (!Perk.autocompleteEC1.canBeApplied) return DC.BEMAX;
+      let minutes = Effects.min(
+        Number.MAX_VALUE,
         Perk.autocompleteEC1,
         Perk.autocompleteEC2,
         Perk.autocompleteEC3
-      ));
-      minutes = minutes.div(EndgameMastery(22).effectOrDefault(1));
+      );
       minutes = minutes.div(VUnlocks.fastAutoEC.effectOrDefault(1));
-      if (Pelle.isDoomed && PelleCelestialUpgrade.vMilestones2.canBeApplied && VUnlocks.fastAutoEC.effectValue.gt(1)) {
-        minutes = minutes.div(VUnlocks.fastAutoEC.effectValue);
-      }
-      return TimeSpan.fromMinutes(minutes).totalMilliseconds.toNumber();
+      return TimeSpan.fromMinutes(minutes).totalMilliseconds;
     }
   }
 };

@@ -38,7 +38,7 @@ export class CelestialDimensionAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get canTick() {
-    return this.dimension.isAvailableForPurchase && super.canTick;
+    return super.canTick && this.dimension.isAvailableForPurchase;
   }
 
   tick() {

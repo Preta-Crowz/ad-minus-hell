@@ -12,7 +12,7 @@ const glyphEffectsOrder =
     "effarigforgotten", "effarigdimensions", "effarigantimatter",
     "cursedgalaxies", "cursedtickspeed", "curseddimensions", "cursedEP",
     "realityglyphlevel", "realitygalaxies", "realityrow1pow", "realityDTglyph",
-    "companiondescription", "companionEP"];
+    "companiondescription", "companionEP", "glitchChaosPow", "glitchADCelPow"];
 
 export default {
   name: "CurrentGlyphEffects",
@@ -26,24 +26,26 @@ export default {
       isColored: false,
       hasEffarig: false,
       hasReality: false,
+      hasGlitch: false,
+      maxSpecialGlyphs: 1,
       logTotalSacrifice: 0,
       pelleChaosEffect: {},
-      maxSpecialGlyphs: 1,
     };
   },
   computed: {
     isSoftcapActive() {
-      return this.effects.length && !this.effects.every(e => e.value.capped === false) || this.pelleChaosEffect.hasCappedEffect;
+      return this.effects.length && !this.effects.every(e => e.value.capped === false);
     },
     uniqueGlyphText() {
       if (!this.hasEffarig && !this.hasReality) return "";
       const uniqueGlyphs = [];
       if (this.hasEffarig) uniqueGlyphs.push(
-        `<span style="color: ${GlyphAppearanceHandler.getBorderColor("effarig")};">Effarig</span>`);
+        `<span style="color: ${GlyphAppearanceHandler.getBorderColor("effarig")};">${formatInt(this.maxSpecialGlyphs)} Effarig Glyph${this.maxSpecialGlyphs === 1 ? "" : "s"}</span>`);
       if (this.hasReality) uniqueGlyphs.push(
-        `<span style="animation: a-reality-glyph-description-cycle 10s infinite;">Reality</span>`);
-      return `You cannot have more than ${formatInt(this.maxSpecialGlyphs)} ${uniqueGlyphs.join(" or ")}
-        ${this.maxSpecialGlyphs !== 1 ? "Glyphs" : "Glyph"} equipped${uniqueGlyphs.length > 1 ? " each." : "."}`;
+        `<span style="animation: a-reality-glyph-description-cycle 2s infinite;">${formatInt(this.maxSpecialGlyphs)} Reality Glyph${this.maxSpecialGlyphs === 1 ? "" : "s"}</span>`);
+      if (this.hasGlitch) uniqueGlyphs.push(
+        `<span style="color: ${GlyphAppearanceHandler.getBorderColor("glitch")};">one Glitch Glyph</span>`);
+      return `You cannot have more than ${makeEnumerationOR(uniqueGlyphs)} equipped.`;
     },
     noEffects() {
       return !this.effects.length;
@@ -52,17 +54,9 @@ export default {
       return Glyphs.activeList;
     },
     pelleGlyphText() {
-      return Pelle.isDoomed
-        ? (!PelleDestructionUpgrade.glyphRarity.canBeApplied
-           ? `Glyph Rarity is set to ${formatPercents(strengthToRarity(Pelle.glyphStrength))} and `
-           : "")
-          + `Level is capped at ${formatInt(Pelle.glyphMaxLevel)}`
-        : "";
-    },
-    slabbyGlyphText() {
-      return Slabdrill.isCursed
-        ? `Glyph Rarity is set to ${formatPercents(Math.clamp((Slabdrill.currentStage - 4) * 20, 0, 100) / 100)} and
-          Level is capped at ${formatInt(Decimal.floor(Decimal.pow(Slabdrill.power, 0.2)))}`
+      return Pelle.isDoomed && !Hell.isInside
+        ? `Glyph Rarity is set to ${formatPercents(strengthToRarity(Pelle.glyphStrength))}
+          and Level is capped at ${formatInt(Pelle.glyphMaxLevel)}`
         : "";
     },
     showChaosText() {
@@ -71,9 +65,6 @@ export default {
     chaosEffect() {
       return this.pelleChaosEffect.description;
     },
-    valueClass(bool) {
-      return bool ? "c-current-glyph-effects__effect--capped" : "";
-    }
   },
   watch: {
     logTotalSacrifice() {
@@ -89,11 +80,12 @@ export default {
       this.isColored = player.options.glyphTextColors;
       this.hasEffarig = Glyphs.active.some(g => g && g.type === "effarig");
       this.hasReality = Glyphs.active.some(g => g && g.type === "reality");
+      this.hasGlitch = Glyphs.active.some(g => g && g.type === "glitch");
+      this.maxSpecialGlyphs = Glyphs.maxSpecialGlyphs;
 
       this.logTotalSacrifice = GameCache.logTotalGlyphSacrifice.value;
 
       this.pelleChaosEffect = Pelle.specialGlyphEffect;
-      this.maxSpecialGlyphs = Slabdrill.isCursed ? 0 : ((Achievement(196).isUnlocked && !player.disablePostReality) ? 2 : 1);
     },
     glyphsChanged() {
       this.effects = getActiveGlyphEffects();
@@ -107,9 +99,6 @@ export default {
   <div class="c-current-glyph-effects l-current-glyph-effects">
     <div class="pelle-current-glyph-effects">
       {{ pelleGlyphText }}
-    </div>
-    <div class="slabdrill-current-glyph-effects">
-      {{ slabbyGlyphText }}
     </div>
     <div class="c-current-glyph-effects__header">
       Currently active Glyph effects:
@@ -138,14 +127,7 @@ export default {
       v-if="showChaosText"
       class="pelle-current-glyph-effects"
     >
-      <div
-        v-for="effect in chaosEffect"
-        :key="effect[0]"
-      >
-        <span :class="{'c-current-glyph-effects__effect--capped' : effect[1]}">
-          {{ effect[0] }}
-        </span>
-      </div>
+      {{ chaosEffect }}
     </div>
   </div>
 </template>

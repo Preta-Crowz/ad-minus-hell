@@ -12,8 +12,6 @@ export default {
       visible: [],
       timeStudyUnlocked: false,
       glyphSacUnlocked: false,
-      isElectron: false,
-      isFlipped: false
     };
   },
   computed: {
@@ -59,14 +57,6 @@ export default {
       const progress = PlayerProgress.current;
       this.timeStudyUnlocked = progress.isEternityUnlocked;
       this.glyphSacUnlocked = RealityUpgrade(19).isBought;
-      this.isFlipped = player.universes.current === 2;
-
-      // ElectronRuntime is a global which only exists on Steam (throws a ReferenceError on web)
-      try {
-        this.isElectron = ElectronRuntime.isActive;
-      } catch {
-        this.isElectron = false;
-      }
     },
     format(x) {
       switch (x) {
@@ -133,8 +123,8 @@ export default {
           Alt is a modifier key that, when pressed in conjunction with any key that has a corresponding autobuyer,
           will toggle said autobuyer.
           <br>
-          When pressing both Alt and Shift, you can toggle buying singles or buying max for the
-          {{ isFlipped ? "Matter" : "Antimatter" }} Dimension and Tickspeed Autobuyers instead.
+          When pressing both Alt and Shift, you can toggle buying singles or buying max for the Antimatter Dimension
+          and Tickspeed Autobuyers instead.
         </span>
         <br>
         <div class="l-modal-hotkeys-row">
@@ -157,25 +147,6 @@ export default {
           a numpad key with <kbd>SHIFT</kbd> will not buy a single Dimension. It may instead, depending on your device,
           cause the page to scroll or change game tabs. <kbd>ALT</kbd> will still work as expected.
         </span>
-        <template v-if="isElectron">
-          <br>
-          <div class="l-modal-hotkeys-row">
-            <span class="c-modal-hotkeys-row__name l-modal-hotkeys-row__name">Window Zoom</span>
-            <kbd>-</kbd><kbd>0</kbd><kbd>+</kbd>
-          </div>
-          <span class="c-modal-hotkeys__shift-description">
-            To adjust zoom level, hold <kbd>ctrl</kbd> and press either <kbd>-</kbd> or <kbd>+</kbd> to decrease or
-            increase zoom. <kbd>ctrl</kbd><kbd>0</kbd> will reset zoom to 100%.
-          </span>
-          <br>
-          <div class="l-modal-hotkeys-row">
-            <span class="c-modal-hotkeys-row__name l-modal-hotkeys-row__name">Fullscreen</span>
-            <kbd>F10</kbd>
-          </div>
-          <span class="c-modal-hotkeys__shift-description">
-            To enter or exit fullscreen, press <kbd>F10</kbd>.
-          </span>
-        </template>
       </div>
     </span>
   </ModalWrapper>

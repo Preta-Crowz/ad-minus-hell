@@ -9,7 +9,7 @@ export default {
   computed: {
     upgrades: () => RealityUpgrades.all,
     costScalingTooltip: () => `Prices start increasing faster above ${format(1e30)} RM and then even faster
-      above ${format(DC.NUMMAX, 1)} RM`,
+      above ${format(Decimal.NUMBER_MAX_VALUE, 1)} RM`,
     possibleTooltip: () => `Checkered upgrades are impossible to unlock this Reality. Striped upgrades are
       still possible.`,
     lockTooltip: () => `This will only function if you have not already failed the condition or
@@ -28,7 +28,7 @@ export default {
     <div class="c-reality-upgrade-infotext">
       Mouseover <i class="fas fa-question-circle" /> icons for additional information.
       <br>
-      The first row of upgrades can be purchased endlessly for increasing costs
+      The first row of upgrades can be purchased endlessly for increasing costs (shift click to bulk buy upto 25)
       <span :ach-tooltip="costScalingTooltip">
         <i class="fas fa-question-circle" />
       </span>

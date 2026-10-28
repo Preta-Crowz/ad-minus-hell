@@ -12,134 +12,127 @@ export default {
   },
   data() {
     return {
-      isDestroyed: false,
-      isDivine: false,
-      hasRealityButton: false,
-      amount: new Decimal(0),
-      antimatterPerSec: new Decimal(0),
-      antimatterPerSecBeforeAlter: new Decimal(0),
-      antimatterPerSecAfterAlter: new Decimal(0),
-      hasSeenAlterations: false,
-      inCursedCore: false,
-      isFlipped: false
+      inCursedCore: false
     };
-  },
-  computed: {
-    alterText() {
-      if (!this.hasSeenAlterations) return "before";
-      return `before any ${this.isFlipped ? "matter" : "antimatter"} production alterations and`;
-    }
   },
   methods: {
     update() {
-      this.isDestroyed = Alpha.isDestroyedForDisplay;
-      this.isDivine = DivinityMilestone.divineDimensions.isReached;
-      this.hasRealityButton = PlayerProgress.realityUnlocked() || TimeStudy.reality.isBought;
-      this.amount = Laitela.continuumActive ? AntimatterDimension(1).continuumAmount : AntimatterDimension(1).amount;
-      this.antimatterPerSec.copyFrom(Currency.antimatter.productionPerSecond);
-      this.antimatterPerSecBeforeAlter.copyFrom(
-        CMilestones.antimatterEqualizer(this.amount.times(AntimatterDimension(1).multiplier), Tickspeed.perSecond).times(
-          NormalChallenge(2).isRunning ? player.chall2Pow : 1).times(NormalChallenge(3).isRunning ? player.chall3Pow : 1)
-      );
-      this.antimatterPerSecAfterAlter.copyFrom(
-        this.locallyDilate(CMilestones.antimatterEqualizer(this.amount.times(AntimatterDimension(1).multiplier), Tickspeed.perSecond)
-          .times(NormalChallenge(2).isRunning ? player.chall2Pow : 1).times(NormalChallenge(3).isRunning ? player.chall3Pow : 1).pow(
-          Accelerators.potency.effectValue1).powEffectOf(ResurgenceUpgrade.synergy5))
-      );
-      this.hasSeenAlterations = EffarigUnlock.reality.isUnlocked || PlayerProgress.endgameUnlocked();
-      this.inCursedCore = player.celestials.slabdrill.core.isActive;
-      this.isFlipped = player.universes.current === 2;
-    },
-    locallyDilate(multiplier) {
-      const log10 = multiplier.log10();
-      const eg = Currency.endgames.value;
-      const endgameMult = Pelle.isDoomed ? 1 + (Math.log10(Math.min(eg, 1e6) * Math.max(Math.log2(eg + 1) - Math.log2(5e5), 1) + 1) / 80) : 1 + (Math.log10(Math.min(eg, 1e6) * Math.max(Math.log2(eg + 1) - Math.log2(5e5), 1) + 1) / 200);
-      const endgameMultValue = (EndgameMilestone.endgameAntimatter.isReached && !player.disablePostReality) ? endgameMult : 1;
-      const pelleOnly = Pelle.isDoomed ? DivineDimensions.conversionFormula2 * Accelerators.cosmic.effectValue2 * EndgameMastery(222).effectOrDefault(1) * SingularityMilestone.singAMDoomDilation.effectOrDefault(1) * EndgameMastery(301).effectOrDefault(DC.D1).toNumber() : 1;
-      return Decimal.pow10(Decimal.pow(log10, getAdjustedGlyphEffect("effarigantimatter") * Effects.product(EndgameMastery(101), EndgameUpgrade(15), SingularityMilestone.antimatterExponentPower, Achievement(233)) * endgameMultValue * EtherealStars.black.reward.toNumber() * pelleOnly));
-    },
-    classObject() {
-      return {
-        "c-prestige-info-blocks": true,
-        "c-prestige-info-blocks--tall": this.isDestroyed && !this.isDivine && !this.inCursedCore,
-        "c-prestige-info-blocks--taller": this.isDivine && !this.inCursedCore
-      };
+      this.inCursedCore = Slabdrill.coreActive;
     }
   }
 };
 </script>
 
 <template>
-  <div>
-    <div :class="classObject()">
-      <HeaderEternityContainer v-if="!inCursedCore" class="l-game-header__eternity" />
-      <HeaderCenterContainer class="l-game-header__center" />
-      <HeaderInfinityContainer v-if="!inCursedCore" class="l-game-header__infinity" />
-    </div>
-    <div
-      v-if="hasRealityButton && !inCursedCore"
-      class="c-production-text"
-    >
-      <br>
-      You are getting {{ format(antimatterPerSec, 2) }} {{ isFlipped ? "matter" : "antimatter" }} per second.
-      <br>
-      You are getting {{ format(antimatterPerSecBeforeAlter, 2) }} {{ isFlipped ? "matter" : "antimatter" }}
-      per second {{ alterText }} Game Speed effects.
-    </div>
-    <div
-      v-if="hasRealityButton && hasSeenAlterations && !inCursedCore"
-      class="c-prevent-overflow"
-    >
-      You are getting {{ format(antimatterPerSecAfterAlter, 2) }} {{ isFlipped ? "matter" : "antimatter" }} per second
-      after positive {{ isFlipped ? "matter" : "antimatter" }} production alterations, and before negative
-      {{ isFlipped ? "matter" : "antimatter" }} production alterations, any positive {{ isFlipped ? "matter" : "antimatter" }}
-      production alterations that apply after certain negative ones, and Game Speed effects.
-    </div>
+  <div
+    class="c-prestige-info-blocks"
+    :class="{ 'c-prestige-info-blocks--cursed': inCursedCore }"
+  >
+    <HeaderEternityContainer
+      v-if="!inCursedCore"
+      class="l-game-header__eternity"
+    />
+    <HeaderCenterContainer class="l-game-header__center" />
+    <HeaderInfinityContainer
+      v-if="!inCursedCore"
+      class="l-game-header__infinity"
+    />
   </div>
 </template>
 
 <style scoped>
-.c-prevent-overflow {
-  margin-left: 5rem;
-  margin-right: 5rem;
-  color: var(--color-text);
-}
-
-.c-production-text {
-  color: var(--color-text);
-}
-
-.c-prestige-info-blocks {
+.c-prestige-info-blocks.c-prestige-info-blocks--cursed {
   display: flex;
-  flex-direction: row;
-  height: 14rem;
+  justify-content: center;
+  min-height: 0;
+  background-color: transparent;
+  text-align: center;
+}
+.c-prestige-info-blocks--cursed .l-game-header__center {
+  width: 100%;
+  text-align: center;
+}
+.c-prestige-info-blocks {
+  background-color: rgba(0, 0, 0, 0.75);
+  display: grid;
+  grid-template-columns: minmax(22rem, 1fr) minmax(50rem, 2fr) minmax(22rem, 1fr);
+  align-items: start;
+  gap: 1rem;
+  min-height: 21rem;
+  height: auto;
   width: 100%;
   color: var(--color-text);
-}
-
-.c-prestige-info-blocks--tall {
-  height: 24rem;
-}
-
-.c-prestige-info-blocks--taller {
-  height: 30rem;
+  position: sticky;
+  z-index: 5;
+  top: 0px
 }
 
 .l-game-header__eternity {
-  position: absolute;
-  left: calc(25% - 22rem);
-  width: 22rem;
+  position: static;
+  width: auto;
+  min-width: 0;
 }
 
 .l-game-header__center {
-  position: absolute;
-  right: calc(50% - 25rem);
-  width: 50rem;
+  position: static;
+  width: auto;
+  height: auto;
+  min-width: 0;
 }
 
 .l-game-header__infinity {
-  position: absolute;
-  right: calc(25% - 22rem);
-  width: 22rem;
+  position: static;
+  width: auto;
+  min-width: 0;
+}
+
+@media screen and (max-width: 100rem) {
+  .c-prestige-info-blocks {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .l-game-header__center {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .l-game-header__eternity {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .l-game-header__infinity {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+@media screen and (max-width: 55rem) {
+  .c-prestige-info-blocks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .l-game-header__center,
+  .l-game-header__eternity,
+  .l-game-header__infinity {
+    grid-column: 1;
+  }
+
+  .l-game-header__center {
+    grid-row: 1;
+  }
+
+  .l-game-header__eternity {
+    grid-row: 2;
+  }
+
+  .l-game-header__infinity {
+    grid-row: 3;
+  }
+
+  .l-game-header__center :deep(.c-prestige-row) {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 </style>

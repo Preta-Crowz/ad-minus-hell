@@ -1,3 +1,4 @@
+import { DC } from "../../constants";
 import wordShift from "../../word-shift";
 
 export const pelleStrikes = {
@@ -44,5 +45,12 @@ export const pelleStrikes = {
       ${wordShift.wordCycle(PelleRifts.paradox.name)}`,
     rift: () => PelleRifts.paradox,
     isDestroyed: () => PelleStrikeUpgrade.pelleStrike5.canBeApplied
+  },
+  glitch: {
+    id: 6,
+    requirementDescription: "destroy pelle",
+    penaltyDescription: () => `nothing bad`,
+    rewardDescription: () => `Unlock ${wordShift.wordCycle(PelleRifts.glitch.name)}`,
+    rift: () => PelleRifts.glitch
   }
 };

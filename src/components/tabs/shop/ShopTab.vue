@@ -3,11 +3,6 @@ import "vue-loading-overlay/dist/vue-loading.css";
 
 import Loading from "vue-loading-overlay";
 
-import Payments from "@/core/payments";
-
-import { STEAM } from "@/env";
-import { SteamRuntime } from "@/steam";
-
 import PrimaryButton from "@/components/PrimaryButton";
 import ShopButton from "./ShopButton";
 
@@ -20,66 +15,35 @@ export default {
   },
   data() {
     return {
-      availableSTD: 0,
-      spentSTD: 0,
+      availableSTD: new Decimal(0),
       isLoading: false,
       IAPsEnabled: false,
       creditsClosed: false,
-      loggedIn: false,
-      username: "",
-      canRespec: false,
       respecTimeStr: "",
     };
   },
   computed: {
-    STEAM() {
-      return STEAM;
-    },
     purchases() {
       return ShopPurchase.all;
     },
     enableText() {
       return `In-app Purchases: ${this.IAPsEnabled ? "Enabled" : "Disabled"}`;
     },
-    respecText() {
-      if (!this.loggedIn) return "Not logged in!";
-      if (!this.canRespec) return "No respec available! (Purchase STDs or wait 3 days since your last one)";
-      return null;
-    },
-    hiddenName() {
-      return player.options.hideGoogleName;
-    }
   },
   methods: {
     update() {
-      this.availableSTD = ShopPurchaseData.availableSTD;
-      this.spentSTD = ShopPurchaseData.spentSTD;
+      this.availableSTD = Decimal.floor(player.IAP.STDcoins);
       this.isLoading = Boolean(player.IAP.checkoutSession.id);
       this.IAPsEnabled = player.IAP.enabled;
       this.creditsClosed = GameEnd.creditsEverClosed;
-      this.loggedIn = Cloud.loggedIn;
-      this.username = Cloud.user?.displayName;
-      this.canRespec = ShopPurchaseData.canRespec;
-      if (!ShopPurchaseData.respecAvailable && !this.canRespec) {
-        this.respecTimeStr = ShopPurchaseData.timeUntilRespec.toStringShort();
-      }
     },
     showStore() {
-      if (STEAM && !SteamRuntime.isActive) return;
       if (this.creditsClosed) return;
       SecretAchievement(33).unlock();
-      if (this.loggedIn) Modal.shop.show();
-      else Modal.message.show("You cannot purchase STD coins without logging in first.");
-    },
-    onCancel() {
-      Payments.cancelPurchase(false);
-    },
-    respec() {
-      if (this.creditsClosed || !this.loggedIn || !this.canRespec) return;
-      ShopPurchaseData.respecRequest();
+      Modal.message.show("You cannot purchase STD coins, they are gained over time");
     },
     toggleEnable() {
-      if (ShopPurchaseData.availableSTD < 0) return;
+      if (ShopPurchaseData.availableSTD.lt(0)) return;
       player.IAP.enabled = !player.IAP.enabled;
       if (ShopPurchaseData.isIAPEnabled) Speedrun.setSTDUse(true);
     },
@@ -87,7 +51,7 @@ export default {
       return {
         "o-primary-btn--subtab-option": true,
         "o-pelle-disabled-pointer": this.creditsClosed,
-        "o-primary-btn--disabled": !this.loggedIn || !this.canRespec
+        "o-primary-btn--disabled": true
       };
     }
   },
@@ -97,12 +61,8 @@ export default {
 <template>
   <div class="tab shop">
     <div class="c-shop-disclaimer">
-      Disclaimer: These are not required to progress in the game, they are just for supporting the developer.
-      The game is balanced without the use of any microtransactions.
-    </div>
-    <div>
-      Note: Shop purchases made on the Android, Steam, and Web versions are
-      separate and non-transferable due to legal reasons.
+      Disclaimer: These are not required to progress in the game.
+      The game is even less balanced with these.
     </div>
     <div class="c-subtab-option-container">
       <PrimaryButton
@@ -113,57 +73,15 @@ export default {
       >
         {{ enableText }}
       </PrimaryButton>
-      <PrimaryButton
-        v-if="!STEAM"
-        v-tooltip="respecText"
-        :class="respecClass()"
-        @click="respec()"
-      >
-        Respec Shop
-      </PrimaryButton>
-    </div>
-    <div v-if="loggedIn && !canRespec && !STEAM">
-      Time until respec available: {{ respecTimeStr }}
-    </div>
-    <div
-      v-if="loggedIn"
-      class="c-login-info"
-    >
-      <template v-if="STEAM">
-        You are logged in as {{ username }}.
-      </template>
-      <template v-else>
-        <span v-if="hiddenName">You are logged in. <i>(name hidden)</i></span>
-        <span v-else>You are logged in as {{ username }}.</span>
-        <button
-          class="o-shop-button-button"
-          onclick="GameOptions.logout()"
-        >
-          Disconnect Google Account
-        </button>
-      </template>
-    </div>
-    <div
-      v-else
-      class="c-login-info"
-    >
-      You must be logged in to purchase STD coins or use these upgrades.
-      <button
-        class="o-shop-button-button"
-        onclick="GameOptions.login()"
-      >
-        Login with Google
-      </button>
     </div>
     <div class="c-shop-header">
       <span>You have {{ availableSTD }}</span>
       <img
-        src="images/std_coin.png"
+        src="/images/std_coin.png"
         class="c-shop-header__img"
       >
       <button
         class="o-shop-button-button"
-        :class="{ 'o-shop-button-button--disabled': !loggedIn }"
         @click="showStore()"
       >
         Buy More
@@ -180,7 +98,6 @@ export default {
     <loading
       :active="isLoading"
       :can-cancel="true"
-      :on-cancel="onCancel"
       :is-full-page="true"
     />
   </div>

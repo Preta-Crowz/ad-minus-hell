@@ -31,15 +31,16 @@ export default {
 
 const AUTOMATOR_BLOCKS_COMPARISON_OPERATORS = ["<", ">", ">=", "<="];
 const AUTOMATOR_BLOCKS_COMPARISON_CURRENCIES = [
-  "AM", "IP", "EP", "RM", "RS", "INFINITIES", "BANKED INFINITIES", "ETERNITIES", "REALITIES", "REMNANTS",
-  "PENDING IP", "PENDING EP", "PENDING TP", "PENDING RM", "PENDING RS", "PENDING GLYPH LEVEL", "PENDING REMNANTS",
-  "DT", "TP", "RG", "REP", "TT", "TOTAL TT", "SPENT TT", "TOTAL COMPLETIONS", "PENDING COMPLETIONS",
+  "AM", "IP", "EP", "RM", "INFINITIES", "BANKED INFINITIES", "ETERNITIES", "REALITIES",
+  "PENDING IP", "PENDING EP", "PENDING TP", "PENDING RM", "PENDING GLYPH LEVEL",
+  "DT", "TP", "RG", "REP", "TT", "TOTAL TT", "TOTAL COMPLETIONS", "PENDING COMPLETIONS",
   "EC1 COMPLETIONS", "EC2 COMPLETIONS", "EC3 COMPLETIONS", "EC4 COMPLETIONS",
   "EC5 COMPLETIONS", "EC6 COMPLETIONS", "EC7 COMPLETIONS", "EC8 COMPLETIONS",
   "EC9 COMPLETIONS", "EC10 COMPLETIONS", "EC11 COMPLETIONS", "EC12 COMPLETIONS",
 ];
 
-const AUTOMATOR_BLOCKS_RESETS = ["INFINITY", "ETERNITY", "REALITY", "DOOM", "ARMAGEDDON", "ENDGAME"];
+const AUTOMATOR_BLOCKS_RESETS = ["INFINITY", "ETERNITY", "REALITY", "DOOM", "ENDGAME"];
+const AUTOMATOR_BLOCKS_AUTOBUYERS = ["INFINITY", "ETERNITY", "REALITY", "ENDGAME"];
 
 /**
  *  @property {String} cmd          Name of automator command
@@ -93,9 +94,6 @@ export const automatorBlocks = [
     canWait: true,
     isUnlocked: () => ExpansionPack.pellePack.isBought
   }, {
-    cmd: "ARMAGEDDON",
-    canWait: true
-  }, {
     cmd: "ENDGAME",
     canRespec: true,
     canWait: true,
@@ -119,7 +117,7 @@ export const automatorBlocks = [
     cmd: "AUTO",
     alias: "CHANGE AUTOBUYER SETTING",
     allowedPatterns: ["AB"],
-    A: AUTOMATOR_BLOCKS_RESETS,
+    A: AUTOMATOR_BLOCKS_AUTOBUYERS,
     B: ["ON", "OFF", "* AUTOBUYER SETTING"],
     targets: ["singleSelectionInput", "singleTextInput"],
   }, {

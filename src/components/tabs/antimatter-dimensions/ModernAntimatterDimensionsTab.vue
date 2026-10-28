@@ -23,11 +23,8 @@ export default {
       isSacrificeUnlocked: false,
       isSacrificeAffordable: false,
       buy10Mult: new Decimal(0),
-      buyOoMPow: new Decimal(0),
       currentSacrifice: new Decimal(0),
-      currentPower: new Decimal(0),
       sacrificeBoost: new Decimal(0),
-      sacrificePower: new Decimal(0),
       disabledCondition: "",
       isQuickResetAvailable: false,
       hasContinuum: false,
@@ -35,22 +32,16 @@ export default {
       multiplierText: "",
       isFullyAutomated: false,
       inCursedCore: false,
-      isFlipped: false
+      isFlipped: false,
     };
   },
   computed: {
     sacrificeTooltip() {
       if (this.isFullyAutomated) {
-        return "Sacrifice autobuyer is enabled and Achievement 118 is unlocked, so Sacrifice is now fully automated";
+        return "Sacrifice Autobuyer is enabled and Achievement 118 is unlocked and active";
       }
-      if (Ascensions.sacA.isUnlocked) return `Boosts 8th ${this.isFlipped ? "Matter" : "Antimatter"} Dimension by
-        +${formatPow(this.sacrificePower, 2, 3)}`;
       return `Boosts 8th ${this.isFlipped ? "Matter" : "Antimatter"} Dimension by ${formatX(this.sacrificeBoost, 2, 2)}`;
     },
-    sacText() {
-      if (Ascensions.sacA.isUnlocked) return `Dimensional Sacrifice (${formatPow(this.sacrificePower, 2, 3)})`;
-      return `Dimensional Sacrifice (${formatX(this.sacrificeBoost, 2, 2)})`;
-    }
   },
   methods: {
     maxAll() {
@@ -76,10 +67,6 @@ export default {
           ImaginaryUpgrade(21).tryShowWarningModal();
           return;
         }
-        if (DualityUpgrade(21).isLockingMechanics && player.auto.disableContinuum) {
-          DualityUpgrade(21).tryShowWarningModal();
-          return;
-        }
         Laitela.setContinuum(true);
       }
     },
@@ -88,6 +75,8 @@ export default {
       return this.buyUntil10 ? "Until 10" : "Buy 1";
     },
     update() {
+      this.isFlipped = player.universes.current === 2;
+      this.inCursedCore = Slabdrill.coreActive;
       this.hasDimensionBoosts = player.dimensionBoosts.gt(0);
       this.buyUntil10 = player.buyUntil10;
       this.hasContinuum = Laitela.continuumUnlocked;
@@ -98,29 +87,19 @@ export default {
       this.isSacrificeUnlocked = isSacrificeUnlocked;
 
       this.buy10Mult.copyFrom(AntimatterDimensions.buyTenMultiplier);
-      this.buyOoMPow.copyFrom(AntimatterDimensions.buyOoMPower);
 
-      this.multiplierText = Ascensions.b10mA.isUnlocked
-        ? `Buy OoM purchase power: +${formatPow(this.buyOoMPow, 2, 3)}`
-        : `Buy 10 Dimension purchase multiplier: ${formatX(this.buy10Mult, 2, 2)}`;
+      this.multiplierText = `Buy 10 Dimension purchase multiplier: ${formatX(this.buy10Mult, 2, 2)}`;
       if (!isSacrificeUnlocked) return;
-      this.isFullyAutomated = Autobuyer.sacrifice.isActive && Achievement(118).canBeApplied &&
-        (!player.disablePostReality || (Alpha.isRunning && Alpha.currentStage >= 12) ||
-        (LHC.voidRunning && NullUpgrade.limerick1.isBought) || SlabdrillUnlocks.eternityChallengeTen.isUnlocked);
-      this.isSacrificeAffordable = Sacrifice.canSacrifice && !this.isFullyAutomated;
+      this.isSacrificeAffordable = Sacrifice.canSacrifice;
+      this.isFullyAutomated = Autobuyer.sacrifice.isActive && Achievement(118).isEffectActive &&
+        (this.isSacrificeAffordable || Sacrifice.nextBoost.lte(1));
       this.currentSacrifice.copyFrom(Sacrifice.totalBoost);
-      this.currentPower.copyFrom(Sacrifice.totalPower);
       this.sacrificeBoost.copyFrom(Sacrifice.nextBoost);
-      this.sacrificePower.copyFrom(Sacrifice.nextPower);
       this.disabledCondition = Sacrifice.disabledCondition;
       const sacText = this.isSacrificeUnlocked
-        ? (Ascensions.sacA.isUnlocked
-          ? ` | Dimensional Sacrifice power: ${formatPow(this.currentPower, 2, 3)}`
-          : ` | Dimensional Sacrifice multiplier: ${formatX(this.currentSacrifice, 2, 2)}`)
+        ? ` | Dimensional Sacrifice multiplier: ${formatX(this.currentSacrifice, 2, 2)}`
         : "";
       this.multiplierText += sacText;
-      this.inCursedCore = player.celestials.slabdrill.core.isActive;
-      this.isFlipped = player.universes.current === 2;
     }
   }
 };
@@ -141,12 +120,12 @@ export default {
       <PrimaryButton
         v-show="isSacrificeUnlocked"
         v-tooltip="sacrificeTooltip"
-        :enabled="isSacrificeAffordable"
+        :enabled="isSacrificeAffordable && !isFullyAutomated"
         class="o-primary-btn--sacrifice"
         @click="sacrifice"
       >
-        <span v-if="isSacrificeAffordable">{{ sacText }}</span>
-        <span v-else-if="isFullyAutomated && disabledCondition !== ''">
+        <span v-if="isSacrificeAffordable">Dimensional Sacrifice ({{ formatX(sacrificeBoost, 2, 2) }})</span>
+        <span v-else-if="isFullyAutomated">
           Dimensional Sacrifice is Automated (Achievement 118)
         </span>
         <span v-else>Dimensional Sacrifice Disabled ({{ disabledCondition }})</span>

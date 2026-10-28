@@ -10,32 +10,32 @@ export default {
     grid() {
       return [
         [
-          NullUpgrade.antimatterDimensionMult,
-          NullUpgrade.infinityPointMult,
-          NullUpgrade.infinityMult,
-          NullUpgrade.infinityDimensionMult,
-          NullUpgrade.replicantiSpeedMult,
+          LHCNullUpgrade.antimatterDimensionMult,
+          LHCNullUpgrade.infinityPointMult,
+          LHCNullUpgrade.infinityMult,
+          LHCNullUpgrade.infinityDimensionMult,
+          LHCNullUpgrade.replicantiSpeedMult,
         ],
         [
-          NullUpgrade.eternityPointMult,
-          NullUpgrade.timeDimensionMult,
-          NullUpgrade.eternityMult,
-          NullUpgrade.dilatedTimeMult,
-          NullUpgrade.tachyonParticleMult,
+          LHCNullUpgrade.eternityPointMult,
+          LHCNullUpgrade.timeDimensionMult,
+          LHCNullUpgrade.eternityMult,
+          LHCNullUpgrade.dilatedTimeMult,
+          LHCNullUpgrade.tachyonParticleMult,
         ],
         [
-          NullUpgrade.ncComp,
-          NullUpgrade.alwaysBroken,
-          NullUpgrade.icComp,
-          NullUpgrade.repUnl,
-          NullUpgrade.eterMiles
+          LHCNullUpgrade.ncComp,
+          LHCNullUpgrade.alwaysBroken,
+          LHCNullUpgrade.icComp,
+          LHCNullUpgrade.repUnl,
+          LHCNullUpgrade.eterMiles
         ],
         [
-          NullUpgrade.limerick1,
-          NullUpgrade.limerick2,
-          NullUpgrade.limerick3,
-          NullUpgrade.limerick4,
-          NullUpgrade.limerick5
+          LHCNullUpgrade.limerick1,
+          LHCNullUpgrade.limerick2,
+          LHCNullUpgrade.limerick3,
+          LHCNullUpgrade.limerick4,
+          LHCNullUpgrade.limerick5
         ]
       ];
     }
@@ -47,6 +47,9 @@ export default {
         "o-null-upgrade-btn--multiplier": column === 1 || column === 2
       };
     },
+    maxAll() {
+      buyMaxNullUpgrades();
+    },
     timeDisplayShort(time) {
       return timeDisplayShort(time);
     }
@@ -56,6 +59,12 @@ export default {
 
 <template>
   <div class="l-null-upgrades-tab">
+    <button
+      class="o-primary-btn"
+      @click="maxAll"
+    >
+      Max all
+    </button>
     <div class="l-null-upgrade-grid l-null-upgrades-tab__grid">
       <div
         v-for="(column, columnId) in grid"

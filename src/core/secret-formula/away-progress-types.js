@@ -111,6 +111,24 @@ export const awayProgressTypes = [
     isUnlocked: () => Ra.pets.v.isUnlocked && !Ra.pets.v.isCapped,
     showOption: false,
   }, {
+    name: "glitchMemories",
+    awayOption: "celestialMemories",
+    reference: ["celestials", "ra", "pets", "glitchyfishys", "memories"],
+    isUnlocked: () => Ra.pets.glitchyfishys.isUnlocked && !Ra.pets.glitchyfishys.isCapped,
+    showOption: false,
+  }, {
+    name: "canteMemories",
+    awayOption: "celestialMemories",
+    reference: ["celestials", "ra", "pets", "cante", "memories"],
+    isUnlocked: () => Ra.pets.cante.isUnlocked && !Ra.pets.cante.isCapped,
+    showOption: false,
+  },{
+    name: "nullMemories",
+    awayOption: "celestialMemories",
+    reference: ["celestials", "ra", "pets", "null", "memories"],
+    isUnlocked: () => Ra.pets.null.isUnlocked && !Ra.pets.null.isCapped,
+    showOption: false,
+  },{
     name: "imaginaryMachines",
     reference: ["reality", "imaginaryMachines"],
     isUnlocked: () => MachineHandler.isIMUnlocked,
@@ -127,8 +145,32 @@ export const awayProgressTypes = [
     reference: ["celestials", "laitela", "singularities"],
     isUnlocked: () => Laitela.isUnlocked,
   }, {
+    name: "riftForce",
+    reference: ["celestials", "glitch", "riftForce"],
+    isUnlocked: () => Glitch.isUnlocked,
+  }, {
     name: "realityShards",
     reference: ["celestials", "pelle", "realityShards"],
     isUnlocked: () => Pelle.isDoomed,
+  },
+  {
+    name: "meta Realys",
+    reference: ["meta", "metaRelays"],
+    isUnlocked: () => PlayerProgress.metaUnlocked(),
+  },
+  {
+    name: "metas",
+    reference: ["meta", "metas",],
+    isUnlocked: () => PlayerProgress.metaUnlocked(),
+  },
+  {
+    name: "artificialMatter",
+    reference: ["celestials", "cante","artificialMatter"],
+    isUnlocked: () => Cante.isUnlocked,
+  },
+  {
+    name: "chaosMatter",
+    reference: ["celestials", "cante","chaosMatter"],
+    isUnlocked: () => Cante.isUnlocked,
   },
 ];

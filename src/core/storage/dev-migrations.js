@@ -892,8 +892,8 @@ export const devMigrations = {
         maxID1ThisReality: new Decimal(1),
         continuumThisReality: true,
       };
-      player.dilation.baseTachyonGalaxies = player.dilation.baseFreeGalaxies;
-      player.dilation.totalTachyonGalaxies = player.dilation.freeGalaxies;
+      player.dilation.baseTachyonGalaxies = new Decimal(player.dilation.baseFreeGalaxies);
+      player.dilation.totalTachyonGalaxies = new Decimal(player.dilation.freeGalaxies);
 
       delete player.replicanti.gal;
       delete player.reality.pp;
@@ -1534,6 +1534,42 @@ export const devMigrations = {
       player.options.lightGlyphs = !player.options.forceDarkGlyphs;
       delete player.options.forceDarkGlyphs;
     },
+    player => {
+      // Glitch stuff
+      player.celestials.glitch.riftForce = player.celestials.glitch.riftforce;
+      delete player.celestials.glitch.riftforce;
+    },
+    player => {
+      // Glitch stuff
+
+      player.celestials.v.runUnlocks.push([0,0,0,0,0,0]);
+      player.celestials.v.runUnlocks = player.celestials.v.runUnlocks.flat();
+
+      player.celestials.v.runRecords.push([0,0,0,0,0,0]);
+      player.celestials.v.runRecords = player.celestials.v.runRecords.flat();
+
+      player.celestials.v.goalReductionSteps.push([0,0,0,0,0,0]);
+      player.celestials.v.goalReductionSteps = player.celestials.v.goalReductionSteps.flat();
+
+      player.celestials.v.runGlyphs.push([]);
+      player.celestials.v.runGlyphs.push([]);
+      player.celestials.v.runGlyphs.push([]);
+      player.celestials.v.runGlyphs.push([]);
+      player.celestials.v.runGlyphs.push([]);
+      player.celestials.v.runGlyphs.push([]);
+      player.celestials.v.runGlyphs.push([]);
+      
+    },
+    player => { // pelle compleation changes
+      player.pelleResets = player.records.fullGameCompletions;
+      player.records.fullGameCompletions = 0;
+    },
+    player => { // pelle autobuyers
+      player.auto.dilationUpgrades.all =  Array.range(0, 6).map(() => ({
+        isActive: true,
+        lastTick: 0,
+      }))
+    },
   ],
 
   patch(player) {
@@ -1547,5 +1583,5 @@ export const devMigrations = {
 
   setLatestTestVersion(player) {
     player.options.testVersion = this.patches.length;
-  }
+  },
 };

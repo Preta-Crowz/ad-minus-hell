@@ -10,9 +10,8 @@ export default {
     return {
       baseRMCap: new Decimal(),
       capRM: new Decimal(),
-      scaleTime: 0,
+      scaleTime: new Decimal(),
       capStr: "",
-      showingRows: 5
     };
   },
   computed: {
@@ -24,9 +23,8 @@ export default {
     update() {
       this.baseRMCap.copyFrom(MachineHandler.baseRMCap);
       this.capRM.copyFrom(MachineHandler.hardcapRM);
-      this.scaleTime = MachineHandler.scaleTimeForIM;
-      this.capStr = formatMachines(MachineHandler.hardcapRM, MachineHandler.currentIMCap, MachineHandler.currentDMCap);
-      this.showingRows = PlayerProgress.endgameUnlocked() ? 6 : 5;
+      this.scaleTime.copyFrom(MachineHandler.scaleTimeForIM);
+      this.capStr = formatMachines(MachineHandler.hardcapRM, MachineHandler.currentIMCap);
     },
     id(row, column) {
       return (row - 1) * 5 + column - 1;
@@ -49,7 +47,7 @@ export default {
       Imaginary Machines are gained passively over time up to the cap, but gain slows down exponentially
       as you approach the cap.
       <br>
-      Every {{ formatInt(scaleTime) }} seconds the difference in iM between your current amount and the cap
+      Every {{ format(scaleTime, 2, 2) }} seconds the difference in iM between your current amount and the cap
       will be cut in half.
       <br>
       <br>
@@ -62,7 +60,7 @@ export default {
       </span>
     </div>
     <div
-      v-for="row in showingRows"
+      v-for="row in 6"
       :key="row"
       class="l-reality-upgrade-grid__row"
     >

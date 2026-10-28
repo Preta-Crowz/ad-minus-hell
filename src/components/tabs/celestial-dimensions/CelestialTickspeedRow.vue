@@ -28,7 +28,7 @@ export default {
     },
     upgradeCount() {
       const purchased = this.purchasedCelestialTickspeed;
-      return quantifyHybridLarge("Purchased Upgrade", purchased);
+      return quantify("Purchased Upgrade", purchased);
     }
   },
   methods: {

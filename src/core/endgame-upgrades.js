@@ -1,4 +1,7 @@
+import { DC } from "./constants";
 import { BitPurchasableMechanicState, RebuyableMechanicState } from "./game-mechanics";
+
+const celestialPointsAreFree = () => DivinityMilestone.divinityOverdrive.isReached;
 
 class EndgameUpgradeState extends BitPurchasableMechanicState {
   constructor(config) {
@@ -20,6 +23,15 @@ class EndgameUpgradeState extends BitPurchasableMechanicState {
 
   get currency() {
     return Currency.celestialPoints;
+  }
+
+  purchase() {
+    if (!this.canBeBought) return false;
+    if (!celestialPointsAreFree()) this.currency.subtract(this.cost);
+    this.isBought = true;
+    this.onPurchased();
+    GameUI.update();
+    return true;
   }
 
   get bitIndex() {
@@ -96,35 +108,50 @@ class RebuyableEndgameUpgradeState extends RebuyableMechanicState {
   }
 
   get boughtAmount() {
-    return player.endgame.rebuyables[this.id];
+    return new Decimal(player.endgame.rebuyables[this.id]);
   }
 
   set boughtAmount(value) {
     player.endgame.rebuyables[this.id] = value;
   }
 
+  purchase() {
+    if (!this.canBeBought) return false;
+    if (GameEnd.creditsEverClosed) return false;
+    if (!celestialPointsAreFree() && this.currency.lt("ee15")) this.currency.subtract(this.cost);
+    this.boughtAmount = this.boughtAmount.add(1);
+    this.onPurchased();
+    GameUI.update();
+    return true;
+  }
+
   bulkPurchase() {
     if (!this.isAffordable) return false;
-    this.boughtAmount += getInverseHybridCostScaling(
+    const targetAmount = getInverseHybridCostScaling(
       Currency.celestialPoints.value,
-      1e100,
-      this.config.initialCost,
-      this.config.costMult,
-      this.config.costMult / 10,
+      DC.E100,
+      new Decimal(this.config.initialCost),
+      new Decimal(this.config.costMult),
+      new Decimal(this.config.costMult / 10),
       DC.E309,
-      1e3,
-      this.config.initialCost * this.config.costMult
-    ).sub(player.endgame.rebuyables[this.id]).toNumber();
-    Currency.celestialPoints.subtract(getHybridCostScaling(
-      player.endgame.rebuyables[this.id] - 1,
-      1e100,
-      this.config.initialCost,
-      this.config.costMult,
-      this.config.costMult / 10,
-      DC.E309,
-      1e3,
-      this.config.initialCost * this.config.costMult
-    ));
+      DC.E3,
+      new Decimal(this.config.initialCost * this.config.costMult)
+    );
+    if (!targetAmount.isFinite() || targetAmount.lte(this.boughtAmount)) return false;
+    const newBoughtAmount = targetAmount;
+    this.boughtAmount = newBoughtAmount;
+    if (!celestialPointsAreFree()) {
+      Currency.celestialPoints.subtract(getHybridCostScaling(
+        newBoughtAmount.sub(1),
+        DC.E100,
+        new Decimal(this.config.initialCost),
+        new Decimal(this.config.costMult),
+        new Decimal(this.config.costMult / 10),
+        DC.E309,
+        DC.E3,
+        new Decimal(this.config.initialCost * this.config.costMult)
+      ));
+    }
     return true;
   }
 }

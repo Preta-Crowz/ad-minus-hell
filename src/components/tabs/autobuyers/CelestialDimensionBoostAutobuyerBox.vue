@@ -23,7 +23,7 @@ export default {
     };
   },
   computed: {
-    autobuyer: () => Autobuyer.celestialDimboost
+    autobuyer: () => Autobuyer.celestialDimBoost
   },
   watch: {
     limitCelDimBoosts(newValue) {

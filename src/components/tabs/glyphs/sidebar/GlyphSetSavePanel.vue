@@ -54,7 +54,7 @@ export default {
       this.level = player.options.ignoreGlyphLevel;
     },
     refreshGlyphSets() {
-      this.glyphSets = cloneDeep(player.reality.glyphs.sets.map(g => Glyphs.copyForRecords(g.glyphs)));
+      this.glyphSets = cloneDeep(player.reality.glyphs.sets.map(g => cloneDeep(Glyphs.copyForRecords(g.glyphs))));
     },
     setName(id) {
       const name = this.names[id] === "" ? "" : `: ${this.names[id]}`;
@@ -71,7 +71,7 @@ export default {
     // preset match, and leniently when matching greedily may lead to an incomplete set being loaded
     loadGlyphSet(set, id) {
       if (!this.setLengthValid(set)) return;
-      let glyphsToLoad = [...set].sort((a, b) => Decimal.compare(a.level.times(a.strength), b.level.times(b.strength)));
+      let glyphsToLoad = [...set].sort((a, b) => Decimal.compare(a.level.mul(a.strength), b.level.mul(b.strength)));
       const activeGlyphs = [...Glyphs.active.filter(g => g)];
 
       // Create an array where each entry contains a single active glyph and all its matches in the preset which it
@@ -218,60 +218,66 @@ export default {
         off="Exact"
       />
     </div>
-    <div
-      v-for="(set, id) in glyphSets"
-      :key="id"
-      class="c-glyph-single-set-save"
-    >
-      <div class="c-glyph-set-preview-area">
-        <GlyphSetPreview
-          :key="glyphSetKey(set, id)"
-          :text="setName(id)"
-          :text-hidden="true"
-          :glyphs="set"
-          :flip-tooltip="true"
-          :none-text="noSet"
-        />
-      </div>
-      <div class="c-glyph-single-set-save-flexbox">
-        <div ach-tooltip="Set a custom name (up to 20 characters)">
-          <input
-            :id="id"
-            type="text"
-            size="20"
-            maxlength="20"
-            placeholder="Custom set name"
-            class="c-glyph-sets-save-name__input"
-            :value="names[id]"
-            @blur="nicknameBlur"
-          >
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-around;">
+        <span
+        v-for="(set, id) in glyphSets"
+        :key="id"
+        class="c-glyph-single-set-save"
+      >
+        <div class="c-glyph-single-set-save-flexbox">
+
+          <div class="c-glyph-set-preview-area">
+            <GlyphSetPreview
+              :key="glyphSetKey(set, id)"
+              :text="setName(id)"
+              :text-hidden="true"
+              :showName="false"
+              :glyphs="set"
+              :flip-tooltip="true"
+              :none-text="noSet"
+            />
+          </div>
+
+          <div ach-tooltip="Set a custom name (up to 20 characters)">
+            <input
+              :id="id"
+              type="text"
+              size="20"
+              maxlength="20"
+              placeholder="Custom set name"
+              class="c-glyph-sets-save-name__input"
+              :value="names[id]"
+              @blur="nicknameBlur"
+            >
+          </div>
+          <div class="c-glyph-single-set-save-flexbox-buttons">
+            <button
+              class="c-glyph-set-save-button"
+              :class="{'c-glyph-set-save-button--unavailable': !hasEquipped || set.length}"
+              @click="saveGlyphSet(id)"
+            >
+              Save
+            </button>
+            <button
+              v-tooltip="loadingTooltip(set)"
+              class="c-glyph-set-save-button"
+              :class="{'c-glyph-set-save-button--unavailable': !setLengthValid(set)}"
+              @click="loadGlyphSet(set, id)"
+            >
+              Load
+            </button>
+            <button
+              class="c-glyph-set-save-button"
+              :class="{'c-glyph-set-save-button--unavailable': !set.length}"
+              @click="deleteGlyphSet(id)"
+            >
+              Delete
+            </button>
+          </div>
         </div>
-        <div class="c-glyph-single-set-save-flexbox-buttons">
-          <button
-            class="c-glyph-set-save-button"
-            :class="{'c-glyph-set-save-button--unavailable': !hasEquipped || set.length}"
-            @click="saveGlyphSet(id)"
-          >
-            Save
-          </button>
-          <button
-            v-tooltip="loadingTooltip(set)"
-            class="c-glyph-set-save-button"
-            :class="{'c-glyph-set-save-button--unavailable': !setLengthValid(set)}"
-            @click="loadGlyphSet(set, id)"
-          >
-            Load
-          </button>
-          <button
-            class="c-glyph-set-save-button"
-            :class="{'c-glyph-set-save-button--unavailable': !set.length}"
-            @click="deleteGlyphSet(id)"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
+      </span>
     </div>
+    
   </div>
 </template>
 

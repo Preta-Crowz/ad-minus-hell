@@ -14,9 +14,8 @@ export default {
       required: true
     },
     name: {
-      type: [Function, String],
-      required: true,
-      default: ""
+      type: String,
+      required: true
     },
     showInterval: {
       type: Boolean,
@@ -42,7 +41,6 @@ export default {
       currMode: 0,
       nextValue: 0,
       nextTime: 0,
-      isFlipped: false
     };
   },
   computed: {
@@ -128,7 +126,6 @@ export default {
         this.nextValue = new Decimal(autobuyer.highestPrevPrestige).times(autobuyer.xHighest);
         this.nextTime = autobuyer.timeToNextTick;
       }
-      this.isFlipped = player.universes.current === 2;
     },
     toggle() {
       this.isActive = !this.isActive;
@@ -191,7 +188,7 @@ export default {
   >
     {{ name }}
     <br>
-    Requirement: {{ format(antimatterCost) }} Total {{ isFlipped ? "Matter" : "Antimatter" }} {{ showEternity }}
+    Requirement: {{ format(antimatterCost) }} Total Antimatter {{ showEternity }}
   </div>
 </template>
 

@@ -2,39 +2,41 @@
 import PrimaryToggleButton from "@/components/PrimaryToggleButton";
 import TimeStudySaveLoadButton from "./TimeStudySaveLoadButton";
 import TimeTheoremBuyButton from "./TimeTheoremBuyButton";
+import PrimaryButton from "@/components/PrimaryButton";
+
 
 export default {
   name: "TimeTheoremShop",
   components: {
+    PrimaryButton,
     PrimaryToggleButton,
     TimeTheoremBuyButton,
     TimeStudySaveLoadButton
   },
   data() {
     return {
-      theoremAmount: new Decimal(0),
-      theoremGeneration: new Decimal(0),
-      totalTimeTheorems: new Decimal(0),
+      theoremAmount: new Decimal(),
+      theoremGeneration: new Decimal(),
+      totalTimeTheorems: new Decimal(),
       shopMinimized: false,
       minimizeAvailable: false,
       hasTTAutobuyer: false,
       isAutobuyerOn: false,
       budget: {
-        am: new Decimal(0),
-        ip: new Decimal(0),
-        ep: new Decimal(0)
+        am: new Decimal(),
+        ip: new Decimal(),
+        ep: new Decimal()
       },
       costs: {
-        am: new Decimal(0),
-        ip: new Decimal(0),
-        ep: new Decimal(0)
+        am: new Decimal(),
+        ip: new Decimal(),
+        ep: new Decimal()
       },
       showST: false,
       STamount: 0,
       hasTTGen: false,
       showTTGen: false,
       invertTTgenDisplay: false,
-      isFlipped: false
     };
   },
   computed: {
@@ -88,11 +90,25 @@ export default {
     },
   },
   methods: {
+    exportStudyTree() {
+      if (player.timestudy.studies.length === 0) {
+        GameUI.notify.error("You cannot export an empty Time Study Tree!");
+      } else {
+        copyToClipboard(GameCache.currentStudyTree.value.exportString);
+        GameUI.notify.info("Exported current Time Studies to your clipboard");
+      }
+    },
+    respecClassObject() {
+      return {
+        "o-primary-btn--subtab-option": true,
+        "o-primary-btn--respec-active": player.respec
+      };
+    },
     minimize() {
       player.timestudy.shopMinimized = !player.timestudy.shopMinimized;
     },
     formatAM(am) {
-      return `${format(am)} ${this.isFlipped ? "M" : "AM"}`;
+      return `${format(am)} AM`;
     },
     buyWithAM() {
       TimeTheorems.buyOne(false, "am");
@@ -112,9 +128,14 @@ export default {
     buyMaxTheorems() {
       TimeTheorems.buyMax(false);
     },
+    tsrespec() {
+      this.respec = !player.respec;
+      player.respec = !player.respec;
+    },
     update() {
+      this.respec = player.respec;
       this.theoremAmount.copyFrom(Currency.timeTheorems);
-      this.theoremGeneration.copyFrom(getTTPerSecond().times(Alpha.isRunning ? 1 : getGameSpeedupForDisplay()));
+      this.theoremGeneration.copyFrom(getTTPerSecond().times(getGameSpeedupForDisplay()));
       this.totalTimeTheorems.copyFrom(Currency.timeTheorems.max);
       this.shopMinimized = player.timestudy.shopMinimized;
       this.hasTTAutobuyer = Autobuyer.timeTheorem.isUnlocked;
@@ -128,12 +149,11 @@ export default {
       costs.am.copyFrom(TimeTheoremPurchaseType.am.cost);
       costs.ip.copyFrom(TimeTheoremPurchaseType.ip.cost);
       costs.ep.copyFrom(TimeTheoremPurchaseType.ep.cost);
-      this.showST = V.spaceTheorems > 0 && (!Pelle.isDoomed || PelleDestructionUpgrade.spaceTheorems.canBeApplied);
+      this.showST = V.spaceTheorems.gt(0);
       this.STamount = V.availableST;
       this.hasTTGen = this.theoremGeneration.gt(0);
       this.showTTGen = this.hasTTGen && (ui.view.shiftDown === this.invertTTgenDisplay);
       this.invertTTgenDisplay = player.options.invertTTgenDisplay;
-      this.isFlipped = player.universes.current === 2;
     },
     toggleTTgen() {
       this.invertTTgenDisplay = !this.invertTTgenDisplay;
@@ -251,6 +271,33 @@ export default {
         :style="minimizeArrowStyle"
       >▼</span>
     </button>
+    <div class="c-subtab-option-container">
+      <PrimaryButton
+        class="o-primary-btn--subtab-option"
+        @click="exportStudyTree"
+      >
+        Export
+      </PrimaryButton>
+      <PrimaryButton
+        :class="respecClassObject()"
+         @click="tsrespec"
+      >
+        <span v-if="respec">
+            Respec
+        </span>
+        <span v-else>
+            Respec
+        </span>
+      </PrimaryButton>
+      <PrimaryButton
+        class="o-primary-btn--subtab-option"
+        onclick="Modal.studyString.show({ id: -1 })"
+      >
+        Import
+      </PrimaryButton>
+      
+    </div>
+    
   </div>
 </template>
 

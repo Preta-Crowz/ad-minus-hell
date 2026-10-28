@@ -8,7 +8,7 @@ export default {
   },
   data() {
     return {
-      endgameCount: 0,
+      endgameCount: DC.D0,
     };
   },
   computed: {
@@ -23,7 +23,7 @@ export default {
   },
   methods: {
     update() {
-      this.endgameCount = Math.floor(Currency.endgames.value);
+      this.endgameCount = Currency.endgames.value.floor();
     },
     getMilestone(row, column) {
       return () => this.milestones[(row - 1) * 3 + column - 1];

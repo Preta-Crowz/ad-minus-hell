@@ -1,6 +1,9 @@
 import * as ADLNotations from "adnot-beport-large";
 import * as ADNotations from "adnot-beport-small";
 
+window.ADNotations = ADNotations;
+import { DC } from "./constants";
+
 export const Notation = (function() {
   const N = ADNotations;
   const notation = type => {
@@ -55,12 +58,9 @@ export const LNotation = (function() {
     extendedScientific: notation(N.ExtendedScientificNotation),
     stackedScientific: notation(N.StackedScientificNotation),
     semiStackedScientific: notation(N.SemiStackedScientificNotation),
-    extendedLogarithm: notation(N.ExtendedLogarithmNotation),
+    entendedLogarithm: notation(N.ExtendedLogarithmNotation),
     tetrational: notation(N.TetrationalNotation),
     trueTetrational: notation(N.TrueTetrationalNotation),
-    hyperE: notation(N.HyperENotation),
-    simpleExtendedScientific: notation(N.SimpleExtendedScientificNotation),
-    stackedMixedScientific: notation(N.StackedMixedScientificNotation)
   };
 }());
 
@@ -77,12 +77,9 @@ export const LNotations = {
     LNotation.extendedScientific,
     LNotation.stackedScientific,
     LNotation.semiStackedScientific,
-    LNotation.extendedLogarithm,
+    LNotation.entendedLogarithm,
     LNotation.tetrational,
-    LNotation.trueTetrational,
-    LNotation.hyperE,
-    LNotation.simpleExtendedScientific,
-    LNotation.stackedMixedScientific
+    LNotation.trueTetrational
   ],
   find: name => {
     const notation = LNotations.all.find(n => n.name === name);
@@ -132,5 +129,7 @@ export const Notations = {
 ADNotations.Settings.isInfinite = decimal => ui.formatPreBreak && decimal.gte(DC.NUMMAX);
 
 EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, () => {
-  ui.formatPreBreak = !PlayerProgress.hasBroken() || (NormalChallenge.isRunning && !Enslaved.isRunning);
+  // Hell starts with Infinity broken, and its trapped Normal Challenges must not bring back the pre-break display
+  ui.formatPreBreak = !Hell.isInside &&
+    (!PlayerProgress.hasBroken() || (NormalChallenge.isRunning && !Enslaved.isRunning));
 });

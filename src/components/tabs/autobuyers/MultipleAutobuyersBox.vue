@@ -21,12 +21,9 @@ export default {
   data() {
     return {
       continuumActive: false,
-      infinityContinuumUnlocked: false,
-      timeContinuumUnlocked: false,
       anyUnlocked: false,
       displayLabelAsGroup: false,
       parentActive: false,
-      isFlipped: false
     };
   },
   computed: {
@@ -43,7 +40,7 @@ export default {
       return Math.ceil(this.entryCount / 8);
     },
     entryCountPerRow() {
-      return this.rowCount === 1 ? this.entryCount : 5;
+      return this.rowCount % 1 === 0 ? this.entryCount / this.rowCount : 5;
     },
     boxSize() {
       // The 1% reduced flex-basis is used to prevent wrapping due to the margins.
@@ -51,12 +48,6 @@ export default {
     },
     isADBox() {
       return this.name === Autobuyer.antimatterDimension.groupName;
-    },
-    isIDBox() {
-      return this.name === Autobuyer.infinityDimension.groupName;
-    },
-    isTDBox() {
-      return this.name === Autobuyer.timeDimension.groupName;
     },
     showAutobuyers() {
       // Only display the Antimatter Dimension Autobuyers if the bulk is the same and there are any of them unlocked
@@ -67,13 +58,10 @@ export default {
   methods: {
     update() {
       this.continuumActive = Laitela.continuumActive;
-      this.infinityContinuumUnlocked = Alpha.currentStage >= 9 && !Alpha.isRunning;
-      this.timeContinuumUnlocked = Alpha.currentStage >= 17 && !Alpha.isRunning;
       const type = this.type;
       this.anyUnlocked = type.anyUnlocked;
       this.displayLabelAsGroup = (type.allMaxedInterval ?? true) && (type.allUnlimitedBulk ?? true);
       this.parentActive = type.isActive;
-      this.isFlipped = player.universes.current === 2;
     },
     toggleGroup() {
       this.type.toggle();
@@ -84,7 +72,7 @@ export default {
 
 <template>
   <span
-    v-if="showAutobuyers && !(isADBox && continuumActive) && !(isIDBox && continuumActive && infinityContinuumUnlocked) && !(isTDBox && continuumActive && timeContinuumUnlocked)"
+    v-if="showAutobuyers && !(isADBox && continuumActive)"
     class="c-autobuyer-box-row"
   >
     <AutobuyerGroupToggleLabel
@@ -123,23 +111,7 @@ export default {
     v-else-if="isADBox && continuumActive"
     class="c-autobuyer-box-row"
   >
-    Continuum replaces your {{ isFlipped ? "Matter" : "Antimatter" }} Dimension and Tickspeed Autobuyers, as your production multipliers
-    <br>
-    now automatically and continuously scale based on how many purchases you would have had otherwise.
-  </span>
-  <span
-    v-else-if="isIDBox && continuumActive && infinityContinuumUnlocked"
-    class="c-autobuyer-box-row"
-  >
-    Continuum replaces your Infinity Dimension Autobuyers, as your production multipliers
-    <br>
-    now automatically and continuously scale based on how many purchases you would have had otherwise.
-  </span>
-  <span
-    v-else-if="isTDBox && continuumActive && timeContinuumUnlocked"
-    class="c-autobuyer-box-row"
-  >
-    Continuum replaces your Time Dimension Autobuyers, as your production multipliers
+    Continuum replaces your Antimatter Dimension and Tickspeed Autobuyers, as your production multipliers
     <br>
     now automatically and continuously scale based on how many purchases you would have had otherwise.
   </span>

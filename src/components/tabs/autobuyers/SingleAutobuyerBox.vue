@@ -20,9 +20,9 @@ export default {
   data() {
     return {
       isUnlocked: false,
+      annihilationMode: 0,
       // Used to hide the input box if the game is auto-sacrificing every tick without resource resets
       isHiddenSacrifice: false,
-      annihilationMode: 0,
     };
   },
   computed: {
@@ -33,18 +33,16 @@ export default {
       return this.name === "Dimensional Sacrifice";
     },
     isAnnihilation() {
-      return this.name === "Annihilation" && (ExpansionPack.laitelaPack.isBought && !player.disablePostReality);
+      return this.name === "Annihilation" && ExpansionPack.laitelaPack.isBought && !player.disablePostReality;
     }
   },
   methods: {
     update() {
       this.isUnlocked = this.autobuyer.isUnlocked;
-      this.isHiddenSacrifice = this.isSacrifice && Achievement(118).canBeApplied &&
-        (!player.disablePostReality || (Alpha.isRunning && Alpha.currentStage >= 12) ||
-        (LHC.voidRunning && NullUpgrade.limerick1.isBought) || SlabdrillUnlocks.eternityChallengeTen.isUnlocked);
-      this.annihilationMode = player.auto.annihilation.mode;
+      this.isHiddenSacrifice = this.isSacrifice && Achievement(118).canBeApplied;
+      if (this.isAnnihilation) this.annihilationMode = this.autobuyer.mode;
     },
-    modeToggle() {
+    toggleAnnihilationMode() {
       player.auto.annihilation.mode = (player.auto.annihilation.mode + 1) % 2;
     },
   }
@@ -72,15 +70,6 @@ export default {
         class="c-autobuyer-box__small-text"
       >
         Multiplier:
-        <button
-          v-if="isAnnihilation"
-          class="c-annihilation-autobuyer-mode-button"
-          @click="modeToggle"
-        >
-          <label class="l-annihilation-autobuyer-mode-button">
-            <span>{{ annihilationMode === 0 ? "+" : "×" }}</span>
-          </label>
-        </button>
         <AutobuyerInput
           class="c-small-autobuyer-input"
           :autobuyer="autobuyer"
@@ -88,31 +77,17 @@ export default {
           :property="autobuyer.inputEntry"
         />
       </span>
+      <button
+        v-if="isAnnihilation"
+        class="c-autobuyer-box__small-text"
+        @click="toggleAnnihilationMode"
+      >
+        {{ annihilationMode === 0 ? "Absolute gain" : "Relative gain" }}
+      </button>
     </div>
   </span>
 </template>
 
 <style scoped>
-.c-annihilation-autobuyer-mode-button {
-  width: 2rem;
-  height: 2rem;
-  background: var(--color-laitela--base);
-  border: var(--var-border-width, 0.2rem) solid var(--color-laitela--accent);
-  color: var(--color-laitela--accent);
-  transition-duration: 0.3s;
-  cursor: pointer;
-  margin: 0.3rem 0.3rem 0 0;
-}
 
-.c-annihilation-autobuyer-mode-button:hover {
-  color: var(--color-laitela--base);
-  background: var(--color-laitela--accent);
-}
-
-.l-annihilation-autobuyer-mode-button {
-  display: flex;
-  align-content: center;
-  justify-content: center;
-  cursor: pointer;
-}
 </style>

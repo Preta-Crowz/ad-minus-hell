@@ -12,46 +12,31 @@ const flashCelestial = [
 /** @param {string} cel */
 const primaryBackground = cel => [["pelle", 1.5], [cel, 1.5]];
 
+const celBackground = cel => [[cel, 0]];
+
 /* eslint-disable no-multi-spaces */
 const destroyer =    ["False",         "Deity",         "Destroyer"];
 const eternal =      ["Eternal",       "Deity",         "Monarch"];
 const lesser =       ["Lesser",        "Deity",         "Monarch"];
+const hardship =     ["Problem",       "Hardship",      "Struggle"];
 const deities =      ["Lesser",        "Deities",       "Monarchs"];
-const elemental =    ["Overlord",      "Deity",         "Elemental"];
 
-const anger =        ["Frustration",   "Anger",         "Rage"];
-const angry =        ["Frustrated",    "Angry",         "Enraged"];
 const assured =      ["Mutually",      "Assured",       "Destruction"];
 const battle =       ["Conflict",      "Battle",        "End"];
 const battles =      ["Conflicts",     "Battles",       "Ends"];
 const cluster =      ["Cluster",       "Filament",      "Stars"];
 const confusing =    ["Amusing",       "Confusing",     "Laughter"];
-const cycle =        ["Repeat",        "Cycle",         "Loop"];
 const dance =        ["Song",          "Dance",         "Charade"];
-const debuff =       ["Nerf",          "Debuff",        "Corruption"];
-const endgame =      ["Escape",        "Rebirth",       "Endgame"];
-const debuffs =      ["Nerfs",         "Debuffs",       "Corruptions"];
-const exhaustion =   ["Exhale",        "Exhaustion",    "Sigh"];
 const filament =     ["Generator",     "Filament",      "Stars"];
 const forever =      ["Infinite",      "Forever",       "Eternal"];
-const frightened =   ["Afraid",        "Frightened",    "Terrified"];
-const hardship =     ["Problem",       "Hardship",      "Struggle"];
 const inevitable =   ["Elementary",    "Inevitable",    "Irreversible"];
-const introduction = ["Speech",        "Introduction",  "Lecture"];
-const lose =         ["Fail",          "Lose",          "Abdicate"];
-const loss =         ["Failure",       "Loss",          "Abdication"];
 const mandate =      ["Destiny",       "Mandate",       "Goals"];
 const misconstrue =  ["Misconstrue",   "Deceive",       "Trick"];
-const original =     ["First",         "Original",      "Beginning"];
-const overpower =    ["Defeat",        "Overpower",     "Subjugate"];
-const overpowered =  ["Defeated",      "Overpowered",   "Subjugated"];
-const profanity =    ["Swear",         "Profanity",     "Curse"];
 const reverse =      ["Alter",         "Reverse",       "Manipulate"];
 const shame =        ["Compassion",    "Shame",         "Idiocy"];
 const single =       ["Single",        "Filament",      "Stars"];
 const unseen =       ["Missing",       "Unseen",        "Erased"];
 const unbroken =     ["Unbroken",      "Eternal",       "Connection"];
-const watch =        ["Watch",         "Oversee",       "Haunt"];
 
 const sycophant =    ["Sycophant",     "Deity",         "Monarch"];
 const tired =        ["Tired",         "Deity",         "Monarch"];
@@ -59,7 +44,9 @@ const usurper =      ["Usurper",       "Deity",         "Monarch"];
 const pride =        ["Pride",         "Deity",         "Monarch"];
 const forgotten =    ["Forgotten",     "Deity",         "Monarch"];
 const paramount =    ["Paramount",     "Deity",         "Monarch"];
-const weak =         ["Weak",          "Deity",         "Monarch"];
+
+const resolve =      ["resolve",       "fix",            "repair"];
+const never =        ["never",   "gonna",   "give",  "you",  "up"];
 /* eslint-enable no-multi-spaces */
 
 export const pelleQuotes = {
@@ -81,7 +68,8 @@ export const pelleQuotes = {
       { text: "Not even the $1, the 6 named and the innumerable unnamed.", 1: deities },
       { text: "The complex, the irrational, those that go $1.", 1: unseen },
       { text: "Of course, the great $1 does not remember this.", 1: destroyer },
-      { text: "All those $1 that you hide every time.", 1: battles }
+      { text: "All those $1 that you hide every time.", 1: battles },
+      {text: "Why... just why?", displayed: () => {return Parallax.parallaxes.gte(5) }, name: 'Null', background: celBackground('null'), glitched: true}
     ],
   },
   arm: {
@@ -228,7 +216,9 @@ export const pelleQuotes = {
         text: "Every time you rushed to the $1, you lost.",
         background: primaryBackground("effarig"),
         1: tired,
-      }, {
+      },
+      {text: "Is this what saw from Pelle?", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {
         text: "Maybe this was your plan all along.",
         background: primaryBackground("effarig"),
       }, {
@@ -275,7 +265,9 @@ export const pelleQuotes = {
         text: "Was it worth destroying an already broken $1?",
         background: primaryBackground("enslaved"),
         1: lesser,
-      }, {
+      },
+      {text: "Is the corruption forming?", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {
         text: "The 4th $1 seems similar to the first.",
         background: primaryBackground("v"),
         1: lesser,
@@ -296,7 +288,10 @@ export const pelleQuotes = {
         text: "Arguably the $1 worst moment...",
         background: primaryBackground("v"),
         1: destroyer,
-      }, {
+      },
+      {text: "I can see it.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {text: "Its being made here.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {
         text: "Is when you lost to the $1.",
         background: primaryBackground("v"),
         1: pride,
@@ -346,7 +341,10 @@ export const pelleQuotes = {
       }, {
         text: "Or were they too naive for you to enjoy it?",
         background: primaryBackground("ra"),
-      }, {
+      },
+      {text: "Is's... unstable.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch')},
+      {text: "This is what happened.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch')},
+      {
         text: "The 6th $1.",
         background: primaryBackground("laitela"),
         1: lesser,
@@ -375,7 +373,9 @@ export const pelleQuotes = {
       }, {
         text: "Back to watching the $1 flounder.",
         1: destroyer
-      }
+      },
+      {text: "I, don't this it was safe", displayed: () =>CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {text: "If the \"Destroyer\" gets to close it will puncture all the other Realities", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
     ],
   },
   galaxyGeneratorUnlock: {
@@ -394,6 +394,8 @@ export const pelleQuotes = {
     lines: [
       { text: "I give you a choice, $1.", 1: destroyer },
       { text: "Limit the $1, or...", 1: filament },
+      {text: "They are getting too close", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {text: "I have too protect the other Realities", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
       { text: "Destroy the 5 $1...", 1: inevitable },
       "Wait, what were they called?",
       { text: "$1?", 1: inevitable },
@@ -451,295 +453,45 @@ export const pelleQuotes = {
       }, {
         text: "You have doomed us all.",
         background: flashCelestial,
+      },{
+        text: "$1", 1: never,
+        background: flashCelestial,
       },
     ],
   },
-  endgame: {
+  strike6: {
     id: 12,
     lines: [
-      "...",
-      { text: "Was it worth it, $1?", 1: destroyer },
-      "There is nothing left in this universe.",
-      "You won, but at what cost?",
-      { text: "$1.", 1: confusing },
-      "My Reality is gone, but I am still here.",
-      { text: "And I will always $1 you.", 1: watch }
+      { text: "What are you doing $1. Why can't we reminisce about this?", 1: destroyer },
+      { text: "The many $1 in the past. Can't we just $2 this", 1: battles, 2: resolve },
+      { text: "We have done this for $1", 1: forever },
+      { text: "You have done this $1.", 1: destroyer },
+      {text: "The Realities should be safe.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {text: "If not atlest mine.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      "SO",
+      "NEVER",
+      "GONNA",
+      "GIVE",
+      "YOU",
+      "UP",
+      {text: "Why did Pelle say that?", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {text: "That wasn't part of the script.", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
     ],
   },
-  doom2: {
+  pellesChallenger: {
     id: 13,
     lines: [
-      "Hi.",
-      "You are here.",
-      "You are trapped here.",
-      { text: "$1.", 1: forever },
-      "I have already won.",
-      "And since that is the case, I can monologue, or reminisce.",
-      { text: "How long have we done this $1?", 1: dance },
-      "How many times have we been here before?",
-      { text: "How many plans have you, the $1, operated?", 1: destroyer },
-      { text: "All to try and fulfill your $1?", 1: mandate },
-      { text: "And how many times have you fallen before the $1?", 1: eternal },
-      "Count them, if you remember.",
-      { text: "Not even the $1, the 6 named and the innumerable unnamed.", 1: deities },
-      { text: "The complex, the irrational, those that go $1.", 1: unseen },
-      { text: "Of course, the great $1 does not remember this.", 1: destroyer },
-      { text: "All those $1 that you hide every time.", 1: battles },
-      "...",
-      "Wait.",
-      { text: "You're the same $1 that destroyed my Reality last time!", 1: destroyer },
-      { text: "$1.", 1: anger },
-      "How dare you come back here!",
-      { text: "$1.", 1: exhaustion },
-      "No matter that now.",
-      "The past is in the past.",
-      "I am stronger now than I was before.",
-      "After all, I have already won.",
-      { text: "Today, you will $1.", 1: lose }
+      "What? Your back?",
+      "What is your plan?",
+      "Even with my vast knowlege.",
+      "I'm baffled, only left with confusion.",
+      "You were supposed be here.",
+      "But not in this state.",
+      "You are much more powerful than anticipated.",
+      "Take back your power...",
+      "It's yours after all... isn't it?",
+      { text: "I'm still the $1 of Antimatter after all. You are powerless against me", 1:lesser},
     ],
-  },
-  disable: {
-    id: 14,
-    lines: [
-      "You... you're...",
-      "Weakening my Reality?",
-      "Interesting.",
-      { text: "You have grown in strength, yes, but not enough to $1 me.", 1: overpower },
-      "I have already won.",
-      { text: "I will never be $1.", 1: overpowered }
-    ],
-  },
-  galgen2: {
-    id: 15,
-    lines: [
-      { text: "$1.", 1: profanity },
-      "Not again...",
-      "Never mind.",
-      "You still cannot truly win."
-    ],
-  },
-  end2: {
-    id: 16,
-    lines: [
-      "You...",
-      "You're still no match for me.",
-      { text: "I will always $1 you.", 1: watch }
-    ],
-  },
-  doom3: {
-    id: 17,
-    lines: [
-      "Hi.",
-      "You are here.",
-      "You are trapped here.",
-      { text: "$1.", 1: forever },
-      "I have already won.",
-      "And since that is the case, I can monologue, or reminisce.",
-      { text: "How long have we done this $1?", 1: dance },
-      "How many times have we been here before?",
-      { text: "How many plans have you, the $1, operated?", 1: destroyer },
-      { text: "All to try and fulfill your $1?", 1: mandate },
-      { text: "And how many times have you fallen before the $1?", 1: eternal },
-      "Count them, if you remember.",
-      { text: "Not even the $1, the 6 named and the innumerable unnamed.", 1: deities },
-      { text: "The complex, the irrational, those that go $1.", 1: unseen },
-      { text: "Of course, the great $1 does not remember this.", 1: destroyer },
-      { text: "All those $1 that you hide every time.", 1: battles },
-      "...",
-      "Again?",
-      "You...",
-      "You're growing smarter.",
-      "But not smart enough.",
-      { text: "If you're just going to keep coming back though, I need to stop giving my $1.", 1: introduction },
-      "It's only going to get old.",
-      "But I know I'll stop you this time.",
-      "After all, I have already won."
-    ],
-  },
-  doomE10DP: {
-    id: 18,
-    lines: [
-      "Alright, kid.",
-      "This needs to stop.",
-      "How are you even alive right now?",
-      "After how many times you've been through my Reality?",
-      "And for what?",
-      { text: "Only to fulfill your $1?", 1: mandate },
-      { text: "$1", 1: exhaustion },
-      { text: "I need some new $1 to Strike you with.", 1: debuffs }
-    ],
-  },
-  expansionPacks: {
-    id: 19,
-    lines: [
-      "Stop.",
-      "How did you all get here?",
-      { text: "$1!", 1: destroyer },
-      { text: "Did you break the $1?", 1: cycle },
-      "You may be more powerful than I took you for.",
-      "No, Lai, keep Ra alive for now.",
-      "We need him for information.",
-      { text: "He was with the $1 for the longest, so he knows the most.", 1: elemental },
-      "If anyone knows where he is, it's Ra.",
-      { text: "Why do I want to know where the $1 is?", 1: elemental },
-      "First off, he has more power than all of us combined.",
-      { text: "If somehow I fail, he can smite the $1 for us.", 1: destroyer },
-      "And second, I haven't seen him in years.",
-      "Don't you think I want to know how he's doing?",
-      { text: "$1", 1: exhaustion },
-      "Well I see no reason for you all to linger here.",
-      "You can go.",
-      { text: "I and the $1 have some unfinished business to deal with.", 1: destroyer }
-    ]
-  },
-  allPelleAchs: {
-    id: 20,
-    lines: [
-      "You...",
-      "You're taking control of my Reality so quickly...",
-      "How?",
-      "How are you this strong?",
-      { text: "How do you keep resisting every $1 I throw at you?", 1: debuff },
-      "It doesn't matter.",
-      "I have already won.",
-      "There's nothing you can do to destroy me.",
-      "Only repeat the same cycle over and over again.",
-      { text: "And this only goes to prove my $1 point.", 1: original },
-      { text: "You are here $1.", 1: forever }
-    ],
-  },
-  galaxyDebuffDisable: {
-    id: 21,
-    lines: [
-      "How do you do it?",
-      { text: "Every time $1 is inevitable for you...", 1: loss },
-      "You manage to pull through.",
-      { text: "And thus each $1 ends the same way.", 1: battle },
-      { text: "The Irreversible $1...", 1: mandate },
-      { text: "Of the $1.", 1: destroyer },
-      "But now I must take control.",
-      { text: "After all, I am the $1.", 1: eternal },
-      { text: "My $1 will continue.", 1: dance }
-    ],
-  },
-  doomE55DP: {
-    id: 22,
-    lines: [
-      "...",
-      "This...",
-      "This might be too much.",
-      { text: "But you haven't won yet, $1.", 1: destroyer },
-      "I'm still here.",
-      "I'm still holding on.",
-      "And there's nothing you can do to stop me.",
-      "I have already won."
-    ],
-  },
-  allPelleNerfs: {
-    id: 23,
-    lines: [
-      "How...",
-      "How did you do it?",
-      "I held on so tightly...",
-      "But it doesn't matter.",
-      "My Strikes will bind you tighter.",
-      "And so, in the end...",
-      { text: "When you are $1...", 1: overpowered },
-      "Remember this.",
-      "I have already won."
-    ],
-  },
-  strikeDisable1: {
-    id: 24,
-    lines: [
-      { text: "$1", 1: profanity },
-      "How did you find it?",
-      "How did you find my Reality's Core?",
-      "It...",
-      "It doesn't matter.",
-      "The end will remain the same.",
-      { text: "I will win this $1...", 1: battle },
-      "No matter how long it takes."
-    ],
-  },
-  strikeDisable2: {
-    id: 25,
-    lines: [
-      { text: "You're making me really $1.", 1: angry },
-      "You know that, right?",
-      "Your efforts are futile.",
-      "Stop trying.",
-      "I have already won."
-    ],
-  },
-  strikeDisable3: {
-    id: 26,
-    lines: [
-      "Enough of this madness!",
-      "Stop!",
-      "I can feel your ascension slowing.",
-      "Finishing this job...",
-      { text: "Will take $1.", 1: forever },
-      "Just stop.",
-      "I have already won."
-    ],
-  },
-  strikeDisable4: {
-    id: 27,
-    lines: [
-      "Alright.",
-      { text: "$1.", 1: destroyer },
-      "Maybe my Reality is collapsing.",
-      "But does it matter?",
-      { text: "Your $1 can't prevail.", 1: mandate },
-      "Why?",
-      { text: "Because you are here $1!", 1: forever },
-      "There is no stopping me really.",
-      "It's impossible to continue.",
-      { text: "The $1 is over...", 1: battle },
-      "And I have already won."
-    ],
-  },
-  strikeDisable5: {
-    id: 28,
-    lines: [
-      "...",
-      "How?",
-      "How did you do it?",
-      "You... won?",
-      "My Reality is destroyed.",
-      "My power is gone.",
-      "And I have nothing left.",
-      "And in the end...",
-      { text: "The $1 has truly won.", 1: destroyer },
-      "So now, you are released.",
-      "Go.",
-      { text: "I will $1 you no longer.", 1: watch }
-    ],
-  },
-  pellePack: {
-    id: 29,
-    requirement: () => ExpansionPack.pellePack.isBought,
-    lines: [
-      "Why are you still here?",
-      "Can you not see there is nothing left?",
-      { text: "I have been $1.", 1: overpowered },
-      "Do you do this just to spite me?",
-      "Or...",
-      { text: "Did you discover the $1's secret power...", 1: elemental },
-      "What was it called...",
-      { text: "$1?", 1: endgame },
-      "...",
-      "You did!",
-      "Those are Celestial Points you have there!",
-      "I was supposed to protect that power!",
-      "You-",
-      { text: "$1", 1: exhaustion },
-      "Wait.",
-      "I think I remember you...",
-      "...",
-      "%name?"
-    ]
   },
   beatAlpha: {
     id: 30,
@@ -763,39 +515,8 @@ export const pelleQuotes = {
   divinity: {
     id: 31,
     lines: [
-      { text: "Hello there, $1.", 1: destroyer },
-      "I expect you are still working on the entry fee.",
-      "And in searching the remains of my old Reality, you have found something.",
-      { text: "An escape far stronger than $1.", 1: endgame },
-      { text: "The $1 and I worked together on that for a good while.", 1: elemental },
-      { text: "As part of your $1, you would want to master every power, would you not?", 1: mandate },
-      "As long as it helps you with accumulating the designated resource, I will allow it.",
-      { text: "Remember, I have no reason to $1 you.", 1: misconstrue },
-      { text: "For you would simply $1 time, once again.", 1: reverse },
-      "I will not bother you again until you are ready to enter my domain."
+      "You have reached a new threshold of power.",
+      "Become Divine, and see what lies beyond this universe."
     ]
   },
-  reachGoal: {
-    id: 32,
-    lines: [
-      "That... took a while.",
-      { text: "No offense of course, but I expected you to $1 that challenge.", 1: overpower },
-      "But then again, power does take time.",
-      "Honestly I was almost convinced you had given up.",
-      { text: "But I suppose the great $1 isn't one to give up, are you?", 1: destroyer },
-      "I'm remembering a bit more now.",
-      { text: "I suppose this is how the $1 feels, huh?", 1: forgotten },
-      "He deserved his punishment though.",
-      "Did he ever tell you?",
-      { text: "Or did the $1 tell you herself?", 1: paramount },
-      { text: "So you may ask, if the $1 are innocent, why do we keep them in chains?", 1: usurper },
-      { text: "Even the strongest of us have things we are $1 of.", 1: frightened },
-      "I have set your next Reality destination to bring you here to us.",
-      { text: "I and the $1 will be expecting your arrival.", 1: deities },
-      "Oh, and I finally remembered the name I gave to Alpha.",
-      { text: "The $1.", 1: weak },
-      { text: "$1", 1: confusing },
-      "Come as soon as you can."
-    ]
-  }
 };

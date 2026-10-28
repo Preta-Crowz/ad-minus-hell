@@ -297,7 +297,7 @@ export const DarkMatterDimensions = {
     for (let tier = 8; tier >= 1; tier--) {
       const dim = DarkMatterDimension(tier);
       if (!dim.isUnlocked) continue;
-      dim.timeSinceLastUpdate += realDiff;
+      dim.timeSinceLastUpdate += realDiff.toNumber();
       if (dim.interval.lt(dim.timeSinceLastUpdate)) {
         const ticks = Decimal.floor(new Decimal(dim.timeSinceLastUpdate).div(dim.interval));
         const productionDM = dim.amount.times(ticks).times(dim.powerDM);
@@ -310,11 +310,13 @@ export const DarkMatterDimensions = {
         dim.timeSinceLastUpdate -= dim.interval.times(ticks).toNumber();
       }
     }
-    if (SingularityMilestone.dmdMultBooster.isUnlocked) Currency.darkEnergy.add(DarkMatterDimensions.totalPowerDE.times(realDiff / 1000));
+    if (SingularityMilestone.dmdMultBooster.isUnlocked) {
+      Currency.darkEnergy.add(DarkMatterDimensions.totalPowerDE.times(realDiff.div(1000)));
+    }
     if (SingularityMilestone.dim4Generation.canBeApplied && Laitela.annihilationUnlocked) {
       const type = DarkMatterDimensions.highestUnlocked;
       DarkMatterDimension(type).amount = DarkMatterDimension(type).amount
-        .plus(SingularityMilestone.dim4Generation.effectValue.times(realDiff / 1000));
+        .plus(SingularityMilestone.dim4Generation.effectValue.times(realDiff.div(1000)));
     }
   },
 

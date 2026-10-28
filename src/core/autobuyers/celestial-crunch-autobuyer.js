@@ -73,7 +73,7 @@ export class CelestialCrunchAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get canTick() {
-    return Currency.celestialMatter.gte(DC.NUMMAX) && super.canTick;
+    return super.canTick && Currency.celestialMatter.gte(DC.NUMMAX);
   }
 
   get resetTickOn() {

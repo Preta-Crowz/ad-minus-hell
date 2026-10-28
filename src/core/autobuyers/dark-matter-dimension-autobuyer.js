@@ -1,6 +1,10 @@
 import { IntervaledAutobuyerState } from "./autobuyer";
 
 export class DarkMatterDimensionAutobuyerState extends IntervaledAutobuyerState {
+  get realTime() {
+    return true;
+  }
+
   get data() {
     return player.auto.darkMatterDims;
   }
@@ -14,7 +18,7 @@ export class DarkMatterDimensionAutobuyerState extends IntervaledAutobuyerState 
   }
 
   get interval() {
-    return SingularityMilestone.darkAutobuyerSpeed.effectValue * 1000;
+    return 1000 * SingularityMilestone.darkAutobuyerSpeed.effectValue;
   }
 
   get hasUnlimitedBulk() {
@@ -23,6 +27,8 @@ export class DarkMatterDimensionAutobuyerState extends IntervaledAutobuyerState 
 
   tick() {
     super.tick();
-    Laitela.maxAllDMDimensions(SingularityMilestone.darkDimensionAutobuyers.effectValue + SingularityMilestone.darkDimAuto5to8.effectValue);
+    Laitela.maxAllDMDimensions(
+      SingularityMilestone.darkDimensionAutobuyers.effectValue + SingularityMilestone.darkDimAuto5to8.effectValue
+    );
   }
 }

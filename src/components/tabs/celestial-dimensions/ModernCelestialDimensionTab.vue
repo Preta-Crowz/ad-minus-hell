@@ -21,7 +21,7 @@ export default {
       dimMultiplier: new Decimal(0),
       matterPerSecond: new Decimal(0),
       incomeType: "",
-      conversionExponent: 0,
+      conversionExponent: new Decimal(0),
       nextDimCapIncrease: 0,
       totalDimCap: new Decimal(0),
       creditsClosed: false,
@@ -93,7 +93,7 @@ export default {
       this.isBroken = player.endgame.celDimExpansion.isBroken;
       this.hasInfinities = PlayerProgress.celestialInfinityUnlocked();
       this.infinityPoints.copyFrom(player.endgame.celDimExpansion.celestialInfinityPoints);
-      this.isAnyAutobuyerUnlocked = Autobuyer.celestialDimension(1).isUnlocked;
+      this.isAnyAutobuyerUnlocked = Autobuyer.celestialDimension(1)?.isUnlocked ?? false;
       this.timeToCap.copyFrom(DC.D5.times(CelestialDimensions.alphaDecaySpeed));
       this.hasEternities = PlayerProgress.celestialEternityUnlocked();
       this.eternityPoints.copyFrom(player.endgame.celDimExpansion.celestialEternityPoints);

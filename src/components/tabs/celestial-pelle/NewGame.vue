@@ -7,6 +7,7 @@ export default {
       visible: false,
       hasMoreCosmetics: false,
       selectedSetName: "",
+      isMeta: false,
     };
   },
   computed: {
@@ -15,7 +16,7 @@ export default {
         opacity: this.opacity,
         visibility: this.visible ? "visible" : "hidden",
       };
-    }
+    },
   },
   methods: {
     update() {
@@ -23,6 +24,7 @@ export default {
       this.opacity = (GameEnd.endState - END_STATE_MARKERS.SHOW_NEW_GAME) * 2;
       this.hasMoreCosmetics = GlyphAppearanceHandler.lockedSets.length > 0;
       this.selectedSetName = GlyphAppearanceHandler.chosenFromModal?.name ?? "None (will choose randomly)";
+      this.isMeta = PlayerProgress.metaUnlocked();
     },
     startNewGame() {
       Endgame.newEndgame();
@@ -40,11 +42,12 @@ export default {
     :style="style"
   >
     <h2>
-      Are you sure you want to Endgame? Endgame will reset the entire game, but keep Record Antimatter, Automator Scripts, Study Presets, Secret Themes,
-      Normal/Secret Achievements (only Rows 19+ for Normal Achievements), Options, and Companion Glyphs.
+      Reset the entire game, but keep Automator Scripts, Study Presets, Secret Themes, Secret Achievements, Options,
+      and Companion Glyph.
     </h2>
     <h3>You can use the button in the top-right to view the game as it is right now.</h3>
-    <div class="c-new-game-button-container">
+    <div class="c-new-game-button-container"
+    >
       <button
         class="c-new-game-button"
         @click="startNewGame"
@@ -54,8 +57,8 @@ export default {
     </div>
     <br>
     <h3 v-if="hasMoreCosmetics">
-      For completing the vanilla game, you also unlock a new cosmetic set of your choice for Glyphs. These are freely
-      modifiable once you reach Reality again, but are purely visual and offer no gameplay bonuses.
+      For completing a Doomed Reality, you also unlock a new cosmetic set of your choice for Glyphs. These are freely
+      modifiable in the Glyphs tab, but are purely visual and offer no gameplay bonuses.
       <br>
       <button
         class="c-new-game-button"
@@ -72,8 +75,7 @@ export default {
     </h3>
     <br>
     <h3>
-      You can also import "speedrun" to start the game again with additional tracking for speedrunning purposes, however,
-      this may reset progress up to Endgame.
+      You can also import "speedrun" to start the game again with additional tracking for speedrunning purposes.
     </h3>
   </div>
 </template>

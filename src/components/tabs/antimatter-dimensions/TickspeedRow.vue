@@ -10,15 +10,14 @@ export default {
       cost: new Decimal(0),
       isAffordable: false,
       tickspeed: new Decimal(0),
-      gameSpeedMult: new Decimal(1),
-      galaxyCount: new Decimal(0),
+      gameSpeedMult: 1,
+      galaxyCount: new Decimal(),
       isContinuumActive: false,
-      continuumValue: new Decimal(0),
+      continuumValue: 0,
       hasTutorial: false,
       hasRealityButton: false,
       isEC9: false,
       isTransient: false,
-      isFlipped: false
     };
   },
   computed: {
@@ -29,8 +28,8 @@ export default {
       };
     },
     multiplierDisplay() {
-      if (InfinityChallenge(3).isRunning) return `Multiply all ${this.isFlipped ? "Matter" : "Antimatter"} Dimensions by
-        ${formatX(this.galaxyCount.times(0.005).add(1.05), 3, 3)}`;
+      if (InfinityChallenge(3).isRunning) return `Multiply all Antimatter Dimensions by
+        ${formatX(this.galaxyCount.times(Hell.ic3PerGalaxy).add(1.05))}`;
       const tickmult = this.mult;
       return `${formatX(tickmult.reciprocal(), 2, 3)} faster / upgrade.`;
     },
@@ -38,13 +37,14 @@ export default {
       return `Tickspeed: ${format(this.tickspeed, 2, 3)} / sec`;
     },
     continuumString() {
-      return formatHybridFloat(this.continuumValue, 2);
+      if (this.continuumValue.gte(1e6)) return format(this.continuumValue, 2);
+      return formatFloat(this.continuumValue, 2);
     },
     upgradeCount() {
       const purchased = this.purchasedTickspeed;
-      if (!this.freeTickspeed) return quantifyHybridLarge("Purchased Upgrade", purchased);
-      if (purchased.eq(0) || this.isContinuumActive) return `${formatHybridLarge(this.freeTickspeed, 3)} Free Upgrades`;
-      return `${formatHybridLarge(purchased, 3)} Purchased + ${formatHybridLarge(this.freeTickspeed, 3)} Free`;
+      if (!this.freeTickspeed) return quantifyInt("Purchased Upgrade", purchased);
+      if (purchased.eq(0) || this.isContinuumActive) return `${formatInt(this.freeTickspeed, 3)} Free Upgrades`;
+      return `${formatInt(purchased, 3)} Purchased + ${formatInt(this.freeTickspeed, 3)} Free`;
     }
   },
   methods: {
@@ -59,13 +59,12 @@ export default {
       this.mult.copyFrom(Tickspeed.multiplier);
       this.cost.copyFrom(Tickspeed.cost);
       this.isAffordable = Tickspeed.isAvailableForPurchase && Tickspeed.isAffordable;
-      this.tickspeed.copyFrom(Tickspeed.perSecond);
-      this.gameSpeedMult.copyFrom(getGameSpeedupForDisplay());
+      this.tickspeed.copyFrom(GameCache.tickspeedPerSecond.value);
+      this.gameSpeedMult = getGameSpeedupForDisplay();
       this.galaxyCount.copyFrom(player.galaxies);
       this.isContinuumActive = Laitela.continuumActive;
-      if (this.isContinuumActive) this.continuumValue.copyFrom(Tickspeed.continuumValue);
+      if (this.isContinuumActive) this.continuumValue = Tickspeed.continuumValue;
       this.hasTutorial = Tutorial.isActive(TUTORIAL_STATE.TICKSPEED);
-      this.isFlipped = player.universes.current === 2;
     },
     buttonClass() {
       return {

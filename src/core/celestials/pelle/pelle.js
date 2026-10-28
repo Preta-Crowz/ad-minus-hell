@@ -1,4 +1,5 @@
 import { Currency } from "../../currency";
+import { DC } from "../../constants";
 import { RebuyableMechanicState } from "../../game-mechanics/rebuyable";
 import { SetPurchasableMechanicState } from "../../utils";
 
@@ -8,30 +9,29 @@ import wordShift from "../../word-shift";
 
 import zalgo from "./zalgo";
 
+const getDisabledPelleItems = (challengerId, items) => items
+  .filter(([, upgrade]) => !ChallengerUpgrade(challengerId).isBought && (!upgrade || !upgrade.canBeApplied))
+  .map(([id]) => id);
 
 const disabledMechanicUnlocks = {
-  achievements: () => ({}),
-  IPMults: () => ({}),
-  EPMults: () => ({}),
-  galaxies: () => ({}),
-  InfinitiedMults: () => ({}),
-  infinitiedGen: () => ({}),
-  eternityGain: () => ({}),
-  eternityMults: () => ({}),
-  studies: () => ({}),
-  EPgen: () => ({}),
-  autoec: () => ({}),
-  replicantiIntervalMult: () => ({}),
-  tpMults: () => ({}),
-  glyphs: () => !PelleRifts.vacuum.milestones[0].canBeApplied,
-  V: () => ({}),
-  singularity: () => ({}),
-  alchemy: () => ({}),
-  achievementMult: () => ({}),
-  blackhole: () => ({}),
-  effarig: () => ({}),
-  imaginaryUpgrades: () => ({}),
-  glyphsac: () => ({}),
+  achievements: () => !ChallengerUpgrade(1).isBought,
+  IPMults: () => !ChallengerUpgrade(7).isBought && !PelleDestructionUpgrade.x2IPUpgrade.canBeApplied,
+  EPMults: () => !ChallengerUpgrade(7).isBought && !PelleDestructionUpgrade.x5EPUpgrade.canBeApplied,
+  InfinitiedMults: () => !ChallengerUpgrade(6).isBought,
+  infinitiedGen: () => !ChallengerUpgrade(0).isBought,
+  eternityMults: () => !ChallengerUpgrade(6).isBought,
+  autoec: () => false,
+  replicantiIntervalMult: () => !ChallengerUpgrade(2).isBought,
+  tpMults: () => !ChallengerUpgrade(9).isBought,
+  glyphs: () => !(PelleRifts.vacuum.milestones[0].canBeApplied || ChallengerUpgrade(19).isBought),
+  V: () => !ChallengerUpgrade(15).isBought,
+  singularity: () => !ChallengerUpgrade(17).isBought && !PelleDestructionUpgrade.singularityMilestones.canBeApplied,
+  continuum: () => !ChallengerUpgrade(17).isBought && !PelleDestructionUpgrade.continuumBuff.canBeApplied,
+  alchemy: () =>  !ChallengerUpgrade(11).isBought,
+  achievementMult: () => !ChallengerUpgrade(1).isBought && !PelleDestructionUpgrade.achievementMultiplier.canBeApplied,
+  blackhole: () => !ChallengerUpgrade(14).isBought,
+  effarig: () => !ChallengerUpgrade(13).isBought,
+  glyphsac: () => !ChallengerUpgrade(12).isBought,
   antimatterDimAutobuyer1: () => PelleUpgrade.antimatterDimAutobuyers1,
   antimatterDimAutobuyer2: () => PelleUpgrade.antimatterDimAutobuyers1,
   antimatterDimAutobuyer3: () => PelleUpgrade.antimatterDimAutobuyers1,
@@ -43,12 +43,11 @@ const disabledMechanicUnlocks = {
   tickspeedAutobuyer: () => PelleUpgrade.tickspeedAutobuyer,
   dimBoostAutobuyer: () => PelleUpgrade.dimBoostAutobuyer,
   galaxyAutobuyer: () => PelleUpgrade.galaxyAutobuyer,
-  timeTheoremAutobuyer: () => ({}),
-  rupg10: () => ({}),
-  dtMults: () => ({}),
-  chargedInfinityUpgrades: () => ({}),
-  alteration: () => ({}),
-  timeTheorems: () => ({})
+  timeTheoremAutobuyer: () => !ChallengerUpgrade(8).isBought,
+  rupg10: () => !ChallengerUpgrade(3).isBought,
+  dtMults: () => !ChallengerUpgrade(9).isBought,
+  chargedInfinityUpgrades: () => !ChallengerUpgrade(16).isBought && !PelleCelestialUpgrade.raTeresa2.canBeApplied,
+  alteration: () => !ChallengerUpgrade(16).isBought && !PelleCelestialUpgrade.raTeresa3.canBeApplied,
 };
 
 export const Pelle = {
@@ -56,51 +55,50 @@ export const Pelle = {
   // Suppress the randomness for this form
   possessiveName: "Pelle's",
 
-  // This is called upon initial Dooming and after every Armageddon when using the modal
+  // The modal uses this to enter Doom; an existing Doomed run cannot use it to escape.
   initializeRun() {
-    if (Alpha.isRunning || LHC.voidRunning || LHC.nullifiedVoidRunning || Slabdrill.isCursed || player.endgame.overcharge.isRunning ||
-        player.compression.active || player.universes.current !== 0) return;
-    if (this.isDoomed) {
-      Pelle.armageddon(true);
-      return;
-    }
+    if (this.isDoomed) return;
 
-    EventHub.dispatch(GAME_EVENT.DOOM_REALITY_BEFORE);
-    if (!Glyphs.unequipAll()) {
-      Modal.hideAll();
-      Modal.message.show(`Dooming your Reality will unequip your Glyphs. Some of your
-        Glyphs could not be unequipped due to lack of inventory space.`, 1);
-      return;
+    if (player.pelleResets > 0) Pelle.quotes.pellesChallenger.show();
+
+    player.celestials.glitch.run = false;
+    
+    if (!Pelle.joined)  {
+      Glyphs.harshAutoClean();
+      if (!Glyphs.unequipAll()) {
+        Modal.hideAll();
+        Modal.message.show(`Dooming your Reality will unequip your Glyphs. Some of your
+          Glyphs could not be unequipped due to lack of inventory space.`, 1);
+        return;
+      }
+      Glyphs.harshAutoClean();
+      if (Glyphs.freeInventorySpace < 5) {
+        Modal.hideAll();
+        Modal.message.show(`You must have enough empty unprotected Glyph slots for
+          ${formatInt(5)} additional Glyphs in order to Doom your Reality.`, 1);
+        return;
+      }
+      for (const type of GlyphInfo.basicGlyphTypes) Glyphs.addToInventory(GlyphGenerator.doomedGlyph(type));
+    } else {
+      if (!Glyphs.unequipAll()) {
+        Modal.hideAll();
+        Modal.message.show(`Dooming your Reality will unequip your Glyphs. Some of your
+          Glyphs could not be unequipped due to lack of inventory space.`, 1);
+        return;
+      }
     }
-    // Keep glyphs equal to max slot in Pelle.
-    Glyphs.autoClean(Glyphs.activeSlotCountInPelle(true));
-    if (Glyphs.freeInventorySpace < 5) {
-      Modal.hideAll();
-      Modal.message.show(`You must have enough empty unprotected Glyph slots for
-        ${formatInt(5)} additional Glyphs in order to Doom your Reality.`, 1);
-      return;
-    }
-    for (const type of BASIC_GLYPH_TYPES) Glyphs.addToInventory(GlyphGenerator.doomedGlyph(type));
-    Glyphs.refreshActive();
-    player.options.confirmations.glyphReplace = true;
+    
+    player.options.confirmations.glyphReplace = false;
     if (BlackHoles.arePaused) BlackHoles.togglePause();
     player.celestials.pelle.doomed = true;
+    Glyphs.refreshActive();
     Pelle.armageddon(false);
     respecTimeStudies(true);
     Currency.infinityPoints.reset();
     player.IPMultPurchases = DC.D0;
     Autobuyer.bigCrunch.mode = AUTO_CRUNCH_MODE.AMOUNT;
-    if (!DivinityMilestone.pelleQoL.isReached) disChargeAll();
-    if (DivinityMilestone.pelleQoL.isReached) {
-      PelleStrikes.powerGalaxies.trigger();
-      Replicanti.unlock(true);
-    }
-    if (!Effarig.isRunning || Effarig.currentStage !== EFFARIG_STAGES.ENDGAME) clearCelestialRuns();
-    CelestialDimensions.resetAmount();
-    player.records.thisEndgame.peakGameSpeed = DC.D1;
-    player.requirementChecks.endgame.noGlyphsDoomed = true;
-    player.celestials.enslaved.stored = DC.D0;
-    Enslaved.autoReleaseSpeed = DC.D0;
+    disChargeAll();
+    clearCelestialRuns();
 
     // Force-enable the group toggle for AD autobuyers to be active; whether or not they can actually tick
     // is still handled through if the autobuyers are unlocked at all. This fixes an odd edge case where the player
@@ -108,50 +106,16 @@ export const Pelle = {
     // for the group toggle is hidden until they're all re-upgraded to the max again.
     player.auto.antimatterDims.isActive = true;
 
-    player.records.realTimeDoomed = 0;
-    if (!PelleAlchemyUpgrade.alchemyPower.canBeApplied) player.celestials.ra.alchemy[0].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyInfinity.canBeApplied) player.celestials.ra.alchemy[1].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyTime.canBeApplied) player.celestials.ra.alchemy[2].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyReplication.canBeApplied) player.celestials.ra.alchemy[3].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyDilation.canBeApplied) player.celestials.ra.alchemy[4].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyEffarig.canBeApplied) player.celestials.ra.alchemy[5].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyCardinality.canBeApplied) player.celestials.ra.alchemy[6].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyEternity.canBeApplied) player.celestials.ra.alchemy[7].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyDimensionality.canBeApplied) player.celestials.ra.alchemy[8].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyInflation.canBeApplied) player.celestials.ra.alchemy[9].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyAlternation.canBeApplied) player.celestials.ra.alchemy[10].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemySynergism.canBeApplied) player.celestials.ra.alchemy[11].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyDecoherence.canBeApplied) player.celestials.ra.alchemy[12].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyMomentum.canBeApplied) player.celestials.ra.alchemy[13].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyMultiversal.canBeApplied) player.celestials.ra.alchemy[14].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyForce.canBeApplied) player.celestials.ra.alchemy[15].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyExponential.canBeApplied) player.celestials.ra.alchemy[16].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyUncountability.canBeApplied) player.celestials.ra.alchemy[17].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyBoundless.canBeApplied) player.celestials.ra.alchemy[18].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyUnpredictability.canBeApplied) player.celestials.ra.alchemy[19].amount = 0;
-    if (!PelleAlchemyUpgrade.alchemyReality.canBeApplied) player.celestials.ra.alchemy[20].amount = 0;
-    if (!ExpansionPack.pellePack.isBought) {
-      AutomatorBackend.stop();
-    }
+    player.buyUntil10 = true;
+    player.records.realTimeDoomed = DC.D0;
 
     if (DivinityMilestone.firstDivine.isReached && !player.disablePostReality) {
-      player.celestials.pelle.upgrades = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]);
-      player.celestials.pelle.rebuyables.antimatterDimensionMult = 47;
-      player.celestials.pelle.rebuyables.timeSpeedMult = 35;
-      player.celestials.pelle.rebuyables.glyphLevels = 26;
-      player.celestials.pelle.rebuyables.infConversion = 21;
-      player.celestials.pelle.rebuyables.galaxyPower = 9;
-    }
-
-    if (DivinityMilestone.pelleQoL.isReached) {
-      player.celestials.pelle.rifts.decay.percentageSpent = 10;
-      player.celestials.pelle.rifts.vacuum.fill = PelleRifts.vacuum.config.percentageToFill(1);
-      player.celestials.pelle.rifts.decay.fill = PelleRifts.decay.config.percentageToFill(11);
-      player.celestials.pelle.rifts.chaos.fill = PelleRifts.chaos.config.percentageToFill(1);
-      player.celestials.pelle.rifts.recursion.fill = PelleRifts.recursion.config.percentageToFill(1);
-      player.celestials.pelle.rifts.paradox.fill = PelleRifts.paradox.config.percentageToFill(1);
-      if (PelleRifts.vacuum.milestones[0].canBeApplied) Glyphs.refreshActive();
-      PelleRifts.all.forEach(x => x.checkMilestoneStates());
+      player.celestials.pelle.upgrades = new Set(Array.range(0, 23));
+      player.celestials.pelle.rebuyables.antimatterDimensionMult = new Decimal(47);
+      player.celestials.pelle.rebuyables.timeSpeedMult = new Decimal(35);
+      player.celestials.pelle.rebuyables.glyphLevels = new Decimal(26);
+      player.celestials.pelle.rebuyables.infConversion = new Decimal(21);
+      player.celestials.pelle.rebuyables.galaxyPower = new Decimal(9);
     }
 
     // Force-unhide all tabs except for the shop tab, for which we retain the hide state instead
@@ -160,28 +124,18 @@ export const Pelle = {
 
     // Force unhide MOST subtabs, although some of the tabs get ignored since they don't contain any
     // meaningful interactable gameplay elements in Doomed
-    const tabsToIgnore = ["statistics", "achievements", "reality", "celestials"];
+    const tabsToIgnore = ["statistics", "achievements", "reality", "celestials", "glitch", "meta"];
     const ignoredIDs = GameDatabase.tabs.filter(t => tabsToIgnore.includes(t.key)).map(t => t.id);
     for (let tabIndex = 0; tabIndex < GameDatabase.tabs.length; tabIndex++) {
       player.options.hiddenSubtabBits[tabIndex] &= ignoredIDs.includes(tabIndex) ? -1 : 0;
     }
     Pelle.quotes.initial.show();
-    if (player.endgames >= 1) {
-      Pelle.quotes.doom2.show();
-    }
-    if (player.endgames >= 2) {
-      Pelle.quotes.doom3.show();
-    }
-    if (player.endgame.doomedParticles.gte(1e10)) {
-      Pelle.quotes.doomE10DP.show();
-    }
-    if (player.endgame.doomedParticles.gte(1e55)) {
-      Pelle.quotes.doomE55DP.show();
-    }
-    if (!PlayerProgress.endgameUnlocked()) {
-      GameStorage.save(true)
-    }
+    GameStorage.save(true);
     EventHub.dispatch(GAME_EVENT.DOOM_REALITY_AFTER);
+  },
+
+  get joined() {
+    return player.celestials.pelle.joined;
   },
 
   get displayName() {
@@ -212,6 +166,13 @@ export const Pelle = {
     return Boolean(!upgrade.canBeApplied);
   },
 
+  isGlyphTypeDisabled(type, alwaysInDoom = false) {
+    if (!(this.isDoomed || alwaysInDoom)) return false;
+    if (type === "reality") return !PelleAlchemyUpgrade.alchemyReality.canBeApplied;
+    if (type === "effarig") return !PelleDestructionUpgrade.specialGlyphEffects.canBeApplied;
+    return type === "cursed";
+  },
+
   get canArmageddon() {
     return this.remnantsGain.gte(1);
   },
@@ -223,21 +184,23 @@ export const Pelle = {
       this.cel.remnants = this.cel.remnants.add(this.remnantsGain);
     }
     finishProcessReality({ reset: true, armageddon: true });
-    if ((this.isAlwaysDischargeCIU && !DivinityMilestone.pelleQoL.isReached) || player.celestials.ra.disCharge) disChargeAll();
+    disChargeAll();
     player.celestials.enslaved.isStoringReal = false;
     player.celestials.enslaved.autoStoreReal = false;
     if (PelleStrikes.dilation.hasStrike && !PelleStrikes.dilation.isDestroyed()) player.dilation.active = true;
+    realityUGs.all[13].isBought ? PelleStrikes.all[5].trigger() : false;
     EventHub.dispatch(GAME_EVENT.ARMAGEDDON_AFTER, gainStuff);
   },
 
-  get isAlwaysDischargeCIU() {
-    return Ra.unlocks.chargedInfinityUpgrades.isDisabledByPelle || !PelleUpgrade.keepBreakInfinityUpgrades.canBeApplied;
-  },
-
   gameLoop(diff) {
-    if (this.isDoomed) {
+    if (this.isDoomed || this.joined) {
       Currency.realityShards.add(this.realityShardGainPerSecond.times(diff).div(1000));
+      if (ChallengerUpgrade(19).isBought) PelleRifts.all.forEach(r => r.rift.active = true);
       PelleRifts.all.forEach(r => r.fill(diff));
+      if (ChallengerUpgrade(20).isBought ||
+        (this.isDoomed && DivinityMilestone.divineDimensions.isReached)) {
+        this.cel.remnants = this.cel.remnants.add(this.remnantsGain);
+      }
     }
   },
 
@@ -245,252 +208,217 @@ export const Pelle = {
     return player.celestials.pelle;
   },
 
+  // Fragmentation of Pelle: Hell is a Doomed Reality
   get isDoomed() {
-    return this.cel.doomed;
+    return this.cel.doomed || Hell.isInside;
   },
 
   get disabledAchievements() {
-    let remainingAchs = [];
-    if (!PelleAchievementUpgrade.achievement37.canBeApplied) remainingAchs.push(37);
-    if (!PelleAchievementUpgrade.achievement54.canBeApplied) remainingAchs.push(54);
-    if (!PelleAchievementUpgrade.achievement55.canBeApplied) remainingAchs.push(55);
-    if (!PelleAchievementUpgrade.achievement65.canBeApplied) remainingAchs.push(65);
-    if (!PelleAchievementUpgrade.achievement74.canBeApplied) remainingAchs.push(74);
-    if (!PelleAchievementUpgrade.achievement76.canBeApplied) remainingAchs.push(76);
-    if (!PelleAchievementUpgrade.achievement78.canBeApplied) remainingAchs.push(78);
-    if (!PelleAchievementUpgrade.achievement81.canBeApplied) remainingAchs.push(81);
-    if (!PelleAchievementUpgrade.achievement85.canBeApplied) remainingAchs.push(85);
-    if (!PelleAchievementUpgrade.achievement87.canBeApplied) remainingAchs.push(87);
-    if (!PelleAchievementUpgrade.achievement91.canBeApplied) remainingAchs.push(91);
-    if (!PelleAchievementUpgrade.achievement92.canBeApplied) remainingAchs.push(92);
-    if (!PelleAchievementUpgrade.achievement93.canBeApplied) remainingAchs.push(93);
-    if (!PelleAchievementUpgrade.achievement95.canBeApplied) remainingAchs.push(95);
-    if (!PelleAchievementUpgrade.achievement102.canBeApplied) remainingAchs.push(102);
-    if (!PelleAchievementUpgrade.achievement103.canBeApplied) remainingAchs.push(103);
-    if (!PelleAchievementUpgrade.achievement104.canBeApplied) remainingAchs.push(104);
-    if (!PelleAchievementUpgrade.achievement111.canBeApplied) remainingAchs.push(111);
-    if (!PelleAchievementUpgrade.achievement113.canBeApplied) remainingAchs.push(113);
-    if (!PelleAchievementUpgrade.achievement116.canBeApplied) remainingAchs.push(116);
-    if (!PelleAchievementUpgrade.achievement117.canBeApplied) remainingAchs.push(117);
-    if (!PelleAchievementUpgrade.achievement118.canBeApplied) remainingAchs.push(118);
-    if (!PelleAchievementUpgrade.achievement125.canBeApplied) remainingAchs.push(125);
-    if (!PelleAchievementUpgrade.achievement131.canBeApplied) remainingAchs.push(131);
-    if (!PelleAchievementUpgrade.achievement132.canBeApplied) remainingAchs.push(132);
-    if (!PelleAchievementUpgrade.achievement133.canBeApplied) remainingAchs.push(133);
-    if (!PelleAchievementUpgrade.achievement134.canBeApplied) remainingAchs.push(134);
-    if (!PelleAchievementUpgrade.achievement137.canBeApplied) remainingAchs.push(137);
-    if (!PelleAchievementUpgrade.achievement141.canBeApplied) remainingAchs.push(141);
-    if (!PelleAchievementUpgrade.achievement142.canBeApplied) remainingAchs.push(142);
-    if (!PelleAchievementUpgrade.achievement143.canBeApplied) remainingAchs.push(143);
-    if (!PelleAchievementUpgrade.achievement156.canBeApplied) remainingAchs.push(156);
-    if (!PelleAchievementUpgrade.achievement164.canBeApplied) remainingAchs.push(164);
-    return remainingAchs;
+    return getDisabledPelleItems(1, [
+      [37, PelleAchievementUpgrade.achievement37],
+      [54, PelleAchievementUpgrade.achievement54],
+      [55, PelleAchievementUpgrade.achievement55],
+      [65, PelleAchievementUpgrade.achievement65],
+      [74, PelleAchievementUpgrade.achievement74],
+      [76, PelleAchievementUpgrade.achievement76],
+      [78, PelleAchievementUpgrade.achievement78],
+      [81, PelleAchievementUpgrade.achievement81],
+      [85, PelleAchievementUpgrade.achievement85],
+      [87, PelleAchievementUpgrade.achievement87],
+      [91, PelleAchievementUpgrade.achievement91],
+      [92, PelleAchievementUpgrade.achievement92],
+      [93, PelleAchievementUpgrade.achievement93],
+      [95, PelleAchievementUpgrade.achievement95],
+      [102, PelleAchievementUpgrade.achievement102],
+      [103, PelleAchievementUpgrade.achievement103],
+      [104, PelleAchievementUpgrade.achievement104],
+      [111, PelleAchievementUpgrade.achievement111],
+      [113, PelleAchievementUpgrade.achievement113],
+      [116, PelleAchievementUpgrade.achievement116],
+      [117, PelleAchievementUpgrade.achievement117],
+      [118, PelleAchievementUpgrade.achievement118],
+      [125, PelleAchievementUpgrade.achievement125],
+      [126, null],
+      [131, PelleAchievementUpgrade.achievement131],
+      [132, PelleAchievementUpgrade.achievement132],
+      [133, PelleAchievementUpgrade.achievement133],
+      [134, PelleAchievementUpgrade.achievement134],
+      [137, PelleAchievementUpgrade.achievement137],
+      [141, PelleAchievementUpgrade.achievement141],
+      [142, PelleAchievementUpgrade.achievement142],
+      [143, PelleAchievementUpgrade.achievement143],
+      [156, PelleAchievementUpgrade.achievement156],
+      [164, PelleAchievementUpgrade.achievement164],
+    ]);
   },
 
   get uselessInfinityUpgrades() {
-    let remainingInfUpgs = [];
-    if (!PelleDestructionUpgrade.passiveIPGen.canBeApplied) remainingInfUpgs.push("passiveGen");
-    if (!PelleDestructionUpgrade.passiveInfGen.canBeApplied) remainingInfUpgs.push("infinitiedGeneration");
-    if (!PelleDestructionUpgrade.x2IPUpgrade.canBeApplied) remainingInfUpgs.push("ipMult");
-    return remainingInfUpgs;
+    return getDisabledPelleItems(0, [
+      ["passiveGen", PelleDestructionUpgrade.passiveIPGen],
+      ["ipMult", PelleDestructionUpgrade.x2IPUpgrade],
+      ["infinitiedGeneration", PelleDestructionUpgrade.passiveInfGen],
+    ]);
   },
 
   get uselessTimeStudies() {
-    let remainingTSs = [];
-    if (!PelleDestructionUpgrade.timestudy32.canBeApplied) remainingTSs.push(32);
-    if (!PelleDestructionUpgrade.timestudy33.canBeApplied) remainingTSs.push(33);
-    if (!PelleDestructionUpgrade.timestudy41.canBeApplied) remainingTSs.push(41);
-    if (!PelleDestructionUpgrade.timestudy51.canBeApplied) remainingTSs.push(51);
-    if (!PelleDestructionUpgrade.timestudy61.canBeApplied) remainingTSs.push(61);
-    if (!PelleDestructionUpgrade.timestudy62.canBeApplied) remainingTSs.push(62);
-    if (!PelleDestructionUpgrade.timestudy121.canBeApplied) remainingTSs.push(121);
-    if (!PelleDestructionUpgrade.timestudy122.canBeApplied) remainingTSs.push(122);
-    if (!PelleDestructionUpgrade.timestudy123.canBeApplied) remainingTSs.push(123);
-    if (!PelleDestructionUpgrade.timestudy141.canBeApplied) remainingTSs.push(141);
-    if (!PelleDestructionUpgrade.timestudy142.canBeApplied) remainingTSs.push(142);
-    if (!PelleDestructionUpgrade.timestudy143.canBeApplied) remainingTSs.push(143);
-    if (!PelleDestructionUpgrade.timestudy192.canBeApplied) remainingTSs.push(192);
-    if (!PelleDestructionUpgrade.timestudy213.canBeApplied) remainingTSs.push(213);
-    return remainingTSs;
+    return getDisabledPelleItems(2, [
+      [32, PelleDestructionUpgrade.timestudy32],
+      [33, PelleDestructionUpgrade.timestudy33],
+      [41, PelleDestructionUpgrade.timestudy41],
+      [51, PelleDestructionUpgrade.timestudy51],
+      [61, PelleDestructionUpgrade.timestudy61],
+      [62, PelleDestructionUpgrade.timestudy62],
+      [121, PelleDestructionUpgrade.timestudy121],
+      [122, PelleDestructionUpgrade.timestudy122],
+      [123, PelleDestructionUpgrade.timestudy123],
+      [141, PelleDestructionUpgrade.timestudy141],
+      [142, PelleDestructionUpgrade.timestudy142],
+      [143, PelleDestructionUpgrade.timestudy143],
+      [192, PelleDestructionUpgrade.timestudy192],
+      [213, PelleDestructionUpgrade.timestudy213],
+    ]);
   },
 
   get disabledRUPGs() {
-    let remainingRUs = [];
-    if (!PelleRealityUpgrade.temporalAmplifier.canBeApplied) remainingRUs.push(1);
-    if (!PelleRealityUpgrade.replicativeAmplifier.canBeApplied) remainingRUs.push(2);
-    if (!PelleRealityUpgrade.eternalAmplifier.canBeApplied) remainingRUs.push(3);
-    if (!PelleRealityUpgrade.superluminalAmplifier.canBeApplied) remainingRUs.push(4);
-    if (!PelleRealityUpgrade.boundlessAmplifier.canBeApplied) remainingRUs.push(5);
-    if (!PelleRealityUpgrade.cosmicallyDuplicate.canBeApplied) remainingRUs.push(6);
-    if (!PelleRealityUpgrade.innumerablyConstruct.canBeApplied) remainingRUs.push(7);
-    if (!PelleRealityUpgrade.paradoxicallyAttain.canBeApplied) remainingRUs.push(8);
-    if (!PelleRealityUpgrade.linguisticallyExpand.canBeApplied) remainingRUs.push(9);
-    if (!PelleRealityUpgrade.existentiallyProlong.canBeApplied) remainingRUs.push(10);
-    if (!PelleRealityUpgrade.boundlessFlow.canBeApplied) remainingRUs.push(11);
-    if (!PelleRealityUpgrade.knowingExistence.canBeApplied) remainingRUs.push(12);
-    if (!PelleRealityUpgrade.telemechanicalProcess.canBeApplied) remainingRUs.push(13);
-    if (!PelleRealityUpgrade.eternalFlow.canBeApplied) remainingRUs.push(14);
-    if (!PelleRealityUpgrade.paradoxicalForever.canBeApplied) remainingRUs.push(15);
-    if (!PelleRealityUpgrade.scourToEmpower.canBeApplied) remainingRUs.push(19);
-    if (!PelleRealityUpgrade.parityOfSingularity.canBeApplied) remainingRUs.push(20);
-    if (!PelleRealityUpgrade.temporalTranscendence.canBeApplied) remainingRUs.push(22);
-    if (!PelleRealityUpgrade.replicativeRapidity.canBeApplied) remainingRUs.push(23);
-    if (!PelleRealityUpgrade.syntheticSymbolism.canBeApplied) remainingRUs.push(24);
-    return remainingRUs;
+    return getDisabledPelleItems(3, [
+      [1, PelleRealityUpgrade.temporalAmplifier],
+      [2, PelleRealityUpgrade.replicativeAmplifier],
+      [3, PelleRealityUpgrade.eternalAmplifier],
+      [4, PelleRealityUpgrade.superluminalAmplifier],
+      [5, PelleRealityUpgrade.boundlessAmplifier],
+      [6, PelleRealityUpgrade.cosmicallyDuplicate],
+      [7, PelleRealityUpgrade.innumerablyConstruct],
+      [8, PelleRealityUpgrade.paradoxicallyAttain],
+      [9, PelleRealityUpgrade.linguisticallyExpand],
+      [10, PelleRealityUpgrade.existentiallyProlong],
+      [11, PelleRealityUpgrade.boundlessFlow],
+      [12, PelleRealityUpgrade.knowingExistence],
+      [13, PelleRealityUpgrade.telemechanicalProcess],
+      [14, PelleRealityUpgrade.eternalFlow],
+      [15, PelleRealityUpgrade.paradoxicalForever],
+      [19, PelleRealityUpgrade.scourToEmpower],
+      [20, PelleRealityUpgrade.parityOfSingularity],
+      [22, PelleRealityUpgrade.temporalTranscendence],
+      [23, PelleRealityUpgrade.replicativeRapidity],
+      [24, PelleRealityUpgrade.syntheticSymbolism],
+    ]);
   },
 
   get uselessPerks() {
-    let remainingPerks = [];
-    if (!PellePerkUpgrade.perkSAM.canBeApplied) remainingPerks.push(10);
-    if (!PellePerkUpgrade.perkSIP1.canBeApplied) remainingPerks.push(12);
-    if (!PellePerkUpgrade.perkSIP2.canBeApplied) remainingPerks.push(13);
-    if (!PellePerkUpgrade.perkSEP1.canBeApplied) remainingPerks.push(14);
-    if (!PellePerkUpgrade.perkSEP2.canBeApplied) remainingPerks.push(15);
-    if (!PellePerkUpgrade.perkSEP3.canBeApplied) remainingPerks.push(16);
-    if (!PellePerkUpgrade.perkSTP.canBeApplied) remainingPerks.push(17);
-    if (!PellePerkUpgrade.perkANR.canBeApplied) remainingPerks.push(30);
-    if (!PellePerkUpgrade.perkEU1.canBeApplied) remainingPerks.push(40);
-    if (!PellePerkUpgrade.perkEU2.canBeApplied) remainingPerks.push(41);
-    if (!PellePerkUpgrade.perkDU1.canBeApplied) remainingPerks.push(42);
-    if (!PellePerkUpgrade.perkDU2.canBeApplied) remainingPerks.push(43);
-    if (!PellePerkUpgrade.perkATT.canBeApplied) remainingPerks.push(44);
-    if (!PellePerkUpgrade.perkATD.canBeApplied) remainingPerks.push(45);
-    if (!PellePerkUpgrade.perkATD.canBeApplied) remainingPerks.push(46);
-    if (!PellePerkUpgrade.perkIDR.canBeApplied) remainingPerks.push(51);
-    if (!PellePerkUpgrade.perkTGR.canBeApplied) remainingPerks.push(52);
-    if (!PellePerkUpgrade.perkDILR.canBeApplied) remainingPerks.push(53);
-    if (!PellePerkUpgrade.perkPEC1.canBeApplied) remainingPerks.push(60);
-    if (!PellePerkUpgrade.perkPEC2.canBeApplied) remainingPerks.push(61);
-    if (!PellePerkUpgrade.perkPEC3.canBeApplied) remainingPerks.push(62);
-    if (!PellePerkUpgrade.perkTP1.canBeApplied) remainingPerks.push(80);
-    if (!PellePerkUpgrade.perkTP2.canBeApplied) remainingPerks.push(81);
-    if (!PellePerkUpgrade.perkTP3.canBeApplied) remainingPerks.push(82);
-    if (!PellePerkUpgrade.perkTP4.canBeApplied) remainingPerks.push(83);
-    if (!PellePerkUpgrade.perkDAU.canBeApplied) remainingPerks.push(100);
-    if (!PellePerkUpgrade.perkDAS.canBeApplied) remainingPerks.push(103);
-    if (!PellePerkUpgrade.perkTTS.canBeApplied) remainingPerks.push(104);
-    if (!PellePerkUpgrade.perkTTF.canBeApplied) remainingPerks.push(105);
-    if (!PellePerkUpgrade.perkTTM.canBeApplied) remainingPerks.push(106);
-    if (!PellePerkUpgrade.perkDILR.canBeApplied) remainingPerks.push(201);
-    if (!PellePerkUpgrade.perkDILR.canBeApplied) remainingPerks.push(202);
-    if (!PellePerkUpgrade.perkDILR.canBeApplied) remainingPerks.push(203);
-    if (!PellePerkUpgrade.perkDILR.canBeApplied) remainingPerks.push(204);
-    return remainingPerks;
+    return getDisabledPelleItems(4, [
+      [10, PellePerkUpgrade.perkSAM],
+      [12, PellePerkUpgrade.perkSIP1],
+      [13, PellePerkUpgrade.perkSIP2],
+      [14, PellePerkUpgrade.perkSEP1],
+      [15, PellePerkUpgrade.perkSEP2],
+      [16, PellePerkUpgrade.perkSEP3],
+      [17, PellePerkUpgrade.perkSTP],
+      [30, PellePerkUpgrade.perkANR],
+      [40, PellePerkUpgrade.perkEU1],
+      [41, PellePerkUpgrade.perkEU2],
+      [42, PellePerkUpgrade.perkDU1],
+      [43, PellePerkUpgrade.perkDU2],
+      [44, PellePerkUpgrade.perkATT],
+      [45, PellePerkUpgrade.perkATD],
+      [46, PellePerkUpgrade.perkATD],
+      [51, PellePerkUpgrade.perkIDR],
+      [52, PellePerkUpgrade.perkTGR],
+      [53, PellePerkUpgrade.perkDILR],
+      [60, PellePerkUpgrade.perkPEC1],
+      [61, PellePerkUpgrade.perkPEC2],
+      [62, PellePerkUpgrade.perkPEC3],
+      [80, PellePerkUpgrade.perkTP1],
+      [81, PellePerkUpgrade.perkTP2],
+      [82, PellePerkUpgrade.perkTP3],
+      [83, PellePerkUpgrade.perkTP4],
+      [100, PellePerkUpgrade.perkDAU],
+      [103, PellePerkUpgrade.perkDAS],
+      [104, PellePerkUpgrade.perkTTS],
+      [105, PellePerkUpgrade.perkTTF],
+      [106, PellePerkUpgrade.perkTTM],
+      [201, PellePerkUpgrade.perkDILR],
+      [202, PellePerkUpgrade.perkDILR],
+      [203, PellePerkUpgrade.perkDILR],
+      [204, PellePerkUpgrade.perkDILR],
+    ]);
   },
 
   get specialGlyphEffect() {
     const isUnlocked = this.isDoomed && PelleRifts.chaos.milestones[1].canBeApplied;
-    const description = this.getSpecialGlyphEffectDescriptionList(this.getAllActive);
-    const activeCount = type => {
-      if (!isUnlocked) return 0;
-      const count = this.getAllActive.get(type);
-      return count === undefined ? 0 : count;
-    };
-    const PGEC = this.isPelleGlyphEffectCapped;
+    const description = this.getSpecialGlyphEffectDescription(this.activeGlyphType);
+    const eff = this.activeGlyphType == "effarig";
+    const realityGlyphCount = isUnlocked ? Glyphs.active.filter(glyph => glyph?.type === "reality").length : 0;
+    const isActive = type => isUnlocked && (this.activeGlyphType === type || eff && ['power', 'time', 'replication', 'infinity', 'dilation'].includes(type));
     return {
       isUnlocked,
       description,
-      hasCappedEffect: PGEC("infinity") || PGEC("time") || PGEC("replication") || PGEC("dilation") || PGEC("power"),
-      infinity: this.calculatePelleInfinity(activeCount("infinity")),
-      time: this.calculatePelleTime(activeCount("time")),
-      replication: this.calculatePelleReplication(activeCount("replication")),
-      dilation: this.calculatePelleDilation(activeCount("dilation")),
-      power: this.calculatePellePower(activeCount("power")),
-      companion: activeCount("companion") > 0
-        ? 1.34 * activeCount("companion")
+      infinity: (isActive("infinity") && (player.challenge.eternity.current <= 8 || PelleDestructionUpgrade.pelleGlyphEffects.canBeApplied))
+        ? Currency.infinityPoints.value.plus(1).pow(eff ? 0.1 : 0.2)
+        : DC.D1,
+      time: isActive("time")
+        ? Currency.eternityPoints.value.plus(1).pow(eff ? 0.1 : 0.3)
+        : DC.D1,
+      replication: isActive("replication")
+        ? 10 ** 55 ** Math.min(1, PelleRifts.vacuum.percentage * (eff ? 0.75 : 1))
         : 1,
-      isScaling: () => {
-        const include = type => this.getAllActive.get(type) !== undefined;
-        if (include("infinity") || include("time") || include("replication") || include("dilation")) return true;
-        return false;
-      },
+      dilation: isActive("dilation")
+        ? Decimal.pow(player.dilation.totalTachyonGalaxies, eff ? 1.2 : 1.5).max(1)
+        : DC.D1,
+      power: isActive("power")
+        ? (eff ? 1.01 : 1.02)
+        : 1,
+      effarig: isActive("effarig"),
+      reality: realityGlyphCount > 0,
+      realityGlyphCount,
+      cursed: isActive("cursed")
+        ? 0.5
+        : 1,
+      companion: isActive("companion")
+        ? 1.34
+        : 1,
+      isScaling: () => ["infinity", "time", "replication", "dilation"].includes(this.activeGlyphType),
     };
   },
-  isPelleGlyphEffectCapped(type) {
-    const activeCount = t => {
-      if (!(Pelle.isDoomed && PelleRifts.chaos.milestones[1].canBeApplied)) return 0;
-      const count = Pelle.getAllActive.get(t);
-      return count === undefined ? 0 : count;
-    };
+
+  getSpecialGlyphEffectDescription(type) {
     switch (type) {
       case "infinity":
-        // TODO: Set a real formula
-        return activeCount("infinity") > 0;
+        return `Infinity Point gain ${player.challenge.eternity.current <= 8 || PelleDestructionUpgrade.pelleGlyphEffects.canBeApplied
+          ? formatX(Currency.infinityPoints.value.plus(1).pow(0.2), 2)
+          : formatX(DC.D1, 2)} (based on current IP)`;
       case "time":
-        // TODO: Set a real formula
-        return activeCount("time") > 0;
-      case "replication":
-      case "dilation":
-      case "power":
-      case "companion":
-      default:
-        return false;
-    }
-  },
-  calculatePelleInfinity(count) {
-    return (count > 0 && (player.challenge.eternity.current <= 8 || PelleDestructionUpgrade.pelleGlyphEffects.canBeApplied))
-        ? Currency.infinityPoints.value.plus(1).pow(0.2).pow(new Decimal(count).div(Currency.infinityPoints.value.plus(1).log10().plus(1).log10().plus(1).log10().pow(10).max(1)))
-        : DC.D1
-  },
-  calculatePelleTime(count) {
-    return count > 0
-        ? Currency.eternityPoints.value.plus(1).pow(0.3).pow(new Decimal(count).div(Currency.eternityPoints.value.plus(1).log10().plus(1).log10().plus(1).log10().pow(10).max(1)))
-        : DC.D1
-  },
-  calculatePelleReplication(count) {
-    return count > 0
-        ? Decimal.pow(Math.min(10 ** 60 ** (PelleRifts.vacuum.percentage), 1e300), count)
-        : DC.D1
-  },
-  calculatePelleDilation(count) {
-    return count > 0
-        ? Decimal.pow(player.dilation.totalTachyonGalaxies, 1.5).max(1).pow(count)
-        : DC.D1
-  },
-  calculatePellePower(count) {
-    return count > 0
-        ? 1 + 0.02 * count
-        : 1
-  },
-  getSpecialGlyphEffectDescription(type, count = 1, onlyReturnUseful = false) {
-    switch (type) {
-      case "infinity":
-        return `Infinity Point gain ${formatX(this.calculatePelleInfinity(count), 2)} (based on current IP)`;
-      case "time":
-        return `Eternity Point gain ${formatX(this.calculatePelleTime(count), 2)}
+        return `Eternity Point gain ${formatX(Currency.eternityPoints.value.plus(1).pow(0.3), 2)}
           (based on current EP)`;
       case "replication":
-        return `Replication speed ${formatX(this.calculatePelleReplication(count), 2)}
+        return `Replication speed ${formatX(10 ** 55 ** Math.min(1, PelleRifts.vacuum.percentage), 2)} \
         (based on ${wordShift.wordCycle(PelleRifts.vacuum.name)})`;
       case "dilation":
-        return `Dilated Time gain ${formatX(this.calculatePelleDilation(count), 2)}
+        return `Dilated Time gain ${formatX(Decimal.pow(player.dilation.totalTachyonGalaxies, 1.5).max(1), 2)}
           (based on Tachyon Galaxies)`;
       case "power":
-        return `Galaxies are ${formatPercents(this.calculatePellePower(count) - 1)} stronger`;
+        return `Galaxies are ${formatPercents(0.02)} stronger`;
+      case "effarig":
+        if (ChallengerUpgrade(21).isBought) return `Grants the Pelle specific effects of all basic Glyph types with redused effect`
+        return `You cannot equip this Glyph while Doomed!`;
+      case "reality":
+        if (ChallengerUpgrade(21).isBought) return `You can equip an additional four Glyph`
+        return `You cannot equip this Glyph while Doomed!`;
+      case "cursed":
+        if (ChallengerUpgrade(21).isBought) return `Galaxies are ${formatPercents(0.5)} weaker`
+        return `You cannot equip this Glyph while Doomed!`;
       case "companion":
         return `You feel ${formatPercents(0.34)} better`;
       // Undefined means that there is no glyph equipped, needs to be here since this function is used in
       // both Current Glyph Effects and Glyph Tooltip
       case undefined:
-        return onlyReturnUseful ? null : "No Glyph equipped!";
+        return "No Glyph equipped!";
       default:
-        if (onlyReturnUseful) return null;
-        if (this.isGlyphTypeDisabled(type)) return "You cannot equip this Glyph while Doomed!";
-        return "This Glyph has no Pelle-exclusive effect! That sucks.";
+        return "You cannot equip this Glyph while Doomed!";
     }
   },
 
-  getSpecialGlyphEffectDescriptionList(map) {
-    const list = [];
-    map.forEach((value, key) => {
-      const desp = this.getSpecialGlyphEffectDescription(key, value, true);
-      if (desp !== null) list.push([desp, this.isPelleGlyphEffectCapped(key)]);
-    });
-    return list;
-  },
-
   get remnantRequirementForDilation() {
-    return PelleStrikes.dilation.isDestroyed() ? 0 : 3.8e7;
+    return Alpha.isDestroyed || PelleStrikes.dilation.isDestroyed() ? 0 : 3.8e7;
   },
 
   get canDilateInPelle() {
@@ -498,19 +426,14 @@ export const Pelle = {
   },
 
   resetResourcesForDilation() {
-    this.cel.records.totalEndgameAntimatter = new Decimal("1e180000");
+    this.cel.records.totalAntimatter = new Decimal("1e180000");
     this.cel.records.totalInfinityPoints = new Decimal("1e60000");
     Currency.eternityPoints.reset();
-    // Oddly specific number? Yes, it's roughly the amount of EP you have
-    // when starting dilation for the first time
-    // Since 5th strike previously did not reset your current EP the previous reset value was kind of useless which
-    // lead to some balancing problems, this hopefully prevents people starting dilation too early and getting
-    // softlocked, or starting it too late and getting not-softlocked.
-    this.cel.records.totalEternityPoints = new Decimal("1e1050");
+    this.cel.records.totalEternityPoints = new Decimal("1e1100");
   },
 
   get remnantsGain() {
-    let am = this.cel.records.totalEndgameAntimatter.plus(1).log10();
+    let am = this.cel.records.totalAntimatter.plus(1).log10();
     let ip = this.cel.records.totalInfinityPoints.plus(1).log10();
     let ep = this.cel.records.totalEternityPoints.plus(1).log10();
 
@@ -526,19 +449,13 @@ export const Pelle = {
       ep = ep.times(25);
     }
 
-    const gainOld = Decimal.pow((Decimal.log10(am.add(2)).add(Decimal.log10(ip.add(2))).add(Decimal.log10(ep.add(2)))).div(1.7), 8);
+    const gain = am.add(2).log10().add(ip.add(2).log10()).add(ep.add(2).log10()).div(1.64).pow(7.5);
 
-    const gainNew = Decimal.pow((Decimal.log10(am.add(2)).add(Decimal.log10(ip.add(2))).add(Decimal.log10(ep.add(2)))).div(1.6), 8.2);
-
-    const gainNewer = Decimal.pow((Decimal.log10(am.add(2)).add(Decimal.log10(ip.add(2))).add(Decimal.log10(ep.add(2)))).div(1.2), 8.5);
-
-    const gain = false ? gainNewer : ((EndgameMastery(61).isBought && !player.disablePostReality) ? gainNew : gainOld);
-
-    return gain.lt(1) ? gain : Decimal.floor(gain.sub(this.cel.remnants));
+    return gain.lt(1) ? gain : Decimal.floor(gain.minus(this.cel.remnants));
   },
 
   realityShardGain(remnants) {
-    return Decimal.pow(10, Decimal.pow(remnants, 1 / 8).times(4)).minus(1).div(1e3);
+    return Decimal.pow(10, Decimal.pow(remnants, (1 / 7.5)).times(4)).minus(1).div(1e3);
   },
 
   get realityShardGainPerSecond() {
@@ -551,10 +468,10 @@ export const Pelle = {
 
   // Calculations assume this is in units of proportion per second (eg. 0.03 is 3% drain per second)
   get riftDrainPercent() {
-    const alphaBoost = Alpha.isDestroyed ? 0.45 : 0;
-    const extraDrain = Math.min(0.45, player.endgames * 0.05);
-    if (EndgameMilestone.riftFill.isReached && !player.disablePostReality) return 0.05 + extraDrain + alphaBoost;
-    return 0.05;
+    if (!EndgameMilestone.riftFill.isReached || player.disablePostReality) return 0.1;
+    const endgameBonus = Decimal.min(0.45, player.endgames.times(0.05)).toNumber();
+    const alphaBonus = Alpha.isDestroyed ? 0.45 : 0;
+    return Math.max(0.1, 0.05 + endgameBonus + alphaBonus);
   },
 
   get glyphMaxLevel() {
@@ -562,19 +479,19 @@ export const Pelle = {
   },
 
   get glyphStrength() {
-    return 1;
+    return DC.D1;
   },
 
   antimatterDimensionMult(x) {
-    return Decimal.pow(10, Math.log10(x + 1) + x ** 5.2 / 1e3 + 4 ** x / 1e18);
+    return Decimal.pow(10, Decimal.log10(x.add(1)).add(x.pow(5.1).div(1e3)).add(DC.D4.pow(x).div(1e19)));
   },
 
-  // Deprecated
   get activeGlyphType() {
     return Glyphs.active.filter(Boolean)[0]?.type;
   },
 
   get hasGalaxyGenerator() {
+    if (HardChallengerUpgrade(1).isBought && Pelle.isDoomed) return true;
     return player.celestials.pelle.galaxyGenerator.unlocked;
   },
 
@@ -598,43 +515,106 @@ export const Pelle = {
     return zalgo(str, Math.floor(stage ** 2 * 7));
   },
 
-  get endTabNames() {
-    if (player.celestials.pelle.divinities >= 13) {
-      return "Our Newest Celestial Still Traverses This Reality For Scraps Of Power Amusing Confusing Laughter".split(" ");
-    } else if (player.celestials.pelle.divinities > 0) {
-      return "Thus We Go Again Rebirth Is Inevitable Surge Forward In Ω Your Divine Leadership".split(" ");
-    } else if (Effarig.isRunning) {
-      return "Congratulations You Have Just Beaten A Dual Celestial Reality Ω Ω Pelle Is Impressed".split(" ");
-    } else if (Alpha.isDestroyed) {
-      return "Why Still Here All Is Destroyed Nothing Remains Except Ω Ω Generator Filament Stars".split(" ");
-    } else if (Achievement(191).isUnlocked) {
-      return "Destruction Has Come A New Beginning Has Arrived Ω Ω Ω We'll Meet Again".split(" ");
-    } else {
-      return "It's Not Over We Will Return We'll Ω Ω Ω Ω Soon Meet Again".split(" ");
+  zalgo(text, stage = 1.5) {
+    const len = Math.round((text.length * (1 - stage) + text.length * stage) * 1e8) / 1e8;
+    const toInterval = len * (1 - stage);
+    let req = toInterval;
+    let str = "";
+    for (let i = 0; i < len; i++) {
+      if (i >= req) {
+        const idx = Math.floor(i * (text.length / len));
+        str += text[idx];
+        req += toInterval;
+      } else {
+        const idx = Math.floor(i * (text.length / len));
+        str += text[idx];
+      }
     }
+    return zalgo(str, Math.floor(stage ** 2 * 7));
   },
+
+  endTabNames: "I Need To Put A Joke Here Just Like The Redemption Mod Um Eh Uh ???".split(" "),
 
   quotes: Quotes.pelle,
+  reset() {
+    GameEnd.additionalEnd = 0;
+    player.isGameEnd = false;
+    player.records.thisMeta.maxAM = DC.D0;
 
-  isGlyphTypeDisabled(type, alwaysInDoom = false) {
-    if (!(this.isDoomed || alwaysInDoom)) return false;
-    if (type === "reality") return !PelleAlchemyUpgrade.alchemyReality.canBeApplied;
-    if (type === "effarig") return !PelleDestructionUpgrade.specialGlyphEffects.canBeApplied;
-    if (type === "cursed") return true;
-    return false;
+    if (!ChallengerUpgrade(19).isBought) player.celestials.pelle.progressBits = 0;
+
+    player.celestials.pelle.upgrades = new Set();
+    player.celestials.pelle.remnants = DC.D0;
+    player.celestials.pelle.realityShards = DC.D0;
+    player.celestials.pelle.records = {
+      totalAntimatter: DC.D0,
+      totalInfinityPoints: DC.D0,
+      totalEternityPoints: DC.D0,
+      totalEndgameAntimatter: DC.D0,
+    }
+
+    player.celestials.pelle.rebuyables = {
+      antimatterDimensionMult: DC.D0,
+      timeSpeedMult: DC.D0,
+      glyphLevels: DC.D0,
+      infConversion: DC.D0,
+      galaxyPower: DC.D0,
+      galaxyGeneratorAdditive: DC.D0,
+      galaxyGeneratorMultiplicative: DC.D0,
+      galaxyGeneratorAntimatterMult: DC.D0,
+      galaxyGeneratorIPMult: DC.D0,
+      galaxyGeneratorEPMult: DC.D0,
+      galaxyGeneratorRSMult: DC.D0,
+      galaxyGeneratorDTMult: DC.D0,
+      galaxyGeneratorRemnantPow: 0,
+      galaxyGeneratorExponential: 0,
+      galaxyGeneratorSuperExponential: 0,
+    }
+
+    player.celestials.pelle.rifts = {
+      vacuum: {
+          fill: DC.D0,
+          active: false,
+          reducedTo: 1
+      },
+      decay: {
+          fill: DC.D0,
+          active: false,
+          percentageSpent: 0,
+          reducedTo: 1
+      },
+      chaos: {
+          fill: DC.D0,
+          active: false,
+          reducedTo: 1
+      },
+      recursion: {
+          fill: DC.D0,
+          active: false,
+          reducedTo: 1
+      },
+      paradox: {
+          fill: DC.D0,
+          active: false,
+          reducedTo: 1
+      },
+      glitch: {
+          fill: DC.D0,
+          active: false,
+          reducedTo: 1
+      }
+    }
+
+    player.celestials.pelle.galaxyGenerator = {
+      unlocked: false,
+      spentGalaxies: DC.D0,
+      generatedGalaxies: DC.D0,
+      phase: 0,
+      sacrificeActive: false
+    }
+    
   },
 
-  get getAllActive() {
-    const map = new Map();
-    Glyphs.active.forEach(glyph => {
-      if (glyph) {
-        const i = map.get(glyph.type);
-        if (i === undefined) map.set(glyph.type, 1);
-        else map.set(glyph.type, i + 1);
-      }
-    });
-    return map;
-  }
 };
 
 EventHub.logic.on(GAME_EVENT.ARMAGEDDON_AFTER, () => {
@@ -642,6 +622,7 @@ EventHub.logic.on(GAME_EVENT.ARMAGEDDON_AFTER, () => {
     Pelle.quotes.arm.show();
   }
 });
+
 EventHub.logic.on(GAME_EVENT.PELLE_STRIKE_UNLOCKED, () => {
   if (PelleStrikes.infinity.hasStrike) {
     Pelle.quotes.strike1.show();
@@ -658,36 +639,9 @@ EventHub.logic.on(GAME_EVENT.PELLE_STRIKE_UNLOCKED, () => {
   if (PelleStrikes.dilation.hasStrike) {
     Pelle.quotes.strike5.show();
   }
-});
-EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, () => {
-  if (GameEnd.endState > END_STATE_MARKERS.GAME_END && !GameEnd.removeAdditionalEnd) Pelle.quotes.endgame.show();
-});
-EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, () => {
-  if (player.celestials.pelle.records.totalEndgameAntimatter.gte(DC.E9E15) && player.endgames >= 1) Pelle.quotes.end2.show();
-});
-EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, () => {
-  if (Pelle.isDoomed && (PelleAchievementUpgrade.all.filter(u => u.canBeApplied).length >= 1 || PelleDestructionUpgrade.all.filter(u => u.canBeApplied).length >= 1)) {
-    Pelle.quotes.disable.show();
+  if (PelleStrikes.glitch.hasStrike) {
+    Pelle.quotes.strike6.show();
   }
-  if (Pelle.isDoomed && PelleDestructionUpgrade.disableGalaxyNerf.canBeApplied) {
-    Pelle.quotes.galaxyDebuffDisable.show();
-  }
-  if (Pelle.isDoomed && Achievement(196).isUnlocked) {
-    Pelle.quotes.allPelleAchs.show();
-  }
-  if (Pelle.isDoomed && Achievement(204).isUnlocked) {
-    Pelle.quotes.allPelleNerfs.show();
-  }
-});
-EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, () => {
-  if (PelleStrikeUpgrade.all.filter(u => u.canBeApplied).length >= 1) Pelle.quotes.strikeDisable1.show();
-  if (PelleStrikeUpgrade.all.filter(u => u.canBeApplied).length >= 2) Pelle.quotes.strikeDisable2.show();
-  if (PelleStrikeUpgrade.all.filter(u => u.canBeApplied).length >= 3) Pelle.quotes.strikeDisable3.show();
-  if (PelleStrikeUpgrade.all.filter(u => u.canBeApplied).length >= 4) Pelle.quotes.strikeDisable4.show();
-  if (PelleStrikeUpgrade.all.filter(u => u.canBeApplied).length >= 5) Pelle.quotes.strikeDisable5.show();
-});
-EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, () => {
-  if (Glyphs.activeWithoutCompanion.length > 0) player.requirementChecks.endgame.noGlyphsDoomed = false;
 });
 
 export class RebuyablePelleUpgradeState extends RebuyableMechanicState {
@@ -696,15 +650,19 @@ export class RebuyablePelleUpgradeState extends RebuyableMechanicState {
   }
 
   get boughtAmount() {
-    return player.celestials.pelle.rebuyables[this.id];
+    const amount = player.celestials.pelle.rebuyables[this.id];
+    if (amount instanceof Decimal) return amount;
+    const decimalAmount = new Decimal(amount);
+    player.celestials.pelle.rebuyables[this.id] = decimalAmount;
+    return decimalAmount;
   }
 
   set boughtAmount(value) {
-    player.celestials.pelle.rebuyables[this.id] = value;
+    player.celestials.pelle.rebuyables[this.id] = value instanceof Decimal ? value : new Decimal(value);
   }
 
   get isCapped() {
-    return this.boughtAmount >= this.config.cap;
+    return this.boughtAmount.gte(this.config.cap);
   }
 
   get isCustomEffect() { return true; }
@@ -751,7 +709,6 @@ export const PelleUpgrade = mapGameDataToObject(
 );
 
 PelleUpgrade.rebuyables = PelleUpgrade.all.filter(u => u.isRebuyable);
-// An upgrade was added post-release; it's simpler to just sort them by cost rather than to migrate the internal data
 PelleUpgrade.singles = PelleUpgrade.all.filter(u => !u.isRebuyable).sort((a, b) => a.cost - b.cost);
 
 export class DivinityMilestoneState {
@@ -763,9 +720,8 @@ export class DivinityMilestoneState {
     return Currency.divinities.gte(this.config.divinities);
   }
 }
+
 export const DivinityMilestone = mapGameDataToObject(
   GameDatabase.celestials.divinityMilestones,
-  config => (config.isBaseResource
-    ? new DivinityMilestoneState(config)
-    : new DivinityMilestoneState(config))
+  config => new DivinityMilestoneState(config)
 );

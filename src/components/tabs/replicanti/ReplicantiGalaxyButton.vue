@@ -15,8 +15,8 @@ export default {
       isAutoActive: false,
       isAutoEnabled: false,
       isDivideUnlocked: false,
-      boughtGalaxies: new Decimal(0),
-      extraGalaxies: new Decimal(0)
+      boughtGalaxies: 0,
+      extraGalaxies: 0
     };
   },
   computed: {
@@ -28,7 +28,7 @@ export default {
     galaxyCountDisplay() {
       const bought = this.boughtGalaxies;
       const extra = this.extraGalaxies;
-      const galaxyCount = extra.gt(0) ? `${formatHybridLarge(bought, 3)}+${formatHybridLarge(extra, 3)}` : formatHybridLarge(bought, 3);
+      const galaxyCount = extra.gt(0) ? `${formatInt(bought)}+${formatInt(extra)}` : formatInt(bought);
       return `Currently: ${galaxyCount}`;
     },
     autobuyer() {
@@ -44,8 +44,8 @@ export default {
     update() {
       const rg = Replicanti.galaxies;
       this.isAvailable = rg.canBuyMore;
-      this.boughtGalaxies.copyFrom(rg.bought);
-      this.extraGalaxies.copyFrom(rg.extra);
+      this.boughtGalaxies = rg.bought;
+      this.extraGalaxies = rg.extra;
       this.isDivideUnlocked = Achievement(126).isUnlocked;
       const auto = Autobuyer.replicantiGalaxy;
       this.isAutoUnlocked = auto.isUnlocked;

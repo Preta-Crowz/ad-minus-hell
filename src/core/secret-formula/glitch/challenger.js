@@ -5,30 +5,55 @@ export const ChallengerUpgrades = [
     id: 0,
     cost: new Decimal(1),
     description: "All Infinity and Break Infinity upgrades can be brought while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Infinity and Break Infinity upgrades can be brought while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable Passive IP Generation, Passive Infinity Generation, and the IP Multiplier upgrade. Unavailable when all remaining Infinity and Break Infinity upgrades are already enabled.",
   },
   {
     name: "Fairly earned",
     id: 1,
     cost: new Decimal(3),
     description: "All achievements are enabled while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " achievements are enabled while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable 33 individual achievements.",
   },
   {
     name: "Unblock knowledge",
     id: 2,
     cost: new Decimal(3),
     description: "All Time Studies are effective while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Time Studies are effective while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable 14 individual Time Studies.",
   },
   {
     name: "Forever real",
     id: 3,
     cost: new Decimal(8),
     description: "All Reality upgrades are enabled while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Reality upgrades are enabled while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable individual Reality upgrades.",
   },
   {
     name: "Permanently",
     id: 4,
     cost: new Decimal(18),
     description: "All perks are enabled while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " perks are enabled while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable individual Perks. Unavailable when all Perks are already restored.",
   },
   {
     name: "Gone for miles",
@@ -47,6 +72,11 @@ export const ChallengerUpgrades = [
     id: 7,
     cost: new Decimal(15),
     description: "IP and EP multipliers are enabled while Doomed",
+    descriptionParts: [
+      { text: "x2 IP and x5 EP multiplier upgrades", conflict: true },
+      { text: " and other IP/EP multipliers are enabled while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable the x2 IP and x5 EP multiplier upgrades.",
   },
   {
     name: "Automating automation",
@@ -59,6 +89,11 @@ export const ChallengerUpgrades = [
     id: 9,
     cost: new Decimal(20),
     description: "All Dilation upgrades can be brought while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Dilation upgrades can be brought while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable the IP Dilation and Tachyon Gain upgrades.",
   },
   {
     name: "Bugged Glitch",
@@ -71,48 +106,89 @@ export const ChallengerUpgrades = [
     id: 11,
     cost: new Decimal(17),
     description: "Alchemy does not reset and is active while Doomed",
+    descriptionParts: [
+      { text: "Alchemy does not reset and " },
+      { text: "all Alchemy effects", conflict: true },
+      { text: " are active while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable individual Alchemy effects.",
   },
   {
     name: "Teresa",
     id: 12,
     cost: new Decimal(13),
     description: "All Teresa unlocks are active while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Teresa unlocks are active while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable selected Teresa milestones and glyph sacrifice. Unavailable when all are already restored.",
   },
   {
     name: "Effarig",
     id: 13,
     cost: new Decimal(6),
     description: "All Effarig unlocks are active while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Effarig unlocks are active while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable Effarig's Infinity rewards.",
   },
   {
     name: "Nameless",
     id: 14,
     cost: new Decimal(8),
     description: "All Nameless unlocks are active while Doomed and enable the Black Hole",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Nameless unlocks are active while Doomed and enable the Black Hole" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable the Black Hole and selected Nameless rewards. Unavailable when all are already restored.",
   },
   {
     name: "V",
     id: 15,
     cost: new Decimal(18),
     description: "All V unlocks are active while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " V unlocks are active while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable Space Theorems, V milestones, and selected V rewards.",
   },
   {
     name: "Ra",
     id: 16,
     cost: new Decimal(33),
     description: "All Ra unlocks are active while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Ra unlocks are active while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable Charged Infinity Upgrades, Glyph Alteration, and Space Theorems. Unavailable when all are already restored.",
   },
   {
     name: "Laitela",
     id: 17,
     cost: new Decimal(60),
     description: "All Laitela unlocks are active while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Laitela unlocks are active while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable Singularity milestones and Continuum. Unavailable when both are already restored.",
   },
   {
     name: "IMAGINATION",
     id: 18,
     cost: new Decimal(50),
     description: "All Imaginary upgrades are active while Doomed",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Imaginary upgrades are active while Doomed" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable individual Imaginary upgrades. Unavailable when all are already restored.",
   },
   {
     name: "Rift apart",
@@ -131,5 +207,10 @@ export const ChallengerUpgrades = [
     id: 21,
     cost: new Decimal(7),
     description: "All glyphs effect are enabled while doomed, Effarig, Reality and Cursed have unique effects",
+    descriptionParts: [
+      { text: "All", conflict: true },
+      { text: " Glyph effects are enabled while Doomed; Effarig, Reality, and Cursed have unique effects" },
+    ],
+    overlapNote: "Separate Destruction upgrades re-enable normal Glyph effects and Effarig Glyph effects.",
   },
 ];

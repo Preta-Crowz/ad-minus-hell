@@ -28,12 +28,14 @@ export const NewsHandler = {
 
   hasSeenNews(id) {
     const groups = id.match(/([a-z]+)(\d+)/u);
+    if (!groups) return false;
     const type = groups[1];
     const number = parseInt(groups[2], 10);
     const bitArray = player.news.seen[type];
+    const index = Math.floor(number / this.BITS_PER_MASK);
 
-    if (!bitArray || this.BITS_PER_MASK * bitArray.length < number) return false;
-    return (bitArray[Math.floor(number / this.BITS_PER_MASK)] |= 1 << (number % this.BITS_PER_MASK)) !== 0;
+    if (!bitArray || index >= bitArray.length) return false;
+    return (bitArray[index] & (1 << (number % this.BITS_PER_MASK))) !== 0;
   },
 
   get uniqueTickersSeen() {

@@ -1,3 +1,4 @@
+import { DC } from "../../constants";
 import { PlayerProgress } from "../../player-progress";
 
 import { MultiplierTabIcons } from "./icons";
@@ -61,8 +62,8 @@ export const TP = {
   },
   dilationGlyphSacrifice: {
     name: "Dilation Glyph Sacrifice",
-    multValue: () => GlyphSacrifice.dilation.effectValue,
-    isActive: () => GlyphSacrifice.dilation.effectValue > 1,
+    multValue: () => GlyphInfo.dilation.sacrificeInfo.effect(),
+    isActive: () => GlyphInfo.dilation.sacrificeInfo.effect().gt(1),
     icon: MultiplierTabIcons.SACRIFICE("dilation"),
   },
 
@@ -71,5 +72,13 @@ export const TP = {
     powValue: () => Enslaved.tachyonNerf,
     isActive: () => Enslaved.isRunning,
     icon: MultiplierTabIcons.GENERIC_ENSLAVED,
-  }
+  },
+  glitchChallengeReality: {
+    name: "Glitch Challenge (Reality)",
+    multValue: () => DC.D1.timesEffectsOf(
+      realityUG(1),
+    ),
+    isActive: () => realityUG(1).isBought,
+    icon: MultiplierTabIcons.GLITCH_CHALLENGE,
+  },
 };

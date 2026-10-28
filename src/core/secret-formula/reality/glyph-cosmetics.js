@@ -223,4 +223,11 @@ export const glyphCosmeticSets = {
     preventBlur: true,
     color: ["W#0000AA"],
   },
+  fish: {
+    id: "fish",
+    name: "you know what that means",
+    symbol: ["🐟", "🐠", "🐡", "🦐", "🦑", "🐙", "🦞", "🦀"],
+    preventBlur: true,
+    color: ["W#6CA0C6","B#15639D"],
+  },
 };

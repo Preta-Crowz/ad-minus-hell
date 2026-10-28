@@ -1,3 +1,5 @@
+import { DC } from "../../constants";
+
 export const accelerators = {
   potency: {
     id: 1,
@@ -27,7 +29,9 @@ export const accelerators = {
         resource: "potency",
         requirement: 0.4,
         description: () => `Total Hadrons increase the ${player.universes.current === 2 ? "Matter" : "Antimatter"} Hardcap`,
-        effect: () => player.disablePostReality ? 0 : Math.clamp(Math.floor(Math.pow(2 * Math.max(player.celestials.laitela.hadrons.trueTotal - 100, 0) + 0.25, 0.5) - 0.5), 0, 25),
+        effect: () => player.disablePostReality && !LHC.voidRunning && !LHC.nullifiedVoidRunning
+          ? 0
+          : Math.clamp(Math.floor(Math.pow(2 * Math.max(player.celestials.laitela.hadrons.trueTotal - 100, 0) + 0.25, 0.5) - 0.5), 0, 25),
         formatEffect: value => `${format(LHC.breakingPoint.root(Decimal.pow10(value)), 2)} ➜ ${format(LHC.breakingPoint, 2)}`
       },
       {
@@ -73,7 +77,7 @@ export const accelerators = {
         resource: "emptiness",
         requirement: 1,
         description: () => `The ${player.universes.current === 2 ? "Matter" : "Antimatter"} Hardcap is increased by ${formatInt(25)} OoM^2s`,
-        effect: () => player.disablePostReality ? 0 : 25
+        effect: () => player.disablePostReality && !LHC.voidRunning && !LHC.nullifiedVoidRunning ? 0 : 25
       },
     ]
   },
@@ -113,7 +117,9 @@ export const accelerators = {
         resource: "cosmic",
         requirement: 1,
         description: () => `The ${player.universes.current === 2 ? "Matter" : "Antimatter"} Hardcap is increased by ${format(Decimal.log10(DC.NUMMAX).sub(275), 4, 4)} OoM^2s`,
-        effect: () => player.disablePostReality ? 0 : Decimal.log10(DC.NUMMAX).sub(275).toNumber()
+        effect: () => player.disablePostReality && !LHC.voidRunning && !LHC.nullifiedVoidRunning
+          ? 0
+          : Decimal.log10(DC.NUMMAX).sub(275).toNumber()
       },
     ]
   }

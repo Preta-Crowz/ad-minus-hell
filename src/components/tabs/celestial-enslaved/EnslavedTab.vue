@@ -21,15 +21,15 @@ export default {
     isRunning: false,
     completed: false,
     storedBlackHole: new Decimal(0),
-    storedReal: 0,
+    storedReal: new Decimal(),
     storedRealEffiency: 0,
-    storedRealCap: 0,
+    storedRealCap: new Decimal(),
     autoRelease: false,
-    autoReleaseSpeed: new Decimal(0),
+    autoReleaseSpeed: new Decimal(),
     unlocks: [],
     buyableUnlocks: [],
     quote: "",
-    currentSpeedUp: new Decimal(0),
+    currentSpeedUp: new Decimal(),
     hintsUnlocked: false,
     canModifyGameTimeStorage: false,
     canChangeStoreTime: false,
@@ -44,16 +44,7 @@ export default {
       return formatPercents(this.storedRealEffiency);
     },
     storedRealCapDesc() {
-      return timeDisplayShort(new Decimal(this.storedRealCap));
-    },
-    storedBHDesc() {
-      return timeDisplayShort(new Decimal(this.storedBlackHole));
-    },
-    nerfedBHTimeDesc() {
-      return timeDisplayShort(new Decimal(this.nerfedBlackHoleTime));
-    },
-    storedRealDesc() {
-      return timeDisplayShort(new Decimal(this.storedReal));
+      return timeDisplayShort(this.storedRealCap);
     },
     unlocksInfo() {
       return ENSLAVED_UNLOCKS;
@@ -62,8 +53,8 @@ export default {
       return Enslaved.storedTimeInsideEnslaved(this.storedBlackHole);
     },
     realityTitle() {
-      if (this.isRunning) return "You are inside The Nameless Ones' Reality";
-      return "Start The Nameless Ones' Reality";
+      if (this.isRunning) return `You are inside ${this.sName()} Reality`;
+      return `Start ${this.sName()} Reality`;
     },
     runButtonClassObject() {
       return {
@@ -83,14 +74,14 @@ export default {
     },
     // Use this here since Nameless has a fairly non-standard character, and SFCs don't support using \uf0c1
     enslavedSymbol: () => Enslaved.symbol,
-    isDoomed: () => Pelle.isDoomed || Slabdrill.isCursed,
+    isDoomed: () => Pelle.isDoomed,
     storeGameTimeClass() {
       return {
         "o-enslaved-mechanic-button": true,
         "o-enslaved-mechanic-button--clickable": this.canModifyGameTimeStorage,
         "o-enslaved-mechanic-button--storing-time": this.isStoringBlackHole,
         "l-fixed-setting": !this.canModifyGameTimeStorage,
-        "o-pelle-disabled": this.isDoomed && !PelleDestructionUpgrade.blackHole.canBeApplied
+        "o-pelle-disabled": this.isDoomed
       };
     },
     storeRealTimeClass() {
@@ -99,7 +90,7 @@ export default {
         "o-enslaved-mechanic-button--clickable": !this.isDoomed,
         "o-enslaved-mechanic-button--storing-time": this.isStoringReal,
         "l-fixed-setting": !this.canChangeStoreRealTime,
-        "o-pelle-disabled": this.isDoomed && !PelleDestructionUpgrade.blackHole.canBeApplied
+        "o-pelle-disabled": this.isDoomed
       };
     },
     dischargeClass() {
@@ -107,7 +98,7 @@ export default {
         "o-enslaved-mechanic-button": true,
         "o-enslaved-mechanic-button--clickable": !this.isDoomed,
         "l-fixed-setting": !this.canDischarge || this.hasNoCharge,
-        "o-pelle-disabled": this.isDoomed && !PelleDestructionUpgrade.blackHole.canBeApplied
+        "o-pelle-disabled": this.isDoomed
       };
     },
     doomedDisabledClass() {
@@ -116,11 +107,8 @@ export default {
     mechanicButtonClass() {
       return {
         "o-enslaved-mechanic-button": true,
-        "o-enslaved-mechanic-button--clickable": !this.isDoomed && !PelleDestructionUpgrade.blackHole.canBeApplied
+        "o-enslaved-mechanic-button--clickable": !this.isDoomed
       };
-    },
-    BHDescClass() {
-      return { "o-pelle-disabled": Pelle.isDoomed && !PelleDestructionUpgrade.blackHole.canBeApplied };
     }
   },
   watch: {
@@ -135,26 +123,35 @@ export default {
       this.isStoringReal = Enslaved.isStoringRealTime;
       this.autoStoreReal = player.celestials.enslaved.autoStoreReal;
       this.offlineEnabled = player.options.offlineProgress;
-      this.hasAutoRelease = Ra.unlocks.autoPulseTime.canBeApplied && !player.disablePostReality;
+      this.hasAutoRelease = Ra.unlocks.autoPulseTime.canBeApplied;
       this.isRunning = Enslaved.isRunning;
-      this.completed = Enslaved.isCompleted && !this.isDoomed && !player.disablePostReality;
-      this.storedReal = player.celestials.enslaved.storedReal;
+      this.completed = Enslaved.isCompleted && !this.isDoomed;
+      this.storedReal.copyFrom(player.celestials.enslaved.storedReal);
       this.storedRealEffiency = Enslaved.storedRealTimeEfficiency;
-      this.storedRealCap = Enslaved.storedRealTimeCap;
+      this.storedRealCap.copyFrom(Enslaved.storedRealTimeCap);
       this.unlocks = Array.from(player.celestials.enslaved.unlocks);
       this.buyableUnlocks = Object.values(ENSLAVED_UNLOCKS).map(x => Enslaved.canBuy(x));
       this.quote = Enslaved.quote;
       this.autoRelease = player.celestials.enslaved.isAutoReleasing;
-      this.autoReleaseSpeed = Enslaved.isAutoReleasing ? Enslaved.autoReleaseSpeed : new Decimal(0);
-      this.currentSpeedUp = Enslaved.currentBlackHoleStoreAmountPerMs;
+      this.autoReleaseSpeed.copyFrom(Enslaved.isAutoReleasing ? Enslaved.autoReleaseSpeed : new Decimal(0));
+      this.currentSpeedUp.copyFrom(Enslaved.currentBlackHoleStoreAmountPerMs);
       this.hintsUnlocked = EnslavedProgress.hintsUnlocked.hasProgress;
       this.canModifyGameTimeStorage = Enslaved.canModifyGameTimeStorage;
       this.canChangeStoreTime = Enslaved.canModifyGameTimeStorage;
       this.canChangeStoreRealTime = Enslaved.canModifyRealTimeStorage;
       this.canDischarge = Enslaved.canRelease(false);
       this.canAutoRelease = Enslaved.canRelease(true);
-      this.hasNoCharge = player.celestials.enslaved.stored === new Decimal(0);
-      this.hasReachedCurrentCap = this.storedReal === this.storedRealCap;
+      this.hasNoCharge = this.storedBlackHole.eq(0);
+      this.hasReachedCurrentCap = this.storedReal.eq(this.storedRealCap);
+    },
+    sName(){
+      if(player.options.themeModern == "S15") return "The Nameless Teresa's'";
+      if(player.options.themeModern == "S16") return "the Nameless Effarig's";
+      if(player.options.themeModern == "S18") return `The Nameless Lai'tela's`;
+      if(player.options.themeModern == "S14") return "The Nameless Ra's";
+      if(player.options.themeModern == "S19") return `The Nameless Pelle's`;
+      if(player.options.themeModern == "S13") return "The Nameless V's";
+      return "The Nameless Ones'";
     },
     toggleStoreBlackHole() {
       Enslaved.toggleStoreBlackHole();
@@ -173,14 +170,14 @@ export default {
       return timeDisplayShort(ms);
     },
     timeUntilBuy(price) {
-      return Decimal.max((price.sub(this.storedBlackHole)).div(this.currentSpeedUp), 0);
+      return Decimal.max((new Decimal(price).sub(this.storedBlackHole)).div(this.currentSpeedUp), 0);
     },
     buyUnlock(info) {
       Enslaved.buyUnlock(info);
     },
     startRun() {
       if (this.isDoomed) return;
-      Modal.celestials.show({ name: "The Nameless Ones'", number: 2 });
+      Modal.celestials.show({ name: this.sName(), number: 2 });
     },
     hasUnlock(info) {
       return Enslaved.has(info);
@@ -283,9 +280,9 @@ export default {
             >
               <div
                 class="o-enslaved-stored-time"
-                :class="BHDescClass"
+                :class="doomedDisabledClass"
               >
-                {{ storedBHDesc }}
+                {{ timeDisplayShort(storedBlackHole) }}
               </div>
               <div>
                 {{ isStoringBlackHole ? "Charging Black Hole": "Charge Black Hole" }}
@@ -297,7 +294,7 @@ export default {
             >
               <span>Discharge Black Hole</span>
               <p v-if="isRunning">
-                {{ nerfedBHTimeDesc }} in this Reality
+                {{ timeDisplayShort(nerfedBlackHoleTime) }} in this Reality
               </p>
             </button>
           </div>
@@ -311,7 +308,7 @@ export default {
               @click="toggleStoreReal"
             >
               <div class="o-enslaved-stored-time">
-                {{ storedRealDesc }}
+                {{ timeDisplayShort(storedReal) }}
               </div>
               <div>
                 {{ isStoringReal ? "Storing real time": "Store real time" }}

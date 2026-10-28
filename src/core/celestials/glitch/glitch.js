@@ -187,7 +187,7 @@ export const Glitch = {
   },
 
   get laitelamaxdim(){
-    return Math.min(5 + GlitchRealityUpgrades.all[5].effectOrDefault(0),8);
+    return Decimal.min(new Decimal(5).plus(GlitchRealityUpgrades.all[5].effectOrDefault(0)), 8).toNumber();
   },
   get decay(){
     if(!this.augmentEffectActive(9)) return new Decimal(1);
@@ -201,6 +201,7 @@ export const Glitch = {
     return (this.augmentEffectActive(9) ? Decimal.div(0.15, this.decay) : 0.15);
   },
   get TDnerf(){
+    if (Hell.isInside) return 0.33;
     return (this.augmentEffectActive(9) ? Decimal.div(0.3, this.decay) : 0.3);
   },
   

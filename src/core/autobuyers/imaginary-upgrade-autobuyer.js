@@ -19,7 +19,7 @@ export class ImaginaryUpgradeAutobuyerState extends AutobuyerState {
 
   tick() {
     const upg = ImaginaryUpgrade(this.id);
-    upg.bulkPurchase();
+    upg.purchaseHybrid();
   }
 
   static get entryCount() { return 10; }

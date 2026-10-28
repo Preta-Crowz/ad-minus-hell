@@ -16,8 +16,9 @@ export default {
       achievementVisible: false,
       showAutoAdjustWeights: false,
       isAutoAdjustWeightsOn: false,
+      STVisible: false,
       factors: getGlyphLevelInputs(),
-      shardsGained: new Decimal(0),
+      shardsGained: 0,
       weights: Object.assign({}, player.celestials.effarig.glyphWeights),
       rows: 3,
     };
@@ -67,6 +68,7 @@ export default {
       if (this.perkShopVisible) rows.push("perk shop");
       if (this.shardVisible) rows.push("shards");
       if (this.singularityVisible) rows.push("singularities");
+      if (this.STVisible) rows.push("space theorem");
       if (this.penaltyVisible) rows.push("instability");
       if (this.rowVisible) rows.push("upgrade rows");
       if (this.achievementVisible) rows.push("achievements");
@@ -82,7 +84,7 @@ export default {
       return RealityUpgrade(18).isBought;
     },
     shardVisible() {
-      return Ra.unlocks.relicShardGlyphLevelBoost.canBeApplied && this.shardsGained.neq(0);
+      return Ra.unlocks.relicShardGlyphLevelBoost.canBeApplied && this.shardsGained !== 0;
     },
     singularityVisible() {
       return SingularityMilestone.glyphLevelFromSingularities.canBeApplied;
@@ -120,8 +122,9 @@ export default {
       const glyphFactors = getGlyphLevelInputs();
       this.perkShopVisible = glyphFactors.perkShop !== 1;
       this.rowVisible = glyphFactors.rowFactor > 0;
-      this.achievementVisible = glyphFactors.achievementFactor > 0;
-      if (glyphFactors.scalePenalty.neq(1)) {
+      this.achievementVisible = glyphFactors.achievementFactor.gt(0);
+      this.STVisible = VUnlocks.glyphCap.isUnlocked;
+      if (glyphFactors.scalePenalty !== 1) {
         this.penaltyVisible = true;
         this.lastInstability = Date.now();
       } else if (this.penaltyVisible) {
@@ -133,7 +136,7 @@ export default {
         this.rows = 6;
       }
       this.factors = glyphFactors;
-      this.shardsGained.copyFrom(Effarig.shardsGained);
+      this.shardsGained = Effarig.shardsGained;
       let same = true;
       this.glyphWeightFields.forEach(e => {
         if (this.weights[e] !== player.celestials.effarig.glyphWeights[e]) same = false;
@@ -156,13 +159,13 @@ export default {
     formatFactor(x) {
       // Not applied to + perks since it's always whole; for factors < 1, the slice makes the
       // factor be fixed point.
-      return Notations.current.isPainful || new Decimal(x).gt(1000)
+      return Notations.current.isPainful || x.gt(1000)
         ? format(x, 2, 2)
         : x.toPrecision(5).slice(0, 6);
     },
     formatLevel(x) {
       return x.gt(1000)
-        ? formatHybridLarge(Decimal.floor(x), 3)
+        ? formatInt(x.floor())
         : format(x, 2, 4);
     },
     makeRowStyle(r) {
@@ -405,6 +408,26 @@ function roundPreservingSum(data) {
         class="l-glyph-levels-and-weights__factor-val"
       >
         {{ formatFactor(factors.singularityEffect) }}
+      </div>
+    </template>
+    <template v-if="STVisible">
+      <div
+        :style="rowStyle('space theorem')"
+        class="l-glyph-levels-and-weights__factor"
+      >
+        Space Theorems
+      </div>
+      <div
+        :style="rowStyle('space theorem')"
+        class="l-glyph-levels-and-weights__operator"
+      >
+        ^
+      </div>
+      <div
+        :style="rowStyle('space theorem')"
+        class="l-glyph-levels-and-weights__factor-val"
+      >
+        {{ formatFactor(factors.ST) }}
       </div>
     </template>
     <template v-if="penaltyVisible">

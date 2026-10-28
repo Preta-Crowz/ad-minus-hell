@@ -24,12 +24,12 @@ export default {
       canBuyPowerDM: false,
       canBuyPowerDE: false,
       isIntervalCapped: false,
-      timer: 0,
+      timer: new Decimal(0),
       timerPercent: new Decimal(0),
       intervalAscensionBump: new Decimal(10000),
       intervalAfterAscension: new Decimal(0),
       darkEnergyPerSecond: new Decimal(0),
-      portionDE: 0,
+      portionDE: new Decimal(0),
       productionPerSecond: new Decimal(0),
       percentPerSecond: 0,
       hoverOverAscension: false,
@@ -85,10 +85,11 @@ export default {
       return `${line1}<br>${line2}`;
     },
     darkEnergyText() {
-      const de = this.powerDE.mul(this.hoverOverAscension ? POWER_DE_PER_ASCENSION : 1);
-      const str = SingularityMilestone.dmdMultBooster.isUnlocked && this.tier !== 1 ? `DE ${formatX(de, 2, 4)}` : `DE +${format(de, 2, 4)}`;
+      const ascensionPower = DarkMatterDimension(this.tier).powerDEPerAscension;
+      const de = this.powerDE.mul(this.hoverOverAscension ? ascensionPower : 1);
+      const str = `DE +${format(de, 2, 4)}`;
       const line1 = this.hoverOverAscension ? `<b>${str}</b>` : str;
-      const ascMult = POWER_DE_PER_ASCENSION.mul(this.interval).div(this.intervalAfterAscension);
+      const ascMult = ascensionPower.mul(this.interval).div(this.intervalAfterAscension);
       const line2 = this.hoverOverAscension
         ? `${formatX(ascMult, 2, 2)} / sec`
         : `Cost: ${this.formatDMCost(this.powerDECost)} DM`;
@@ -97,7 +98,7 @@ export default {
     ascensionTooltip() {
       return `Interval is capped at ${formatInt(DarkMatterDimension(this.tier).intervalPurchaseCap)}ms.
         Ascension multiplies interval by ${formatInt(this.intervalAscensionBump)},
-        DM by ${formatHybridSmall(this.powerDMPerAscension, 3)}, and DE by ${formatInt(POWER_DE_PER_ASCENSION)}.`;
+        DM by ${formatInt(this.powerDMPerAscension)}, and DE by ${format(DarkMatterDimension(this.tier).powerDEPerAscension, 2)}.`;
     }
   },
   methods: {
@@ -118,14 +119,16 @@ export default {
       this.canBuyPowerDM = dim.canBuyPowerDM;
       this.canBuyPowerDE = dim.canBuyPowerDE;
       this.isIntervalCapped = dim.interval.lte(dim.intervalPurchaseCap);
-      this.timer = dim.timeSinceLastUpdate;
-      this.timerPercent = new Decimal(this.timer).div(this.interval).toNumber();
+      this.timer.copyFrom(dim.realDiff);
+      this.timerPercent.copyFrom(this.timer.div(this.interval));
       this.intervalAscensionBump.copyFrom(SingularityMilestone.ascensionIntervalScaling.effectOrDefault(new Decimal(1200)));
       this.intervalAfterAscension.copyFrom(dim.intervalAfterAscension);
       this.darkEnergyPerSecond.copyFrom(dim.productionPerSecond);
-      this.portionDE = this.darkEnergyPerSecond.div(Currency.darkEnergy.productionPerSecond).toNumber();
-      this.productionPerSecond.copyFrom(this.dimensionProduction(this.tier));
-      this.percentPerSecond = Decimal.divide(this.productionPerSecond, this.amount).clampMax(1).toNumber();
+      this.portionDE.copyFrom(this.darkEnergyPerSecond.div(Currency.darkEnergy.productionPerSecond));
+      this.productionPerSecond = this.dimensionProduction(this.tier);
+      this.percentPerSecond = this.amount.eq(0)
+        ? 0
+        : Decimal.divide(this.productionPerSecond, this.amount).clampMax(1).toNumber();
       if (!this.isIntervalCapped) this.hoverOverAscension = false;
     },
     handleIntervalClick() {
@@ -141,28 +144,24 @@ export default {
     // All the values are internally Decimals and technically allowed to go above Infinity. This is a special case
     // however; it looks better in-game if we just format it as Infinity instead, as the resource used for these costs
     // is itself hardcapped at e308 and we specifically want to format here (and nowhere else) as Infinity.
+    // not any more
     formatDMCost(cost) {
-      return (cost.gt(Laitela.darkMatterCap) && !Alpha.isDestroyed) ? Notations.current.infinite : format(cost, 2);
+      return cost.gt(Laitela.darkMatterCap) && !Alpha.isDestroyed
+        ? Notations.current.infinite
+        : format(cost, 2);
     },
     dimensionProduction(tier) {
       if (tier === 8 && DarkMatterDimensions.highestUnlocked !== 8) return new Decimal(0);
-      if (tier === DarkMatterDimensions.highestUnlocked) return SingularityMilestone.dim4Generation.effectOrDefault(new Decimal(0));
+      if (tier === DarkMatterDimensions.highestUnlocked) {
+        return SingularityMilestone.dim4Generation.effectOrDefault(new Decimal(0));
+      }
       const prodDim = DarkMatterDimension(tier + 1);
       return prodDim.amount.times(prodDim.powerDM).divide(prodDim.interval).times(1000);
     },
     hoverState(state) {
       if (!this.isIntervalCapped) return;
       this.hoverOverAscension = state;
-    },
-    hasLongIntText() {
-      return this.intervalText.length > 20;
-    },
-    hasLongDMText() {
-      return this.darkMatterText.length > 20;
-    },
-    hasLongDEText() {
-      return this.darkEnergyText.length > 20;
-    },
+    }
   }
 };
 </script>
@@ -192,19 +191,19 @@ export default {
         >
           <i class="fas fa-question-circle" />
         </span>
-        <span :class="{ 'l-dmd-interval-small-text': hasLongIntText }" v-html="intervalText" />
+        <span v-html="intervalText" />
       </button>
       <button
         :class="darkMatterClassObject"
         @click="buyPowerDM"
       >
-        <span :class="{ 'l-dmd-dm-small-text': hasLongDMText }" v-html="darkMatterText" />
+        <span v-html="darkMatterText" />
       </button>
       <button
         :class="darkEnergyClassObject"
         @click="buyPowerDE"
       >
-        <span :class="{ 'l-dmd-de-small-text': hasLongDEText }" v-html="darkEnergyText" />
+        <span v-html="darkEnergyText" />
       </button>
     </div>
     <div v-if="interval.gt(200)">
@@ -218,23 +217,3 @@ export default {
     </div>
   </div>
 </template>
-
-<style scoped>
-.l-dmd-interval-small-text {
-  vertical-align: middle;
-  font-size: 0.9rem;
-  line-height: 0.9rem;
-}
-
-.l-dmd-dm-small-text {
-  vertical-align: middle;
-  font-size: 0.9rem;
-  line-height: 0.9rem;
-}
-
-.l-dmd-de-small-text {
-  vertical-align: middle;
-  font-size: 0.9rem;
-  line-height: 0.9rem;
-}
-</style>

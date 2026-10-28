@@ -31,11 +31,8 @@ export default {
     },
     requirement() {
       if (this.id === 1) {
-        if (this.maxTT.gte(1e9)) return `Requirement: ${formatInt(5)} EC11 and EC12 completions
-          and ${format(this.maxTT, 2, 2)}/${formatInt(TimeStudy.dilation.totalTimeTheoremRequirement)}
-          total Time Theorems`;
         return `Requirement: ${formatInt(5)} EC11 and EC12 completions
-          and ${formatHybridSmall(this.maxTT, 3)}/${formatInt(TimeStudy.dilation.totalTimeTheoremRequirement)}
+          and ${formatInt(this.maxTT)}/${formatInt(TimeStudy.dilation.totalTimeTheoremRequirement)}
           total Time Theorems`;
       }
       if (this.id === 6) {
@@ -54,13 +51,13 @@ export default {
     update() {
       if (this.id === 1) {
         this.maxTT.copyFrom(Currency.timeTheorems.max);
-        this.showRequirement = !this.study.isBought && (!Perk.bypassECDilation.canBeApplied || player.disablePostReality);
+        this.showRequirement = !this.study.isBought && !Perk.bypassECDilation.canBeApplied;
       }
       if (this.id === 6) {
         this.showRequirement = !Pelle.isDoomed;
       }
       this.currTT.copyFrom(Currency.timeTheorems.value);
-      this.ttGen.copyFrom(getTTPerSecond().times(Alpha.isRunning || Slabdrill.isCursed ? 1 : getGameSpeedupFactor()));
+      this.ttGen.copyFrom(getTTPerSecond().times(GameCache.gameSpeed.value));
     },
     clickHandler() {
       switch (this.id) {

@@ -33,14 +33,17 @@ export class DilationTimeStudyState extends TimeStudyState {
       if (!quiet) {
         Tab.eternity.dilation.show();
       }
-      if (Perk.autounlockDilation1.canBeApplied && !player.disablePostReality) {
+      if (Perk.autounlockDilation1.canBeApplied) {
         for (const id of [4, 5, 6]) player.dilation.upgrades.add(id);
       }
-      if (Perk.autounlockDilation2.canBeApplied && !player.disablePostReality) {
+      if (Perk.autounlockDilation2.canBeApplied) {
         for (const id of [7, 8, 9]) player.dilation.upgrades.add(id);
       }
-      if (!player.disablePostReality && (!Pelle.isDoomed || PellePerkUpgrade.perkSTP.canBeApplied)) Currency.tachyonParticles.bumpTo(Perk.startTP.effectOrDefault(0));
-      if (Ra.unlocks.unlockDilationStartingTP.canBeApplied && !isInCelestialReality() && !Pelle.isDoomed && !player.disablePostReality) {
+      if ((Pelle.isDoomed || Pelle.joined) && Perk.autounlockDilation2.canBeApplied && ChallengerUpgrade(9).isBought) {
+        for (const id of [14, 15]) player.dilation.upgrades.add(id);
+      }
+      if (!Pelle.isDoomed) Currency.tachyonParticles.bumpTo(Perk.startTP.effectOrDefault(0));
+      if (Ra.unlocks.unlockDilationStartingTP.canBeApplied && !isInCelestialReality() && !Pelle.isDoomed) {
         Currency.tachyonParticles.bumpTo(getTP(Ra.unlocks.unlockDilationStartingTP.effectOrDefault(0), false));
       }
       TabNotification.dilationAfterUnlock.tryTrigger();
@@ -52,13 +55,13 @@ export class DilationTimeStudyState extends TimeStudyState {
     if (this.id === 6) {
       // ID 6 is the reality unlock study
       if (!PlayerProgress.realityUnlocked()) {
-        Modal.message.show(`Reality Machine gain for your first Reality is reduced above ${format("1e6000")} Eternity
-          Points and capped at ${format("1e8000")} Eternity Points. This is due to balance changes made in the Reality
+        Modal.message.show(`Reality Machine gain for your first Reality is reduced above ${format("1e8000")} Eternity
+          Points and capped at ${format("1e10000")} Eternity Points. This is due to balance changes made in the Reality
           update which affect the difficulty of reaching those amounts, such as the increased Time Dimension cost
           scaling above ${format("1e6000")}.`, {}, 3);
         EventHub.dispatch(GAME_EVENT.REALITY_FIRST_UNLOCKED);
       }
-      if (!Perk.autounlockReality.isBought || player.disablePostReality) Tab.reality.glyphs.show();
+      if (!Perk.autounlockReality.isBought) Tab.reality.glyphs.show();
     }
 
     player.dilation.studies.push(this.id);

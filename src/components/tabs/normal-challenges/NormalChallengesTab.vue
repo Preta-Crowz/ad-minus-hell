@@ -13,8 +13,7 @@ export default {
   data() {
     return {
       showCharge: false,
-      charges: 0,
-      isFlipped: false
+      charges: 0
     };
   },
   computed: {
@@ -26,7 +25,6 @@ export default {
     update() {
       this.showCharge = Ascensions.oc3A.isUnlocked && player.endgame.overcharge.allowComplex;
       this.charges = Math.min(player.endgame.overcharge.completions.chall, 12);
-      this.isFlipped = player.universes.current === 2;
     }
   }
 };
@@ -40,7 +38,7 @@ export default {
     </div>
     <div>
       If you have an active Big Crunch Autobuyer, it will attempt to Crunch
-      as soon as possible when reaching Infinite {{ isFlipped ? "matter" : "antimatter" }}.
+      as soon as possible when reaching Infinite antimatter.
     </div>
     <div v-if="showCharge">
       <br>

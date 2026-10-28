@@ -20,19 +20,19 @@ export default {
       isRaCapped: false,
       isCapped: false,
       level: 0,
-      memories: new Decimal(0),
-      requiredMemories: new Decimal(0),
-      memoryChunks: new Decimal(0),
-      memoryChunksPerSecond: new Decimal(0),
-      memoriesPerSecond: new Decimal(0),
-      memoryMultiplier: 1,
+      memories: new Decimal(),
+      requiredMemories: new Decimal(),
+      memoryChunks: new Decimal(),
+      memoryChunksPerSecond: new Decimal(),
+      memoriesPerSecond: new Decimal(),
+      memoryMultiplier: new Decimal(),
       canGetMemoryChunks: false,
-      memoryUpgradeCost: new Decimal(0),
-      chunkUpgradeCost: new Decimal(0),
+      memoryUpgradeCost: new Decimal(),
+      chunkUpgradeCost: new Decimal(),
       memoryUpgradeCapped: false,
       chunkUpgradeCapped: false,
-      currentMemoryMult: new Decimal(0),
-      currentChunkMult: new Decimal(0),
+      currentMemoryMult: new Decimal(),
+      currentChunkMult: new Decimal(),
       nextMemoryUpgradeEstimate: "",
       nextMemoryChunkUpgradeEstimate: "",
       isExpanded: false,
@@ -78,16 +78,22 @@ export default {
       this.memories.copyFrom(pet.memories);
       this.requiredMemories.copyFrom(pet.requiredMemories);
       this.memoryChunks.copyFrom(pet.memoryChunks);
-      this.memoryChunksPerSecond.copyFrom(pet.memoryChunksPerSecond);
-      this.memoriesPerSecond.copyFrom(pet.memoryChunks.times(Ra.productionPerMemoryChunk).times(this.currentMemoryMult));
+      if(pet.name == "Cante" || pet.name == "Null") {
+        this.memoryChunksPerSecond = pet.memoryChunksPerSecond.mul(Ra.CandNChunkProduction);
+        this.memoriesPerSecond = pet.memoryChunks.mul(this.currentMemoryMult);
+      }
+      else {
+        this.memoryChunksPerSecond = pet.memoryChunksPerSecond;
+        this.memoriesPerSecond = pet.memoryChunks.mul(Ra.productionPerMemoryChunk).mul(this.currentMemoryMult);
+      }
       this.canGetMemoryChunks = pet.canGetMemoryChunks;
-      this.memoryMultiplier = pet.memoryProductionMultiplier;
+      this.memoryMultiplier.copyFrom(pet.memoryProductionMultiplier);
       this.memoryUpgradeCost.copyFrom(pet.memoryUpgradeCost);
       this.chunkUpgradeCost.copyFrom(pet.chunkUpgradeCost);
       this.memoryUpgradeCapped = pet.memoryUpgradeCapped;
       this.chunkUpgradeCapped = pet.chunkUpgradeCapped;
       this.currentMemoryMult.copyFrom(pet.memoryUpgradeCurrentMult);
-      this.currentChunkMult.copyFrom(pet.chunkUpgradeCurrentMult);
+      this.currentChunkMult = pet.chunkUpgradeCurrentMult;
       this.isExpanded = ExpansionPack.raPack.isBought && !player.disablePostReality;
 
       this.nextMemoryUpgradeEstimate = Ra.timeToGoalString(pet, this.memoryUpgradeCost.sub(this.memories));
@@ -98,6 +104,9 @@ export default {
         .map(u => u.level)
         .filter(goal => goal > this.level);
       return missingUpgrades.length === 0 ? 25 : missingUpgrades.min();
+    },
+    unlockIndex(row, column) {
+      return (row - 1) * 7 + column - 1;
     },
     upgradeClassObject(type) {
       const available = type === "memory"
@@ -124,9 +133,6 @@ export default {
         width: `${100 * Decimal.min(1, gone.div(cost)).toNumber()}%`,
         background: this.pet.color
       };
-    },
-    id(row, column) {
-      return (row - 1) * 7 + column - 1;
     },
   },
 };
@@ -164,7 +170,9 @@ export default {
         <div class="l-ra-pet-upgrade-container">
           <div class="l-ra-pet-upgrade c-ra-pet-upgrade__top">
             <button
+              type="button"
               :class="upgradeClassObject('memory')"
+              :aria-label="`${name}'s Recollection`"
               @click="pet.purchaseMemoryUpgrade()"
             >
               <span class="fas fa-brain" />
@@ -208,7 +216,9 @@ export default {
           </div>
           <div class="l-ra-pet-upgrade c-ra-pet-upgrade__bottom">
             <button
+              type="button"
               :class="upgradeClassObject('chunk')"
+              :aria-label="`${name}'s Fragmentation`"
               @click="pet.purchaseChunkUpgrade()"
             >
               <span class="fas fa-dice-d6" />
@@ -267,7 +277,7 @@ export default {
           </span>
         </div>
       </div>
-      <div v-if="memoryMultiplier > 1 && !isRaCapped">
+      <div v-if="memoryMultiplier.gt(1) && !isRaCapped">
         Multiplying all Memory production by {{ format(memoryMultiplier, 2, 3) }}
         <span :ach-tooltip="memoryGainTooltip">
           <i class="fas fa-question-circle" />
@@ -279,33 +289,30 @@ export default {
         v-else
         class="l-ra-pet-postcompletion-spacer"
       />
-      <div v-if="isExpanded">
+      <div v-if="['teresa', 'effarig', 'enslaved', 'v'].includes(pet.id)">
         <div
-          v-for="row in 2"
+          v-for="row in (isExpanded ? 2 : 1)"
           :key="row"
           class="l-ra-pet-milestones"
         >
           <!-- This choice of key forces a UI update every level up -->
           <RaUpgradeIcon
             v-for="column in 7"
-            :key="id(row, column)"
-            :unlock="unlocks[id(row, column)]"
+            :key="25 * level + unlockIndex(row, column)"
+            :unlock="unlocks[unlockIndex(row, column)]"
           />
         </div>
       </div>
-      <div v-if="!isExpanded">
-        <div
-          v-for="row in 1"
-          :key="row"
-          class="l-ra-pet-milestones"
-        >
-          <!-- This choice of key forces a UI update every level up -->
-          <RaUpgradeIcon
-            v-for="column in 7"
-            :key="id(row, column)"
-            :unlock="unlocks[id(row, column)]"
-          />
-        </div>
+      <div
+        v-else
+        class="l-ra-pet-milestones"
+      >
+        <!-- This choice of key forces a UI update every level up -->
+        <RaUpgradeIcon
+          v-for="(unlock, i) in unlocks"
+          :key="25 * level + i"
+          :unlock="unlock"
+        />
       </div>
     </div>
   </div>
@@ -331,10 +338,5 @@ export default {
 
 .l-ra-pet-postcompletion-spacer {
   margin-bottom: 0.8rem;
-}
-
-.c-ra-pet-upgrade__tooltip {
-  font-family: Typewriter, serif;
-  line-height: 1.5;
 }
 </style>

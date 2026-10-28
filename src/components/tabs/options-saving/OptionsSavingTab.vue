@@ -4,7 +4,6 @@ import OpenModalHotkeysButton from "@/components/OpenModalHotkeysButton";
 import OptionsButton from "@/components/OptionsButton";
 import PrimaryToggleButton from "@/components/PrimaryToggleButton";
 import SaveFileName from "./SaveFileName";
-
 import { STEAM } from "@/env";
 
 export default {
@@ -18,18 +17,16 @@ export default {
   },
   data() {
     return {
-      time: 0,
-      lastExportTime: 0,
-      hasExportedToday: false,
       cloudAvailable: false,
+      isSteam: STEAM,
       cloudEnabled: false,
       forceCloudOverwrite: false,
       showCloudModal: false,
-      syncSaveIntervals: false,
-      showTimeSinceSave: false,
       hideGoogleName: false,
       loggedIn: false,
       userName: "",
+      syncSaveIntervals: false,
+      showTimeSinceSave: false,
       canSpeedrun: false,
       inSpeedrun: false,
       creditsClosed: false,
@@ -47,11 +44,11 @@ export default {
         ? `Your local save will always overwrite your cloud save no matter what.`
         : `Save conflicts will prevent your local save from being saved to the cloud.`;
     },
-    STEAM() {
-      return STEAM;
-    }
   },
   watch: {
+    syncSaveIntervals(newValue) {
+      player.options.syncSaveIntervals = newValue;
+    },
     cloudEnabled(newValue) {
       player.options.cloudEnabled = newValue;
     },
@@ -61,36 +58,29 @@ export default {
     showCloudModal(newValue) {
       player.options.showCloudModal = newValue;
     },
-    syncSaveIntervals(newValue) {
-      player.options.syncSaveIntervals = newValue;
+    hideGoogleName(newValue) {
+      player.options.hideGoogleName = newValue;
     },
     showTimeSinceSave(newValue) {
       player.options.showTimeSinceSave = newValue;
     },
-    hideGoogleName(newValue) {
-      player.options.hideGoogleName = newValue;
-    }
   },
   methods: {
     update() {
       const options = player.options;
-      this.time = Date.now();
-      this.lastExportTime = player.lastExportTime;
-      this.hasExportedToday = Math.floor(this.time / 86400000) <= Math.floor(this.lastExportTime / 86400000);
       this.cloudAvailable = Cloud.isAvailable;
       this.cloudEnabled = options.cloudEnabled;
       this.forceCloudOverwrite = options.forceCloudOverwrite;
       this.showCloudModal = options.showCloudModal;
-      this.syncSaveIntervals = options.syncSaveIntervals;
-      this.showTimeSinceSave = options.showTimeSinceSave;
       this.hideGoogleName = options.hideGoogleName;
       this.loggedIn = Cloud.loggedIn;
+      this.userName = this.loggedIn ? Cloud.user.displayName : "";
+      this.syncSaveIntervals = options.syncSaveIntervals;
+      this.showTimeSinceSave = options.showTimeSinceSave;
       this.canSpeedrun = player.speedrun.isUnlocked;
       this.inSpeedrun = player.speedrun.isActive;
       this.canModifySeed = Speedrun.canModifySeed();
       this.creditsClosed = GameEnd.creditsEverClosed;
-      if (!this.loggedIn) return;
-      this.userName = Cloud.user.displayName;
     },
     importAsFile(event) {
       // This happens if the file dialog is canceled instead of a file being selected
@@ -116,18 +106,6 @@ export default {
         Modal.message.show(`You cannot modify your seed any more. Glyph RNG has already been used to generate
           at least one Glyph on this run.`);
       }
-    },
-    exportSave() {
-      if (!this.hasExportedToday) {
-        GameStorage.export();
-        player.lastExportTime = Date.now();
-        player.storedTime += 3600;
-        GameUI.notify.info("Daily Export rewards have been granted!");
-      }
-      if (this.hasExportedToday) {
-        GameStorage.export();
-        GameUI.notify.info("You have already exported your save today!");
-      }
     }
   }
 };
@@ -135,15 +113,12 @@ export default {
 
 <template>
   <div class="l-options-tab">
-    <div>
-      You can export your save once per day to get free rewards!
-    </div>
     <div class="l-options-grid">
       <div class="l-options-grid__row">
         <OptionsButton
           class="o-primary-btn--option_font-x-large"
           :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-          @click="exportSave()"
+          onclick="GameStorage.export()"
         >
           Export save
         </OptionsButton>
@@ -239,36 +214,26 @@ export default {
         </OptionsButton>
       </div>
       <OpenModalHotkeysButton />
-    </div>
-    <h2
-      v-if="cloudAvailable"
-      class="c-cloud-options-header"
-    >
-      <span v-if="hideGoogleName">Logged in to Google <i>(name hidden)</i></span>
-      <span v-else-if="loggedIn">Logged in as {{ userName }}</span>
-      <span v-else>Not logged in</span>
-    </h2>
-    <div v-if="loggedIn">
-      <span v-if="cloudEnabled">Cloud Saving will occur automatically every 10 minutes.</span>
-      <span v-else>Cloud Saving has been disabled on this save.</span>
-    </div>
-    <div
-      v-if="cloudAvailable"
-      class="l-options-grid"
-    >
-      <div
-        v-if="!STEAM"
-        class="l-options-grid__row"
-      >
+      <div v-if="cloudAvailable" class="l-options-grid__row">
+        <h2 class="c-cloud-options-header">
+          <span v-if="loggedIn && hideGoogleName">Logged in to Google <i>(name hidden)</i></span>
+          <span v-else-if="loggedIn">Logged in as {{ userName }}</span>
+          <span v-else>Not logged in</span>
+        </h2>
+      </div>
+      <div v-if="cloudAvailable && loggedIn" class="l-options-grid__row">
+        <span>{{ cloudEnabled ? "Cloud saving will occur automatically every 10 minutes." : "Cloud saving is disabled on this save." }}</span>
+      </div>
+      <div v-if="cloudAvailable && !isSteam" class="l-options-grid__row">
         <OptionsButton
           v-if="loggedIn"
+          :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
           onclick="GameOptions.logout()"
         >
-          Disconnect Google Account and disable Cloud Saving
+          Disconnect Google Account
         </OptionsButton>
         <OptionsButton
           v-else
-          v-tooltip="'This will connect your Google Account to your Antimatter Dimensions savefiles'"
           :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
           onclick="GameOptions.login()"
         >
@@ -277,60 +242,51 @@ export default {
         <PrimaryToggleButton
           v-if="loggedIn"
           v-model="hideGoogleName"
-          v-tooltip="'This will hide your Google Account name from the UI for privacy. Saving/loading is unaffected.'"
           class="o-primary-btn--option l-options-grid__button"
-          :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
           label="Hide Google Account name:"
         />
       </div>
-      <div
-        v-if="loggedIn"
-        class="l-options-grid__row"
-      >
-        <OptionsButton
-          onclick="GameOptions.cloudSave()"
-          :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-        >
-          Cloud save
-        </OptionsButton>
-        <OptionsButton
-          onclick="GameOptions.cloudLoad()"
-          :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-        >
-          Cloud load
-        </OptionsButton>
-        <PrimaryToggleButton
-          v-model="syncSaveIntervals"
-          class="o-primary-btn--option l-options-grid__button"
-          :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-          label="Force local save before cloud saving:"
-        />
-      </div>
-      <div
-        v-if="loggedIn"
-        class="l-options-grid__row"
-      >
-        <PrimaryToggleButton
-          v-model="cloudEnabled"
-          class="o-primary-btn--option l-options-grid__button"
-          :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-          label="Automatic cloud saving/loading:"
-        />
-        <PrimaryToggleButton
-          v-model="showCloudModal"
-          v-tooltip="modalTooltip"
-          class="o-primary-btn--option l-options-grid__button"
-          :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-          label="Show modal if possible saving conflict:"
-        />
-        <PrimaryToggleButton
-          v-model="forceCloudOverwrite"
-          v-tooltip="overwriteTooltip"
-          class="o-primary-btn--option l-options-grid__button"
-          :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-          label="Force cloud saving despite conflicts:"
-        />
-      </div>
+      <template v-if="cloudAvailable && loggedIn">
+        <div class="l-options-grid__row">
+          <OptionsButton
+            :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
+            onclick="GameOptions.cloudSave()"
+          >
+            Cloud save
+          </OptionsButton>
+          <OptionsButton
+            :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
+            onclick="GameOptions.cloudLoad()"
+          >
+            Cloud load
+          </OptionsButton>
+          <PrimaryToggleButton
+            v-model="syncSaveIntervals"
+            class="o-primary-btn--option l-options-grid__button"
+            label="Force local save before cloud saving:"
+          />
+        </div>
+        <div class="l-options-grid__row">
+          <PrimaryToggleButton
+            v-model="cloudEnabled"
+            class="o-primary-btn--option l-options-grid__button"
+            :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
+            label="Automatic cloud saving:"
+          />
+          <PrimaryToggleButton
+            v-model="showCloudModal"
+            v-tooltip="modalTooltip"
+            class="o-primary-btn--option l-options-grid__button"
+            label="Show modal on possible save conflict:"
+          />
+          <PrimaryToggleButton
+            v-model="forceCloudOverwrite"
+            v-tooltip="overwriteTooltip"
+            class="o-primary-btn--option l-options-grid__button"
+            label="Force cloud saving despite conflicts:"
+          />
+        </div>
+      </template>
     </div>
-  </div>
+    </div>
 </template>

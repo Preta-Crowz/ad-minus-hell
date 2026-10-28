@@ -1,6 +1,7 @@
 <script>
 import EnterCelestialsRaPet from "@/components/modals/prestige/EnterCelestialsRaPet";
 import ModalWrapperChoice from "@/components/modals/ModalWrapperChoice";
+import { Celestials, V } from "../../../core/globals";
 
 export default {
   name: "EnterCelestialsModal",
@@ -16,23 +17,27 @@ export default {
     name: {
       type: String,
       required: true
+    },
+    isHarder: {
+      type: Boolean,
+      required: false,
+      default: false,
     }
   },
   data() {
     return {
-      laitelaFastest: 3600,
+      laitelaFastest: new Decimal(3600),
       teresaBestAM: new Decimal(),
-      teresaRunMult: new Decimal(0),
+      teresaRunMult: new Decimal(),
       effarigDone: false,
       effarigLayer: "",
       enslavedDone: false,
       laitelaTime: "",
-      alphaStage: 0,
-      alphaReq: "",
     };
   },
   computed: {
     effects() {
+      if(this.isHarder) return GameDatabase.celestials.descriptions[this.number].extremeEffects().split("\n");
       return GameDatabase.celestials.descriptions[this.number].effects().split("\n");
     },
     description() {
@@ -45,36 +50,38 @@ export default {
     message() {
       return `Perform a Reality reset and enter ${this.name} Reality, in which:`;
     },
-    formatStageNum() {
-      const a = this.alphaStage + 1;
-      if (a % 10 === 1 && Math.floor(a / 10) !== 1) return `${a}st`;
-      if (a % 10 === 2 && Math.floor(a / 10) !== 1) return `${a}nd`;
-      if (a % 10 === 3 && Math.floor(a / 10) !== 1) return `${a}rd`;
-      return `${a}th`;
-    },
     extraLine() {
       switch (this.number) {
         case 0:
           return this.teresaBestAM.eq(1)
-            ? `You have not unlocked the reward for Teresa's Reality yet. Unlocking the reward requires
+            ? `You have not unlocked the reward for ${this.name} Reality yet. Unlocking the reward requires
               purchasing the Reality study and completing the Reality for the first time.`
-            : `Your highest Teresa completion was for ${format(this.teresaBestAM, 2, 2)} antimatter,
+            : `Your highest ${this.name} completion was for ${format(this.teresaBestAM, 2, 2)} antimatter,
               gaining you a ${formatX(this.teresaRunMult, 2)} multiplier to Glyph Sacrifice power.`;
         case 1: return this.effarigDone
-          ? "Effarig is completed!"
+          ? `${this.name} is completed!`
           : `You are currently on the ${this.effarigLayer} Layer.`;
         case 2: return this.enslavedDone
           ? "Have... we... not helped enough..."
           : "We... can help... Let us... help...";
-        case 3: return "";
-        case 4: return `Within Ra's Reality, some resources will generate Memory Chunks
+        case 3: {
+          return this.isHarder ? "This Reality is Harder than normal" : "";
+        }
+        case 4: return `Within ${this.name} Reality, some resources will generate Memory Chunks
           for Celestial Memories based on their amounts:`;
-        case 5: return this.laitelaFastest >= 300
-          ? "You have not completed Lai'tela at this tier."
+        case 5: return this.laitelaFastest.gte(300)
+          ? `You have not completed ${this.name} at this tier.`
           : `Your fastest completion on this tier is ${this.laitelaTime}.`;
-        case 6: return "";
-        case 7: return `You are currently on the ${this.formatStageNum} Stage of Alpha's Reality.
-          Your current goal is to ${this.alphaReq}.`;
+        case 6: {
+          let augments = makeEnumeration(Glitch.activeAugments);
+          if(augments == "") augments = "Nothing";
+          return `start ${this.name} reality with ${augments} active?`;
+        }
+        case 7: return `You are currently on Stage ${formatInt(Alpha.currentStage + 1)} of Alpha's Reality.
+          Your current goal is to ${Alpha.currentStageName}.`;
+        case 8: {
+          return "Stop hacking";
+        }
         default: throw new Error(`Attempted to start an Unknown Celestial in Celestial Modal Confirmation.`);
       }
     }
@@ -85,12 +92,10 @@ export default {
       this.teresaRunMult.copyFrom(Teresa.runRewardMultiplier);
       const effarigStage = Effarig.currentStage;
       this.effarigDone = effarigStage === EFFARIG_STAGES.COMPLETED;
-      this.effarigLayer = [null, "Infinity", "Eternity", "Reality", "Endgame"][effarigStage];
+      this.effarigLayer = [null, "Infinity", "Eternity", "Reality", "OVERDRIVE"][effarigStage];
       this.enslavedDone = Enslaved.isCompleted;
-      this.laitelaFastest = player.celestials.laitela.fastestCompletion;
-      this.laitelaTime = TimeSpan.fromSeconds(new Decimal(this.laitelaFastest)).toStringShort();
-      this.alphaStage = Alpha.currentStage;
-      this.alphaReq = Alpha.currentStageName;
+      this.laitelaFastest.copyFrom(player.celestials.laitela.fastestCompletion);
+      this.laitelaTime = TimeSpan.fromSeconds(this.laitelaFastest).toStringShort();
     },
     handleYesClick() {
       beginProcessReality(getRealityProps(true));
@@ -98,10 +103,13 @@ export default {
         case 0: return Teresa.initializeRun();
         case 1: return Effarig.initializeRun();
         case 2: return Enslaved.initializeRun();
-        case 3: return V.initializeRun();
+        case 3: {
+          if(this.isHarder) return V.initializeExtremeRun();
+          return V.initializeRun();
+        }
         case 4: return Ra.initializeRun();
         case 5: return Laitela.initializeRun();
-        case 6: throw new Error(`Attempted to start Pelle through EnterCelestialsModal instead of ArmageddonModal`);
+        case 6: return Glitch.initializeRun();
         case 7: return Alpha.initializeRun();
         default: throw new Error(`Attempted to start an Unknown Celestial in Celestial Modal Confirmation.`);
       }
@@ -115,7 +123,7 @@ export default {
     <template #header>
       {{ topLabel }}
     </template>
-    <div class="c-modal-message__text" :class="{ 'l-alpha-text': number === 7 }">
+    <div class="c-modal-message__text">
       {{ message }}
       <br>
       <br>
@@ -161,6 +169,7 @@ export default {
   max-width: 45rem;
   text-align: left;
 }
+
 .c-modal-celestial__run-effects__line {
   display: flex;
   margin-bottom: 0.5rem;
@@ -168,9 +177,5 @@ export default {
 
 .reality-description {
   padding: 0 2rem;
-}
-
-.l-alpha-text {
-  font-size: 1.2rem;
 }
 </style>

@@ -1,3 +1,4 @@
+import { DC } from "../../constants";
 import { GameMechanicState } from "../../game-mechanics";
 
 /**
@@ -51,7 +52,7 @@ class AlchemyResourceState extends GameMechanicState {
   }
 
   get fillFraction() {
-    return Math.clamp(this.amount / this.cap, 0, 1);
+    return Decimal.clamp(this.amount.div(this.cap), 0, 1).toNumber();
   }
 
   get unlockedWith() {
@@ -66,10 +67,6 @@ class AlchemyResourceState extends GameMechanicState {
     return this.unlockedWith.level >= this.unlockedAt;
   }
 
-  get isDestroyed() {
-    return Pelle.isDoomed && this.config.destroyed();
-  }
-
   get lockText() {
     return `${this.unlockedWith.name} Level ${formatInt(this.unlockedAt)}`;
   }
@@ -78,14 +75,15 @@ class AlchemyResourceState extends GameMechanicState {
     return true;
   }
 
+  get isDestroyed() {
+    if (!Pelle.isDoomed) return false;
+    return !PelleAlchemyUpgrade[`alchemy${this.name}`]?.canBeApplied;
+  }
+
   get effectValue() {
-    if (SlabdrillUnlocks.dilation.isUnlocked && (this.config.id <= 4 || this.config.id === 10)) {
-      return this.config.effect(this.amount);
-    }
-    if (player.disablePostReality) return this.config.effect(0);
     // Disable Exponential alchemy effect in V reality.
-    if (V.isRunning && this.config.id === 14) return 0;
-    return this.config.effect(Pelle.isDisabled("alchemy") && this.isDestroyed ? 0 : this.amount);
+    if (V.isRunning && this.config.id === 14) return DC.D0;
+    return this.config.effect(Pelle.isDisabled("alchemy") && this.isDestroyed ? DC.D0 : this.amount);
   }
 
   get reaction() {
@@ -98,7 +96,13 @@ class AlchemyResourceState extends GameMechanicState {
   get cap() { throw new NotImplementedError(); }
 
   get capped() {
-    return this.amount >= this.cap;
+    return this.amount.gte(this.cap);
+  }
+  get over25K() {
+    return this.amount.gte(25000);
+  }
+  reset() {
+    this.amount = DC.D0;
   }
 }
 
@@ -115,19 +119,18 @@ class BasicAlchemyResourceState extends AlchemyResourceState {
   }
 
   set highestRefinementValue(value) {
-    player.celestials.ra.highestRefinementValue[this._name] = Math.max(this.highestRefinementValue, value);
+    player.celestials.ra.highestRefinementValue[this._name] = Decimal.max(this.highestRefinementValue, value);
   }
 
   get cap() {
-    if (SlabdrillUnlocks.dilation.isUnlocked) return Slabdrill.power.div(1e12).toNumber();
-    return Math.clampMax(Ra.alchemyResourceCap, this.highestRefinementValue);
+    return Decimal.clampMax(Ra.alchemyResourceCap, this.highestRefinementValue);
   }
 }
 
 class AdvancedAlchemyResourceState extends AlchemyResourceState {
   get cap() {
     const reagentCaps = this.reaction.reagents.map(x => x.resource.cap);
-    return Math.min(...reagentCaps);
+    return Decimal.min(...reagentCaps);
   }
 }
 
@@ -149,41 +152,55 @@ class AlchemyReaction {
   // 100%, but the reaction will be forced to occur at higher than 100% if there is significantly more reagent than
   // product. This allows resources to be created quickly when its reaction is initially turned on with saved reagents.
   get reactionYield() {
-    if (!this._product.isUnlocked || this._reagents.some(r => !r.resource.isUnlocked)) return 0;
-    const forcingFactor = (this._reagents
-      .map(r => r.resource.amount)
-      .min() - this._product.amount) / 100;
+    if (MetaFabricatorUpgrade(17).isBought) return new Decimal(0);
+    if (!this._product.isUnlocked || this._reagents.some(r => !r.resource.isUnlocked)) return new Decimal();
+    let forcingFactor = (this._reagents
+      .map(r => r.resource.amount))
+    while (forcingFactor.length > 1) {
+      if (forcingFactor[0].gt(forcingFactor[1])) forcingFactor.splice(1, 1);
+      else forcingFactor.splice(0, 1);
+    }
+    forcingFactor = forcingFactor[0];
+    forcingFactor = forcingFactor.sub(this._product.amount);
+    forcingFactor = forcingFactor.div(100);
     const totalYield = this._reagents
-      .map(r => r.resource.amount / r.cost)
-      .min();
-    return Math.min(totalYield, Math.max(forcingFactor, 1));
+      .map(r => r.resource.amount.div(r.cost));
+    while (totalYield.length > 1) {
+      if (totalYield[0].gt(totalYield[1])) totalYield.splice(1, 1);
+      else totalYield.splice(0, 1);
+    }
+    return Decimal.min(totalYield[0], Decimal.max(forcingFactor, 1));
   }
 
   // Check each reagent for if a full reaction would drop it below the product amount.  If so, reduce reaction yield
   get actualYield() {
+    if (MetaFabricatorUpgrade(17).isBought) return new Decimal(0);
     // Assume a full reaction to see what the maximum possible product is
-    const maxFromReaction = this.baseProduction * this.reactionYield * this.reactionEfficiency;
+    const Yield = this.reactionYield; // better performance
+    const maxFromReaction = this.baseProduction.mul(Yield).mul(this.reactionEfficiency);
     const prodBefore = this._product.amount;
-    const prodAfter = prodBefore + maxFromReaction;
-    let cappedYield = this.reactionYield;
+    const prodAfter = prodBefore.add(maxFromReaction);
+    let cappedYield = Yield;
     for (const reagent of this._reagents) {
       const reagentBefore = reagent.resource.amount;
-      const reagentAfter = reagent.resource.amount - this.reactionYield * reagent.cost;
-      const diffBefore = reagentBefore - prodBefore;
-      const diffAfter = reagentAfter - prodAfter;
-      cappedYield = Math.min(cappedYield, this.reactionYield * diffBefore / (diffBefore - diffAfter));
+      const reagentAfter = reagentBefore.sub(Yield.mul(reagent.cost));
+      const diffBefore = reagentBefore.sub(prodBefore);
+      const diffAfter = reagentAfter.sub(prodAfter);
+      cappedYield = Decimal.min(cappedYield, Yield.mul(diffBefore).div(diffBefore.sub(diffAfter)));
     }
-    return Math.clampMin(cappedYield, 0);
+    return Decimal.clampMin(cappedYield, 0);
   }
 
   // Assign reactions priority in descending order based on the largest reagent total after the reaction.  The logic
   // is that if we assume that all the reactions are cap-limited, then by assigning priority in this way, reactions
   // get applied so that earlier reactions are less likely to reduce the yield of later reactions.
   get priority() {
+    if (MetaFabricatorUpgrade(17).isBought) return new Decimal(0);
     let maxReagent = Glyphs.levelCap;
+    const Yield = this.actualYield; // better performance
     for (const reagent of this._reagents) {
-      const afterReaction = reagent.resource.amount - reagent.cost * this.actualYield;
-      maxReagent = Decimal.min(maxReagent, afterReaction).toNumber();
+      const afterReaction = reagent.resource.amount.sub(reagent.cost.mul(Yield));
+      maxReagent = Decimal.min(maxReagent, afterReaction);
     }
     return maxReagent;
   }
@@ -197,38 +214,39 @@ class AlchemyReaction {
   }
 
   get isReality() {
-    return this._product.id === ALCHEMY_RESOURCE.REALITY;
+    return this._product.id >= ALCHEMY_RESOURCE.REALITY;
   }
 
   // Reactions are per-10 products because that avoids decimals in the UI for reagents, but efficiency losses can make
   // products have decimal coefficients.
   get baseProduction() {
-    return this.isReality ? 1 : 5;
+    return this.isReality ? DC.D1 : DC.D5;
   }
 
   get reactionEfficiency() {
-    return this.isReality ? 1 : AlchemyResource.synergism.effectValue;
+    return Decimal.mul(this.isReality ? 1 : AlchemyResource.synergism.effectValue, Ra.unlocks.StrongerAlchemy.effectOrDefault(1));
   }
 
   get reactionProduction() {
-    return this.baseProduction * this.reactionEfficiency;
+    return this.baseProduction.mul(this.reactionEfficiency);
   }
 
   // Cap products at the minimum amount of all reagents before the reaction occurs, eg. 200Ξ and 350Ψ will not bring
   // ω above 200.  In fact, since some Ξ will be used during the reaction, the actual cap will be a bit lower.
   combineReagents() {
-    if (!this.isActive || this.reactionYield === 0) return;
+    if (!this.isActive || this.reactionYield.eq(0)) return;
     const unpredictabilityEffect = AlchemyResource.unpredictability.effectValue;
-    const times = Math.clampMax(1 + poissonDistribution(unpredictabilityEffect / (1 - unpredictabilityEffect)), 50);
+    let times = poissonDistribution(unpredictabilityEffect.div(unpredictabilityEffect.sub(1).neg())).add(1);
     const cap = this._product.cap;
+    times = times.clampMax(1e4).toNumber();
     for (let i = 0; i < times; i++) {
       const reactionYield = this.actualYield;
       for (const reagent of this._reagents) {
-        reagent.resource.amount -= reactionYield * reagent.cost;
+        reagent.resource.amount = reagent.resource.amount.sub(reactionYield.mul(reagent.cost));
       }
       // The minimum reaction yield is 0.05 so the cap is actually reached
-      const effectiveYield = Math.clampMin(reactionYield * this.reactionProduction, 0.05);
-      this._product.amount = Math.clampMax(this._product.amount + effectiveYield, cap);
+      const effectiveYield = Decimal.clampMin(reactionYield.mul(this.reactionProduction), 0.05);
+      this._product.amount = Decimal.clampMax(this._product.amount.add(effectiveYield), cap);
     }
   }
 }
@@ -242,7 +260,10 @@ export const AlchemyResource = mapGameDataToObject(
 
 export const AlchemyResources = {
   all: AlchemyResource.all,
-  base: AlchemyResource.all.filter(r => r.isBaseResource)
+  base: AlchemyResource.all.filter(r => r.isBaseResource),
+  reset(){
+    AlchemyResources.all.forEach(x => x.amount = DC.D0);
+  }
 };
 
 export const AlchemyReactions = (function() {

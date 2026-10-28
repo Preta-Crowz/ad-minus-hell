@@ -3,19 +3,23 @@ import { AutobuyerState } from "./autobuyer";
 
 export class GalaxyGeneratorUpgradeAutobuyerState extends AutobuyerState{
     get _upgradeName(){
-        return ["additive", "multiplicative", "antimatterMult", "IPMult", "EPMult"][this.id-1];
+        return ["additive", "multiplicative", "antimatterMult", "IPMult", "EPMult", "RSMult", "DTMult", "remnantPow", "exponential", "superExponential"][this.id-1];
     }
 
     get data(){
-        return player.auto.galgenUpgrades.all[this.id-1];
+        const upgrades = player.auto.galgenUpgrades.all;
+        while (upgrades.length < GalaxyGeneratorUpgradeAutobuyerState.entryCount) {
+            upgrades.push({ isActive: false });
+        }
+        return upgrades[this.id-1];
     }
 
     get name(){
-        return ["Additive", "Multiplicative", "Antimatter", "Infinity Point", "Eternity Point"][this.id-1];
+        return ["Additive", "Multiplicative", "Antimatter", "Infinity Point", "Eternity Point", "Reality Shard", "Dilated Time", "Remnant Power", "Galaxy Power", "Galaxy Dilation"][this.id-1];
     }
 
     get isUnlocked(){
-        return ChallengerUpgrade(8).isBought && Pelle.hasGalaxyGenerator;
+        return (ChallengerUpgrade(8).isBought || ExpansionPack.pellePack.isBought) && Pelle.hasGalaxyGenerator;
     }
 
     get bulk(){
@@ -24,11 +28,11 @@ export class GalaxyGeneratorUpgradeAutobuyerState extends AutobuyerState{
 
     tick(){
         const upgradeName = this._upgradeName;
-        GalaxyGeneratorUpgrades[upgradeName].purchase();
+        GalaxyGeneratorUpgrades[upgradeName].purchase(DivinityMilestone.automaticDivinity.isReached);
     }
 
     static get entryCount(){
-        return 5;
+        return 10;
     }
 
     static get autobuyerGroupName(){ return "Galaxy Generator Upgrades"; }
@@ -48,7 +52,7 @@ export class GalaxyGeneratorSacrificeAutobuyerState extends AutobuyerState{
     }
 
     get isUnlocked(){
-        return ChallengerUpgrade(8).isBought && Pelle.hasGalaxyGenerator;
+        return (ChallengerUpgrade(8).isBought || ExpansionPack.pellePack.isBought) && Pelle.hasGalaxyGenerator;
     }
 
     get bulk(){

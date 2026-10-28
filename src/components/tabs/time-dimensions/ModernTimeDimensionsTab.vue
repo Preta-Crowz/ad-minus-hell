@@ -11,14 +11,15 @@ export default {
   data() {
     return {
       totalUpgrades: new Decimal(0),
-      multPerTickspeed: 0,
-      tickspeedSoftcap: 0,
+      multPerTickspeed: new Decimal(0),
+      tickspeedSoftcap: new Decimal(0),
       timeShards: new Decimal(0),
       upgradeThreshold: new Decimal(0),
       shardsPerSecond: new Decimal(0),
       incomeType: "",
       areAutobuyersUnlocked: false,
       showLockedDimCostNote: true,
+      isInsideHell: false,
       isEndgameUnlocked: false,
       timeDimCompressionMagnitude: 0,
       timeDimOverflow: 0,
@@ -27,7 +28,6 @@ export default {
       timeDimOverflow2: 0,
       timeDimStart2: new Decimal(0),
       hasSecond: false,
-      hasCap: true
     };
   },
   computed: {
@@ -35,10 +35,11 @@ export default {
   },
   methods: {
     update() {
+      this.isInsideHell = Hell.isInside;
       this.showLockedDimCostNote = !TimeDimension(8).isUnlocked && player.realities.gte(1);
       this.totalUpgrades.copyFrom(player.totalTickGained);
-      this.multPerTickspeed = FreeTickspeed.multToNext;
-      this.tickspeedSoftcap = FreeTickspeed.softcap;
+      this.multPerTickspeed.copyFrom(FreeTickspeed.multToNext);
+      this.tickspeedSoftcap.copyFrom(FreeTickspeed.softcap);
       this.timeShards.copyFrom(Currency.timeShards);
       this.upgradeThreshold.copyFrom(FreeTickspeed.fromShards(Currency.timeShards.value).nextShards);
       this.shardsPerSecond.copyFrom(TimeDimension(1).productionPerSecond);
@@ -47,12 +48,11 @@ export default {
       this.isEndgameUnlocked = PlayerProgress.endgameUnlocked();
       this.timeDimCompressionMagnitude = TimeDimensions.compressionMagnitude;
       this.timeDimOverflow = 1 / this.timeDimCompressionMagnitude;
-      this.timeDimStart = TimeDimensions.OVERFLOW;
+      this.timeDimStart.copyFrom(TimeDimensions.OVERFLOW);
       this.timeDimCompressionMagnitude2 = TimeDimensions.compressionMag2;
       this.timeDimOverflow2 = 1 / this.timeDimCompressionMagnitude2;
-      this.timeDimStart2 = TimeDimensions.OVERFLOW_SQUARED;
+      this.timeDimStart2.copyFrom(TimeDimensions.OVERFLOW_SQUARED);
       this.hasSecond = Currency.timeShards.gte(DC.ENUMMAX);
-      this.hasCap = Alpha.currentStage < 11 || player.disablePostReality;
     },
     maxAll() {
       tryUnlockTimeDimensions();
@@ -85,7 +85,7 @@ export default {
     <div>
       <p>
         You have gained
-        <span class="c-time-dim-description__accent">{{ formatHybridLarge(totalUpgrades, 3) }}</span> Tickspeed upgrades from
+        <span class="c-time-dim-description__accent">{{ formatInt(totalUpgrades) }}</span> Tickspeed upgrades from
         <span class="c-time-dim-description__accent">{{ format(timeShards, 2, 1) }}</span> Time Shards.
       </p>
       <p>
@@ -95,38 +95,32 @@ export default {
         Tickspeed upgrade gained.
       </p>
     </div>
-    <div>
+    <div v-if="isEndgameUnlocked">
       <p>
-        <span v-if="isEndgameUnlocked">
-          Your Time Dimension Compression Magnitude is
-          <span class="c-time-dim-compression-description__accent">{{ format(timeDimCompressionMagnitude, 2, 3) }}</span>,
-          which raises all Time Dimension Multipliers' Exponents to the power of
-          <span class="c-time-dim-compression-description__accent">{{ format(timeDimOverflow, 2, 3) }}</span>
-          while above
-          <span>{{ formatPostBreak(timeDimStart, 2, 1) }}</span>.
-        </span>
+        Your Time Dimension Compression Magnitude is
+        <span class="c-time-dim-compression-description__accent">{{ format(timeDimCompressionMagnitude, 2, 3) }}</span>,
+        which raises all Time Dimension multipliers' exponents to the power of
+        <span class="c-time-dim-compression-description__accent">{{ format(timeDimOverflow, 2, 3) }}</span>
+        while above {{ formatPostBreak(timeDimStart, 2, 1) }}.
       </p>
     </div>
-    <div>
+    <div v-if="hasSecond">
       <p>
-        <span v-if="hasSecond">
-          Your Time Dimension Compression^2 Magnitude is
-          <span class="c-time-dim-compression-description__accent">{{ format(timeDimCompressionMagnitude2, 2, 3) }}</span>,
-          which raises all Time Dimension Multipliers' Exponents to the power of
-          <span class="c-time-dim-compression-description__accent">{{ format(timeDimOverflow2, 2, 3) }}</span>
-          while above
-          <span>{{ formatPostBreak(timeDimStart2, 2, 1) }}</span>.
-        </span>
+        Your Time Dimension Compression^2 Magnitude is
+        <span class="c-time-dim-compression-description__accent">{{ format(timeDimCompressionMagnitude2, 2, 3) }}</span>,
+        which raises all Time Dimension multipliers' exponents to the power of
+        <span class="c-time-dim-compression-description__accent">{{ format(timeDimOverflow2, 2, 3) }}</span>
+        while above {{ formatPostBreak(timeDimStart2, 2, 1) }}.
       </p>
     </div>
     <div>
       The amount each additional upgrade requires will start
-      increasing above {{ formatHybridLarge(tickspeedSoftcap, 3) }} Tickspeed upgrades.
+      increasing above {{ formatInt(tickspeedSoftcap) }} Tickspeed upgrades.
     </div>
     <div>You are getting {{ format(shardsPerSecond, 2, 0) }} {{ incomeType }} per second.</div>
     <div class="l-dimensions-container">
       <NewTimeDimensionRow
-        v-for="tier in 8"
+        v-for="tier in (isInsideHell ? 6 : 8)"
         :key="tier"
         :tier="tier"
         :are-autobuyers-unlocked="areAutobuyersUnlocked"
@@ -141,9 +135,8 @@ export default {
       <div v-if="showLockedDimCostNote">
         Hold shift to see the Eternity Point cost for locked Time Dimensions.
       </div>
-      <div v-if="hasCap">
-        Any 8th Time Dimensions purchased above {{ format(1e8) }} will not further increase the multiplier.
-      </div>
+      Any 8th Time Dimensions purchased above {{ format(1e8) }} will not further increase the multiplier.<br>
+      Along with other Time Dimensions purchased above {{ format(1e30) }}.
     </div>
   </div>
 </template>

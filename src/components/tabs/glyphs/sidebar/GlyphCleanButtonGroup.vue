@@ -18,12 +18,20 @@ export default {
       return "Delete";
     },
     autoCleanTooltip() {
-      return `${this.removeString} Glyphs that are worse in every way than
-        enough other Glyphs${this.hasPerkShop ? " (ignores customized Glyphs)" : ""}`;
+      const requiredBetterGlyphs = Math.max(5, Glyphs.normalGlyphCleanupReserve);
+      const cleanupReserve = Glyphs.normalGlyphCleanupReserve;
+      return `${this.removeString} normal Glyphs that are worse in every way than at least ${formatInt(requiredBetterGlyphs)}
+        others. Special Glyphs use their highest equip limit across regular and Doomed Reality.${cleanupReserve > 0
+        ? ` Keeps at least ${formatInt(cleanupReserve)} normal Glyphs for the highest equip capacity across both modes.`
+        : ""}${this.hasPerkShop ? " (ignores customized Glyphs)" : ""}`;
     },
     harshAutoCleanTooltip() {
-      return `${this.removeString} Glyphs that are worse in every way than
-        ANY other Glyph${this.hasPerkShop ? " (includes customized Glyphs)" : ""}`;
+      const requiredBetterGlyphs = Math.max(1, Glyphs.normalGlyphCleanupReserve);
+      const cleanupReserve = Glyphs.normalGlyphCleanupReserve;
+      return `${this.removeString} normal Glyphs that are worse in every way than at least ${formatInt(requiredBetterGlyphs)}
+        others. Special Glyphs use their highest equip limit across regular and Doomed Reality.${cleanupReserve > 0
+        ? ` Keeps at least ${formatInt(cleanupReserve)} normal Glyphs for the highest equip capacity across both modes.`
+        : ""}${this.hasPerkShop ? " (includes customized Glyphs)" : ""}`;
     },
     deleteRejectedTooltip() {
       const negativeWarning = AutoGlyphProcessor.hasNegativeEffectScore()
@@ -50,14 +58,14 @@ export default {
       if (player.options.confirmations.autoClean) {
         Modal.glyphPurge.show({ harsh: false });
       } else {
-        Glyphs.autoClean();
+        Glyphs.autoClean(5);
       }
     },
     harshAutoClean() {
       if (player.options.confirmations.autoClean) {
         Modal.glyphPurge.show({ harsh: true });
       } else {
-        Glyphs.harshAutoClean();
+        Glyphs.autoClean(1);
       }
     },
     deleteAllUnprotected() {

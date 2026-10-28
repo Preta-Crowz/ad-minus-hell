@@ -21,14 +21,10 @@ export default {
       target: 0,
       idx: 0,
       isDoomed: false,
-      isCursed: false
     };
   },
   computed: {
-    resetTerm() {
-      if (this.isCursed) return "perform a Core Jump";
-      return this.isDoomed ? "restart this Armageddon" : "restart this Reality";
-    },
+    resetTerm() { return this.isDoomed ? "Armageddon" : "Reality"; },
   },
   methods: {
     update() {
@@ -36,7 +32,6 @@ export default {
       this.idx = this.inventoryIndex;
       this.glyph = Glyphs.findByInventoryIndex(this.idx);
       this.isDoomed = Pelle.isDoomed;
-      this.isCursed = Slabdrill.isCursed;
     },
     handleYesClick() {
       Glyphs.swapIntoActive(this.glyph, this.targetSlot);
@@ -53,6 +48,6 @@ export default {
     <template #header>
       You are about to replace a Glyph
     </template>
-    Replacing a Glyph will {{ resetTerm }}.
+    Replacing a Glyph will restart this {{ resetTerm }}.
   </ModalWrapperChoice>
 </template>

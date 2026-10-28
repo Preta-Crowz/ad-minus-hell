@@ -1,3 +1,5 @@
+import { DC } from "../../constants";
+
 import { RebuyableMechanicState } from "../../game-mechanics/rebuyable";
 
 import { PelleRifts } from "./rifts";
@@ -10,7 +12,7 @@ export const GalaxyGenerator = {
   get generationCaps() {
     return PelleRifts.all
       .map(x => ({ rift: x.config.key, cap: x.config.galaxyGeneratorThreshold }))
-      .sort((a, b) => a.cap - b.cap);
+      .sort((a, b) => Decimal.compare(a.cap, b.cap));
   },
 
   get spentGalaxies() {
@@ -22,50 +24,63 @@ export const GalaxyGenerator = {
   },
 
   get galaxies() {
-    return this.generatedGalaxies.sub(this.spentGalaxies);
+    const generator = player.celestials.pelle.galaxyGenerator;
+    if (!(generator.unspentGalaxies instanceof Decimal)) {
+      generator.unspentGalaxies = this.generatedGalaxies.sub(this.spentGalaxies).max(0);
+    }
+    return generator.unspentGalaxies;
   },
 
   get gainPerSecondPreCap() {
-    let extraGain = 1;
-    if (EndgameMilestone.moreFasterGalaxies.isReached && !player.disablePostReality) extraGain = Decimal.pow(10, Math.min(Currency.endgames.value / 200, 50)).times(Decimal.pow(10, Math.max((Math.log10(Currency.endgames.value + 1) - 4) * 50, 0)));
-    if (!Pelle.hasGalaxyGenerator) return new Decimal(0);
+    let extraGain = DC.D1;
+    if (EndgameMilestone.moreFasterGalaxies.isReached && !player.disablePostReality) {
+      const endgames = Currency.endgames.value;
+      extraGain = Decimal.pow(10, endgames.div(200).min(50))
+        .times(Decimal.pow(10, endgames.add(1).log10().sub(4).times(50).max(0)));
+    }
     let galaxyGen = new Decimal(GalaxyGeneratorUpgrades.additive.effectValue).timesEffectsOf(
       GalaxyGeneratorUpgrades.multiplicative,
       GalaxyGeneratorUpgrades.antimatterMult,
       GalaxyGeneratorUpgrades.IPMult,
       GalaxyGeneratorUpgrades.EPMult,
       GalaxyGeneratorUpgrades.RSMult,
-      GalaxyGeneratorUpgrades.DTMult
-    ).times(extraGain).powEffectsOf(GalaxyGeneratorUpgrades.remnantPow, GalaxyGeneratorUpgrades.exponential).pow(Accelerators.cosmic.effectValue1).pow(Universes.ephemeralLightToGalGen).pow(
-      GalacticPowers.galaxyGenerationEmpowerment.isUnlocked ? GalacticPowers.galaxyGenerationEmpowerment.reward : 1);
+      GalaxyGeneratorUpgrades.DTMult,
+      HardChallengerUpgrade(1),
+    ).times(extraGain)
+      .powEffectsOf(GalaxyGeneratorUpgrades.remnantPow, GalaxyGeneratorUpgrades.exponential)
+      .pow(Accelerators.cosmic.effectValue1)
+      .pow(Universes.ephemeralLightToGalGen)
+      .pow(GalacticPowers.galaxyGenerationEmpowerment.isUnlocked
+        ? GalacticPowers.galaxyGenerationEmpowerment.reward
+        : 1);
     if (galaxyGen.gt(10)) {
-      let logGal = galaxyGen.log10();
-      galaxyGen = Decimal.pow10(logGal.powEffectOf(GalaxyGeneratorUpgrades.superExponential));
+      galaxyGen = Decimal.pow10(galaxyGen.log10().powEffectOf(GalaxyGeneratorUpgrades.superExponential));
     }
     return galaxyGen;
   },
 
   get galGenInstability() {
-    const extraReduction = (ExpansionPack.pellePack.isBought && !player.disablePostReality) ? 1 : 0;
-    const reduction = Effects.sum(EndgameMastery(122), Achievement(206), EndgameUpgrade(12), EndgameMastery(181)) + extraReduction;
-    let powReduction = 1;
-    if (EndgameMilestone.instabilityReduction.isReached && !player.disablePostReality) powReduction = Math.pow(1 / Math.log10(Currency.endgames.value + 1), 0.1);
-    return Math.pow(10 - reduction, powReduction);
+    const packReduction = ExpansionPack.pellePack.isBought && !player.disablePostReality ? 1 : 0;
+    const endgameReduction = PlayerProgress.endgameUnlocked()
+      ? Effects.sum(EndgameMastery(122), EndgameUpgrade(12), EndgameMastery(181)).toNumber()
+      : 0;
+    const reduction = Effects.sum(Achievement(296)).toNumber() + endgameReduction + packReduction;
+    const powerReduction = EndgameMilestone.instabilityReduction.isReached && !player.disablePostReality
+      ? Decimal.pow(Currency.endgames.value.add(1).log10().reciprocal(), 0.1).toNumber()
+      : 1;
+    return Math.pow(10 - reduction, powerReduction);
   },
 
   get harshInstabilityStart() {
     return new Decimal(1e60);
   },
 
-  harshGalGenInstabilityByGalaxies(currGalaxies) {
+  harshGalGenInstabilityByGalaxies(currentGalaxies) {
     const extremePower = GalacticPowers.galGenInstability2.isUnlocked ? GalacticPowers.galGenInstability2.reward : 1;
-    const power = (Decimal.log10(Decimal.clamp(currGalaxies.div(this.harshInstabilityStart), 1, 1e50)).div(1000)).times(Effects.product(EndgameUpgrade(14))).times(1 / extremePower).toNumber();
-    return Math.pow(1 + power, Decimal.log10(Decimal.clamp(currGalaxies.div(this.harshInstabilityStart), 1, 1e50)).toNumber());
-  },
-
-  get harshGalGenInstability() {
-    const currGalaxies = player.galaxies.add(GalaxyGenerator.galaxies);
-    return this.harshGalGenInstabilityByGalaxies(currGalaxies);
+    const logarithm = Decimal.log10(Decimal.clamp(currentGalaxies.div(this.harshInstabilityStart), 1, 1e50));
+    const endgamePower = PlayerProgress.endgameUnlocked() ? Effects.product(EndgameUpgrade(14)) : 1;
+    const power = logarithm.div(1000).times(endgamePower).times(1 / extremePower).toNumber();
+    return Math.pow(1 + power, logarithm.toNumber());
   },
 
   get instabilityStart() {
@@ -73,37 +88,22 @@ export const GalaxyGenerator = {
     return delay.times(1e10);
   },
 
-  gainPerSecondPostCapByGalaxies(currGalaxies) {
+  gainPerSecondPostCapByGalaxies(currentGalaxies) {
     if (!Pelle.hasGalaxyGenerator) return new Decimal(1);
-    return Decimal.max(1, Decimal.pow(Decimal.pow(this.galGenInstability, this.harshGalGenInstabilityByGalaxies(currGalaxies)), Decimal.log10(Decimal.max(Decimal.pow(currGalaxies.div(this.instabilityStart), 0.75), 1))));
+    const instabilityPower = this.harshGalGenInstabilityByGalaxies(currentGalaxies);
+    const instabilityStartRatio = Decimal.max(Decimal.pow(currentGalaxies.div(this.instabilityStart), 0.75), 1);
+    return Decimal.max(1, Decimal.pow(Decimal.pow(this.galGenInstability, instabilityPower), Decimal.log10(instabilityStartRatio)));
   },
 
   get gainPerSecondPostCap() {
-    if (!Pelle.hasGalaxyGenerator) return new Decimal(1);
-    const currGalaxies = player.galaxies.add(GalaxyGenerator.galaxies);
-    return this.gainPerSecondPostCapByGalaxies(currGalaxies);
+    const currentGalaxies = player.galaxies.add(this.galaxies);
+    const projectedGalaxies = currentGalaxies.add(this.gainPerSecondPreCap);
+    return this.gainPerSecondPostCapByGalaxies(projectedGalaxies);
   },
 
   get gainPerSecond() {
-    if (!Pelle.hasGalaxyGenerator) return new Decimal(0);
+    if (!Pelle.hasGalaxyGenerator) return DC.D0;
     return this.gainPerSecondPreCap.div(this.gainPerSecondPostCap);
-  },
-
-  gainPerSecondDisplay(neededCount) {
-    // Equals to 1/gainPerSecond
-    function g(x) {
-      return new Decimal(GalaxyGenerator.gainPerSecondPostCapByGalaxies(x)).div(GalaxyGenerator.gainPerSecondPreCap);
-    }
-
-    const currGalaxies = player.galaxies.add(GalaxyGenerator.galaxies);
-    const N = 1000;
-    const h = new Decimal(neededCount).sub(currGalaxies).div(N);
-    let s = g(currGalaxies).add(g(neededCount));
-    for (let i = 1; i <= N - 1; i++) {
-      const x = currGalaxies.add(h.mul(i));
-      s = s.add(g(x).mul((i & 1) ? 4 : 2));
-    }
-    return s.mul(h).div(3);
   },
 
   get capObj() {
@@ -111,7 +111,7 @@ export const GalaxyGenerator = {
   },
 
   get generationCap() {
-    return this.capObj ? this.capObj.cap : Infinity;
+    return this.capObj ? this.capObj.cap : DC.BEMAX;
   },
 
   get capRift() {
@@ -119,7 +119,7 @@ export const GalaxyGenerator = {
   },
 
   get isCapped() {
-    return new Decimal(this.generationCap).eq(this.generatedGalaxies);
+    return Decimal.eq(this.generationCap, this.generatedGalaxies);
   },
 
   get sacrificeActive() {
@@ -127,7 +127,6 @@ export const GalaxyGenerator = {
   },
 
   startSacrifice() {
-    player.celestials.pelle.collapsed.rifts = false;
     player.celestials.pelle.galaxyGenerator.sacrificeActive = true;
   },
 
@@ -136,10 +135,7 @@ export const GalaxyGenerator = {
       Pelle.quotes.galaxyGeneratorRifts.show();
     }
     if (this.sacrificeActive) {
-      let reductionSpeed = 0.075;
-      if (EndgameMilestone.galGenAnimation.isReached && !player.disablePostReality) reductionSpeed = reductionSpeed * Math.pow(1.2, Math.floor(Math.min(Currency.endgames.value, 40) / 2));
-      if (Alpha.isDestroyed) reductionSpeed = 1e300;
-      this.capRift.reducedTo = Decimal.max(new Decimal(this.capRift.reducedTo).sub(new Decimal(reductionSpeed).times(diff).div(1000)), 0).toNumber();
+      this.capRift.reducedTo = Decimal.max(Decimal.sub(this.capRift.reducedTo, (diff.div(1e3).mul(9))), 0).toNumber();
       if (this.capRift.reducedTo === 0) {
         player.celestials.pelle.galaxyGenerator.sacrificeActive = false;
         player.celestials.pelle.galaxyGenerator.phase++;
@@ -147,7 +143,7 @@ export const GalaxyGenerator = {
         const phase = player.celestials.pelle.galaxyGenerator.phase;
         if (phase === 1) {
           Pelle.quotes.galaxyGeneratorPhase1.show();
-        } else if (phase === 4) {
+        } else if (phase === 5) {
           Pelle.quotes.galaxyGeneratorPhase4.show();
         }
 
@@ -164,15 +160,17 @@ export const GalaxyGenerator = {
         Glyphs.unequipAll(player.options.respecIntoProtected && Glyphs.findFreeIndex(true) === -1);
         Glyphs.refreshActive();
       }
+
     }
-    player.celestials.pelle.galaxyGenerator.generatedGalaxies = player.celestials.pelle.galaxyGenerator.generatedGalaxies.add(Decimal.max(this.gainPerSecond.times(diff).div(1000), 0));
-    player.celestials.pelle.galaxyGenerator.generatedGalaxies = Decimal.min(
-      player.celestials.pelle.galaxyGenerator.generatedGalaxies,
-      this.generationCap
-    );
+    const generator = player.celestials.pelle.galaxyGenerator;
+    const remaining = this.generationCap.sub(this.generatedGalaxies).max(0);
+    const gain = Decimal.min(this.gainPerSecond.times(diff.div(1000)).max(0), remaining);
+    const reachedCap = gain.gte(remaining);
+    generator.generatedGalaxies = reachedCap ? this.generationCap : this.generatedGalaxies.add(gain);
+    generator.unspentGalaxies = this.galaxies.add(gain);
 
     if (!this.capRift) {
-      PelleRifts.all.forEach(r => r.reducedTo = new Decimal(diff).div(player.disablePostReality ? 1e5 : (DivinityMilestone.ascendedSurge.isReached ? 0.01 : (DivinityMilestone.finalRebirth.isReached ? 10 : (DivinityMilestone.celestialSurge.isReached ? 1e3 : (DivinityMilestone.pelleQoL.isReached ? 1e4 : 1e5))))).times(3).add(r.reducedTo).clampMax(Alpha.isDestroyed ? Infinity : 2).toNumber());
+      PelleRifts.all.forEach(r => r.reducedTo = diff.div(1e5).mul(9).add(r.reducedTo).clampMax(5).toNumber());
       if (PelleRifts.vacuum.milestones[0].canBeApplied && !this.hasReturnedGlyphSlot) {
         Glyphs.refreshActive();
         EventHub.dispatch(GAME_EVENT.GLYPHS_EQUIPPED_CHANGED);
@@ -188,7 +186,11 @@ export class GalaxyGeneratorUpgrade extends RebuyableMechanicState {
   }
 
   get boughtAmount() {
-    return player.celestials.pelle.rebuyables[this.id];
+    const amount = player.celestials.pelle.rebuyables[this.id];
+    if (amount instanceof Decimal) return amount;
+    const decimalAmount = new Decimal(amount);
+    player.celestials.pelle.rebuyables[this.id] = decimalAmount;
+    return decimalAmount;
   }
 
   set boughtAmount(value) {
@@ -201,59 +203,64 @@ export class GalaxyGeneratorUpgrade extends RebuyableMechanicState {
     return this.config.effect(this.boughtAmount);
   }
 
-  purchase(bulk) {
-    if (!this.canBeBought) return false;
-    if (GameEnd.creditsEverClosed) return false;
-    let pending;
-    let upg = GalaxyGeneratorUpgrades.all.find(g => g.config.id === this.id);
-    let i;
-    for (let num = 0; num < 20; num++) {
-      if (GalaxyGeneratorUpgrades.all[num]) {
-        if (GalaxyGeneratorUpgrades.all[num].id === this.id) i = num;
-      }
+  purchase(bulk = false) {
+    if (!bulk) return super.purchase();
+    if (!this.canBeBought || GameEnd.creditsEverClosed) return false;
+
+    if (this.id === "galaxyGeneratorMultiplicative") {
+      const currency = this.currency.value;
+      const newAmount = currency.max(1).log10().floor().add(1);
+      if (newAmount.lte(this.boughtAmount)) return false;
+
+      const price = Decimal.pow(10, newAmount.sub(1));
+      this.boughtAmount = newAmount;
+      this.currency.value = currency.sub(price).max(0);
+      this.onPurchased();
+      GameUI.update();
+      return true;
     }
-    let price;
-    let clicked = false;
-    let logC = [3, 10, 10, 100, 1000, 1e10, 1e100, 10, 1e100, 2];
-    let exD = [1/3, 0.1, 1e7, 20000, 10, 1e90, 1, 1, 1, 50];
-    let superScale = DC.E10000.div(exD[i]);
-    let currV = ((i >= 2 && i <= 4) || i === 9 ? upg.currency.value.max(1).log10().div(exD[i]) : upg.currency.value.div(exD[i]));
-    let currW = (i === 1
-      ? (currV.gte(superScale)
-         ? Decimal.sqrt(Decimal.log(currV.div(superScale).max(1), logC[i]).times(2).add(0.25)).sub(0.5).add(Decimal.log(superScale, logC[i]))
-         : Decimal.log(currV, logC[i]))
-      : ((i === 6 || i === 8)
-         ? Decimal.sqrt(Decimal.log(currV, logC[i]).times(2).add(0.25)).sub(0.5)
-         : Decimal.log(currV, logC[i])));
-    if (bulk) {
-      pending = Decimal.floor(currW).sub(player.celestials.pelle.rebuyables[this.id]);
-      player.celestials.pelle.rebuyables[this.id] +=
-        (i === 6 ? Math.min(Math.max(20000 - player.celestials.pelle.rebuyables["galaxyGeneratorDTMult"], 0), pending.toNumber()) : pending.toNumber());
-      if (player.celestials.pelle.rebuyables["galaxyGeneratorDTMult"] >= 20000) clicked = true;
-      if (i === 6 && clicked) {
-        let cos = upg.currency.value.max(1).log10().div(2e10);
-        let purs = Decimal.log(cos, 1.001);
-        let xs = purs.add(20000).toNumber();
-        let gain = xs - player.celestials.pelle.rebuyables[this.id];
-        player.celestials.pelle.rebuyables[this.id] += gain;
-      }
-      price = (i === 6 ? Math.min(player.celestials.pelle.rebuyables[this.id], 20000) : player.celestials.pelle.rebuyables[this.id]);
-      price = (i === 1
-        ? (new Decimal(price).gte(Decimal.log(superScale, logC[i]))
-           ? Decimal.pow(logC[i], new Decimal(price).sub(Decimal.log(superScale, logC[i])).add(0.5).pow(2).sub(0.25).div(2)).times(superScale)
-           : Decimal.pow(logC[i], price))
-        : ((i === 6 || i === 8)
-           ? Decimal.pow(logC[i], new Decimal(price).add(0.5).pow(2).sub(0.25).div(2))
-           : Decimal.pow(logC[i], price)));
-      price = ((i >= 2 && i <= 4) || i === 9 ? Decimal.pow10(price.times(exD[i])) : price.times(exD[i]));
-      if (i === 6 && clicked) {
-        price = Decimal.pow10(2e10 * Math.pow(1.001, Math.max(player.celestials.pelle.rebuyables[this.id] - 20000, 0)));
-      }
-      upg.currency.value = upg.currency.value.sub(price).max(0);
+
+    const index = GalaxyGeneratorUpgrades.all.findIndex(upgrade => upgrade.id === this.id);
+    const logBase = [3, 10, 10, 100, 1000, 1e10, 1e100, 10, 1e100, 2][index];
+    const exponentScale = [1 / 3, 0.1, 1e7, 20000, 10, 1e90, 1, 1, 1, 50][index];
+    const currency = this.currency.value;
+    const scaledCurrency = ((index >= 2 && index <= 4) || index === 9
+      ? currency.max(1).log10().div(exponentScale)
+      : currency.div(exponentScale));
+    let maxAmount;
+    if (index === 6 || index === 8) {
+      maxAmount = Decimal.sqrt(Decimal.log(scaledCurrency, logBase).times(2).add(0.25)).sub(0.5);
     } else {
-      upg.currency.value = upg.currency.value.sub(upg.cost).max(0);
-      player.celestials.pelle.rebuyables[this.id]++;
+      maxAmount = Decimal.log(scaledCurrency, logBase);
     }
+
+    let newAmount = Decimal.floor(maxAmount).max(this.boughtAmount);
+    let crossedDilationCap = false;
+    if (index === 6) {
+      newAmount = newAmount.min(20000);
+      crossedDilationCap = newAmount.gte(20000);
+      if (crossedDilationCap) {
+        const postCapAmount = Decimal.log(currency.max(1).log10().div(2e10), 1.001).add(20000);
+        newAmount = newAmount.max(postCapAmount);
+      }
+    }
+    if (newAmount.lte(this.boughtAmount)) return false;
+
+    let priceAmount = index === 6 ? newAmount.min(20000) : newAmount;
+    if (index === 6 || index === 8) {
+      priceAmount = Decimal.pow(logBase, priceAmount.add(0.5).pow(2).sub(0.25).div(2));
+    } else {
+      priceAmount = Decimal.pow(logBase, priceAmount);
+    }
+    const price = ((index >= 2 && index <= 4) || index === 9
+      ? Decimal.pow10(priceAmount.times(exponentScale))
+      : priceAmount.times(exponentScale));
+    const adjustedPrice = index === 6 && crossedDilationCap
+      ? Decimal.pow10(Decimal.pow(1.001, newAmount.sub(20000)).times(2e10))
+      : price;
+
+    this.boughtAmount = newAmount;
+    this.currency.value = currency.sub(adjustedPrice).max(0);
     this.onPurchased();
     GameUI.update();
     return true;

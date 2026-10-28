@@ -1,43 +1,52 @@
-import { finalSigil } from "./navigation-sigils/final-sigil";
-import { galaxyIcon } from "./navigation-sigils/galaxy-icon";
 import { alchemyResources } from "./alchemy";
 import { alphaUnlocks } from "./alpha";
 import { divinityMilestones } from "./divinity-milestones";
 import { divinityUpgrades } from "./divinity-upgrades";
 import { effarigUnlocks } from "./effarig";
 import { enslaved } from "./enslaved";
-import { pelleGalaxyGeneratorUpgrades } from "./galaxy-generator";
+import { galaxyIcon } from "./navigation-sigils/galaxy-icon";
+import { finalSigil } from "./navigation-sigils/final-sigil";
 import { celestialNavigation } from "./navigation";
-import { pelleUpgrades } from "./pelle-upgrades";
-import { pelleAchievementEnabling } from "./pelle-destruction-upgrades";
-import { pelleDestructionUpgrades } from "./pelle-destruction-upgrades";
-import { pelleRealityUpgradeEnabling } from "./pelle-destruction-upgrades";
-import { pelleImaginaryUpgradeEnabling } from "./pelle-destruction-upgrades";
-import { pelleCelestialRewardEnabling } from "./pelle-destruction-upgrades";
-import { pellePerkEnabling } from "./pelle-destruction-upgrades";
-import { pelleAlchemyEnabling } from "./pelle-destruction-upgrades";
-import { pelleStrikeDisabling } from "./pelle-destruction-upgrades";
-import { perkShop } from "./perk-shop";
-import { ra } from "./ra";
-import { resurgenceUpgrades } from "./resurgence-upgrades";
+import { pelleGalaxyGeneratorUpgrades } from "./galaxy-generator";
 import { pelleRifts } from "./rifts";
+import { pelleStrikes } from "./strikes";
+import { pelleUpgrades } from "./pelle-upgrades";
+import {
+  pelleAchievementEnabling,
+  pelleAlchemyEnabling,
+  pelleCelestialRewardEnabling,
+  pelleDestructionUpgrades,
+  pelleImaginaryUpgradeEnabling,
+  pellePerkEnabling,
+  pelleRealityUpgradeEnabling,
+  pelleStrikeDisabling
+} from "./pelle-destruction-upgrades";
+import { perkShop } from "./perk-shop";
+import { quotes } from "./quotes";
+import { ra } from "./ra";
 import { singularityMilestones } from "./singularity-milestones";
 import { slabdrillUnlocks } from "./slabdrill";
-import { pelleStrikes } from "./strikes";
 import { teresa } from "./teresa";
-import { quotes } from "./quotes";
-import { v } from "./v";
-import { vUpgrades } from "./v";
+import { v, vUpgrades } from "./v";
+import { GlitchRifts } from "./glitchrift";
+import { glitchRealityUpgrades } from "./glitchupgrades";
+import { glitchSpeedUpgrades } from "./glitchspeed";
+import { cante } from "./cante";
+import { NullData } from "./null";
+import { resurgenceUpgrades } from "./resurgence-upgrades";
 
 export const celestials = {
+  alpha: {
+    unlocks: alphaUnlocks
+  },
+  slabdrill: {
+    unlocks: slabdrillUnlocks
+  },
   effarig: {
     unlocks: effarigUnlocks
   },
   alchemy: {
     resources: alchemyResources
-  },
-  alpha: {
-    unlocks: alphaUnlocks
   },
   pelle: {
     galaxyGeneratorUpgrades: pelleGalaxyGeneratorUpgrades,
@@ -55,24 +64,26 @@ export const celestials = {
     alchemy: pelleAlchemyEnabling,
     strikes: pelleStrikeDisabling
   },
+  descriptions: {},
   divinityMilestones,
   divinityUpgrades,
-  descriptions: {},
-  enslaved,
   navigation: celestialNavigation,
   navSigils: {
     ...galaxyIcon,
     ...finalSigil
   },
+  resurgenceUpgrades,
+  enslaved,
   perkShop,
   ra,
-  resurgenceUpgrades,
   singularityMilestones,
-  slabdrill: {
-    unlocks: slabdrillUnlocks
-  },
   teresa,
   quotes,
   v,
-  vUpgrades
+  vUpgrades,
+  GlitchRifts,
+  glitchRealityUpgrades,
+  glitchSpeedUpgrades,
+  cante,
+  null: NullData
 };

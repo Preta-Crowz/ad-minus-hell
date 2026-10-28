@@ -10,6 +10,7 @@ export class BreakEternityUpgradeState extends SetPurchasableMechanicState {
   }
 
   get set() {
+    if (!player.breakEternityUpgrades) player.breakEternityUpgrades = new Set();
     return player.breakEternityUpgrades;
   }
 
@@ -32,6 +33,7 @@ class RebuyableBreakEternityUpgradeState extends RebuyableMechanicState {
   }
 
   get boughtAmount() {
+    if (!player.breakEternityRebuyables) player.breakEternityRebuyables = Array.repeat(0, 10);
     return player.breakEternityRebuyables[this.id];
   }
 

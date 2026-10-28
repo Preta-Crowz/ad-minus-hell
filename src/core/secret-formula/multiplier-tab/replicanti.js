@@ -1,3 +1,5 @@
+import { DC } from "../../constants";
+
 import { MultiplierTabIcons } from "./icons";
 
 // See index.js for documentation
@@ -8,13 +10,7 @@ export const replicanti = {
     isActive: () => PlayerProgress.eternityUnlocked(),
     overlay: ["Ξ"],
   },
-  achievement1: {
-    name: "Achievement 81",
-    multValue: 3,
-    isActive: () => Achievement(81).canBeApplied && !Pelle.isDoomed,
-    icon: MultiplierTabIcons.ACHIEVEMENT,
-  },
-  achievement2: {
+  achievement: {
     name: "Achievement 134",
     // This is explicitly 2 in the replicanti code as well, inside of a replicanti amount check
     multValue: 2,
@@ -24,8 +20,8 @@ export const replicanti = {
   timeStudy: {
     name: "Time Studies",
     multValue: () => {
-      const preReality = Effects.product(TimeStudy(62), TimeStudy(213)) * (TimeStudy(132).isBought ? 1.5 : 1);
-      return preReality * (Perk.studyPassive.isBought && TimeStudy(132).isBought ? 2 : 1);
+      const preReality = Effects.product(TimeStudy(62), TimeStudy(213)).mul((TimeStudy(132).isBought ? 1.5 : 1));
+      return preReality.mul(Perk.studyPassive.isBought && TimeStudy(132).isBought ? 2 : 1);
     },
     isActive: () => PlayerProgress.eternityUnlocked() && !Pelle.isDoomed,
     icon: MultiplierTabIcons.TIME_STUDY,
@@ -35,11 +31,11 @@ export const replicanti = {
     multValue: () => {
       const baseEffect = (Pelle.isDoomed ? DC.D1 : getAdjustedGlyphEffect("replicationspeed"))
         .times(Pelle.specialGlyphEffect.replication);
-      const alteredEffect = Math.clampMin(
-        Decimal.log10(Replicanti.amount) * getSecondaryGlyphEffect("replicationdtgain"), 1);
+      const alteredEffect = Decimal.clampMin(
+        Decimal.log10(Replicanti.amount).mul(getSecondaryGlyphEffect("replicationdtgain")), 1);
       return GlyphAlteration.isAdded("replication") ? baseEffect.times(alteredEffect) : baseEffect;
     },
-    isActive: () => PlayerProgress.realityUnlocked() && (!Pelle.isDoomed || Pelle.specialGlyphEffect.replication > 1),
+    isActive: () => PlayerProgress.realityUnlocked() && (!Pelle.isDoomed || Pelle.specialGlyphEffect.replication.gt(1)),
     icon: MultiplierTabIcons.GENERIC_GLYPH,
   },
   amplifierRep: {
@@ -78,10 +74,25 @@ export const replicanti = {
     isActive: () => Pelle.isDoomed && PelleRifts.decay.effectValue.gt(1),
     icon: MultiplierTabIcons.PELLE,
   },
+  glitchChallengeBI: {
+    name: "Glitch Challenge (BI)",
+    multValue: () => DC.D1.timesEffectsOf(
+      breakInfinityUG(4),
+      breakInfinityUG(5),
+    ),
+    isActive: () => [4,5].some(x => breakInfinityUG(x).isBought),
+    icon: MultiplierTabIcons.GLITCH_CHALLENGE,
+  },
+  glitchRiftEternity: {
+    name: "Glitch Rift (Eternity)",
+    multValue: () =>  GlitchRifts.delta.milestones[0].effectOrDefault(1),
+    isActive: () => true,
+    icon: MultiplierTabIcons.GLITCH_CHALLENGE,
+  },
   iap: {
     name: "Shop Tab Purchases",
     multValue: () => ShopPurchase.replicantiPurchases.currentMult,
-    isActive: () => ShopPurchaseData.totalSTD > 0 && ShopPurchase.replicantiPurchases.currentMult > 1,
+    isActive: () => player.IAP.STDcoins.gt(0) && ShopPurchase.replicantiPurchases.currentMult.gt(1),
     icon: MultiplierTabIcons.IAP,
   },
 };

@@ -2,13 +2,15 @@
 import CostDisplay from "@/components/CostDisplay";
 import CustomizeableTooltip from "@/components/CustomizeableTooltip";
 import DescriptionDisplay from "@/components/DescriptionDisplay";
+import PrimaryToggleButton from "../../PrimaryToggleButton.vue";
 
 export default {
   name: "PelleUpgrade",
   components: {
     DescriptionDisplay,
     CostDisplay,
-    CustomizeableTooltip
+    CustomizeableTooltip,
+    PrimaryToggleButton
   },
   props: {
     upgrade: {
@@ -32,14 +34,16 @@ export default {
     return {
       canBuy: false,
       isBought: false,
-      purchases: 0,
-      currentTimeEstimate: "Calculating...",
-      projectedTimeEstimate: "Calculating...",
+      purchases: new Decimal(0),
+      currentTimeEstimate: new Decimal(0),
+      projectedTimeEstimate: new Decimal(0),
       isCapped: false,
       hovering: false,
       hasRemnants: false,
       galaxyCap: 0,
-      notAffordable: false
+      notAffordable: false,
+      isAutoUnlocked: false,
+      isAutobuyerOn: false,
     };
   },
   computed: {
@@ -52,7 +56,7 @@ export default {
       const formattedEffect = x => this.config.formatEffect(this.config.effect(x));
       const value = formattedEffect(this.purchases);
       const next = (!this.isCapped && this.hovering)
-        ? formattedEffect(this.purchases + 1)
+        ? formattedEffect(this.purchases.add(1))
         : undefined;
       return { prefix, value, next };
     },
@@ -65,7 +69,7 @@ export default {
       return !(this.canBuy ||
         this.isBought ||
         this.isCapped ||
-        (this.galaxyGenerator && !(this.config.currencyLabel === "Galaxy" || this.config.currencyLabel === "Reality Shard"))
+        (this.galaxyGenerator && this.config.currencyLabel !== "Galaxy")
       );
     },
     shouldEstimateImprovement() {
@@ -79,50 +83,59 @@ export default {
       return `${this.currentTimeEstimate} ➜ ${this.projectedTimeEstimate}`;
     },
   },
+  watch: {
+    isAutobuyerOn(newValue){
+      Autobuyer.galgenUpgrade(this.rebuyableId).isActive = newValue;
+    }
+  },
   methods: {
     update() {
       this.canBuy = this.upgrade.canBeBought && !this.faded;
       this.isBought = this.upgrade.isBought;
       this.isCapped = this.upgrade.isCapped;
-      this.purchases = player.celestials.pelle.rebuyables[this.upgrade.config.id];
-      if (this.hasTimeEstimate && (this.hovering || this.shouldEstimateImprovement)) {
-        this.currentTimeEstimate = TimeSpan
-          .fromSeconds((this.galaxyGenerator && this.config.currencyLabel === "Galaxy")
-            ? GalaxyGenerator.gainPerSecondDisplay(this.upgrade.cost)
-            : this.secondsUntilRSCost(Pelle.realityShardGainPerSecond))
-          .toTimeEstimate();
-        this.projectedTimeEstimate = TimeSpan
-          .fromSeconds(this.secondsUntilRSCost(Pelle.nextRealityShardGain))
-          .toTimeEstimate();
-      }
+      this.purchases.copyFrom(new Decimal(player.celestials.pelle.rebuyables[this.upgrade.config.id] ?? 0));
+      this.currentTimeEstimate = TimeSpan
+        .fromSeconds(this.secondsUntilCost(this.galaxyGenerator ? GalaxyGenerator.gainPerSecond
+          : Pelle.realityShardGainPerSecond)).toTimeEstimate();
+      this.projectedTimeEstimate = TimeSpan
+        .fromSeconds(this.secondsUntilCost(Pelle.nextRealityShardGain))
+        .toTimeEstimate();
       this.hasRemnants = Pelle.cel.remnants.gt(0);
       this.galaxyCap = GalaxyGenerator.generationCap;
       const genDB = GameDatabase.celestials.pelle.galaxyGeneratorUpgrades;
       this.notAffordable = (this.config === genDB.additive || this.config === genDB.multiplicative) &&
-        (Decimal.gt(this.upgrade.cost, new Decimal(this.galaxyCap).sub(GalaxyGenerator.generatedGalaxies).add(player.galaxies).add(GalaxyGenerator.galaxies)));
-    },
-    secondsUntilRSCost(rate) {
-      const value = Currency.realityShards.value;
-      return Decimal.sub(this.upgrade.cost, value).div(rate);
+        (Decimal.gt(this.upgrade.cost,
+          this.galaxyCap.sub(GalaxyGenerator.generatedGalaxies.add(player.galaxies))));
+          
+      let autobuyer = {isUnlocked: false, isActive: false};
+      if(this.galaxyGenerator){
+        const upgrades = GalaxyGeneratorUpgrades.all.map(upgrade => upgrade.id);
+        this.rebuyableId = upgrades.findIndex(id => id === this.upgrade.id)+1;
+        autobuyer = Autobuyer.galgenUpgrade(this.rebuyableId) ?? autobuyer;
+      }
+      this.isAutoUnlocked = autobuyer.isUnlocked;
+      this.isAutobuyerOn = autobuyer.isActive;
     },
     attemptPurchase() {
-      if (this.upgrade === GalaxyGeneratorUpgrades.RSMult && (EndgameUpgrade(6).isLockingMechanics || EndgameUpgrade(14).isLockingMechanics)) {
-        if (EndgameUpgrade(6).isLockingMechanics) {
-          EndgameUpgrade(6).tryShowWarningModal();
-        }
-        if (EndgameUpgrade(14).isLockingMechanics) {
-          EndgameUpgrade(14).tryShowWarningModal();
-        }
+      if (this.upgrade === GalaxyGeneratorUpgrades.RSMult &&
+        (EndgameUpgrade(6).isLockingMechanics || EndgameUpgrade(14).isLockingMechanics)) {
+        if (EndgameUpgrade(6).isLockingMechanics) EndgameUpgrade(6).tryShowWarningModal();
+        if (EndgameUpgrade(14).isLockingMechanics) EndgameUpgrade(14).tryShowWarningModal();
       } else {
         !this.faded && this.upgrade.purchase();
       }
-    }
+    },
+    secondsUntilCost(rate) {
+      const value = this.galaxyGenerator ? player.galaxies.add(GalaxyGenerator.galaxies) : Currency.realityShards.value;
+      return Decimal.sub(this.upgrade.cost, value).div(rate);
+    },
   }
 };
 </script>
 
 <template>
-  <button
+  <div class="l-spoon-btn-group">
+    <button
     class="c-pelle-upgrade"
     :class="{
       'c-pelle-upgrade--unavailable': !canBuy && !(isBought || isCapped),
@@ -174,7 +187,15 @@ export default {
       :config="config"
       :name="galaxyGenerator ? config.currencyLabel : 'Reality Shard'"
     />
-  </button>
+    </button>
+    <PrimaryToggleButton
+        v-if="(galaxyGenerator) && isAutoUnlocked"
+        v-model="isAutobuyerOn"
+        label="Auto:"
+        class="l--spoon-btn-group__little-spoon"
+        style="margin-top: -.5rem; width: 18.5rem; margin-left: 0.3rem;"
+    />
+  </div>
 </template>
 
 <style scoped>

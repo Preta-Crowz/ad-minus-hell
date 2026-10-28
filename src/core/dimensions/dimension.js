@@ -2,9 +2,9 @@ export class DimensionState {
   constructor(getData, tier) {
     this._tier = tier;
     this._getData = getData;
-    const DISPLAY_NAMES = [null, "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth"];
+    const DISPLAY_NAMES = [null, "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth", "Eleventh", "Twelfth", "Thirteen", "Fourteenth", "Fifteenth", "Sixteenth"];
     this._displayName = DISPLAY_NAMES[tier];
-    const SHORT_DISPLAY_NAMES = [null, "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"];
+    const SHORT_DISPLAY_NAMES = [null, "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th", "13th", "14th", "15th", "16th"];
     this._shortDisplayName = SHORT_DISPLAY_NAMES[tier];
   }
 
@@ -20,9 +20,9 @@ export class DimensionState {
   /** @param {Decimal} value */
   set amount(value) { this.data.amount = value; }
 
-  /** @returns {number} */
+  /** @returns {Decimal} */
   get bought() { return this.data.bought; }
-  /** @param {number} value */
+  /** @param {Decimal} value */
   set bought(value) { this.data.bought = value; }
 
   /** @abstract */
@@ -33,18 +33,20 @@ export class DimensionState {
   }
 
   productionForDiff(diff) {
-    return this.productionPerSecond.times(diff).div(1000);
+    return this.productionPerSecond.times(diff.div(1000));
   }
 
   produceCurrency(currency, diff) {
-    currency.add(this.productionForDiff(diff));
+    const production = this.productionForDiff(diff);
+    if (Decimal.isFinite(production)) currency.add(production);
   }
 
   produceDimensions(dimension, diff) {
-    dimension.amount = dimension.amount.plus(this.productionForDiff(diff));
+    const nextAmount = dimension.amount.plus(this.productionForDiff(diff));
+    if (Decimal.isFinite(nextAmount)) dimension.amount = nextAmount;
   }
 
-  static get dimensionCount() { return 9; }
+  static get dimensionCount() { return 8; }
 
   static createAccessor() {
     const index = Array.range(1, this.dimensionCount).map(tier => new this(tier));

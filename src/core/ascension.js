@@ -42,7 +42,8 @@ export const Ascension = {
     return Ascensions.all.find(x => !x.isUnlocked);
   },
   get overchargePenalty() {
-    return [1, 0.72, 0.525, 0.375, 0.125][player.endgame.overcharge.level];
+    // Hell is permanently at Overcharge level 4
+    return [1, 0.72, 0.525, 0.375, 0.125][Hell.isInside ? 4 : player.endgame.overcharge.level];
   }
 };
 

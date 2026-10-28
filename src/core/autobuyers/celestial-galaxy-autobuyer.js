@@ -50,7 +50,7 @@ export class CelestialGalaxyAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get canTick() {
-    return CelestialGalaxy.canBeBought && CelestialGalaxy.requirement.isSatisfied && super.canTick;
+    return super.canTick && CelestialGalaxy.canBeBought && CelestialGalaxy.requirement.isSatisfied;
   }
 
   get resetTickOn() {

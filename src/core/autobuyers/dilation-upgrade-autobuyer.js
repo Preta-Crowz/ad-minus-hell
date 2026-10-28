@@ -1,25 +1,27 @@
 import { IntervaledAutobuyerState } from "./autobuyer";
 
 export class DilationUpgradeAutobuyerState extends IntervaledAutobuyerState {
-  get _upgradeName() { return ["dtGain", "galaxyThreshold", "tachyonGain"][this.id - 1]; }
+  get _upgradeName() { return ["dtGain", "galaxyThreshold", "tachyonGain", "dtGainPelle",'galaxyMultiplier', "tickspeedPower"][this.id - 1]; }
 
   get data() {
     return player.auto.dilationUpgrades.all[this.id - 1];
   }
 
   get name() {
-    return [`Dilated Time Multiplier`, `Tachyon Galaxy Threshold`, "Tachyon Particle Multiplier"][this.id - 1];
+    return [`Dilated Time Multiplier`, `Tachyon Galaxy Threshold`, "Tachyon Particle Multiplier",
+      `Pelle DT Multiplier`, `Tachyon Galaxy Multiplier`, "Tickspeed Power"
+    ][this.id - 1];
   }
 
   get interval() {
-    return player.disablePostReality
-      ? 1000
-      : 1000 * Perk.autobuyerFasterDilation.effectOrDefault(1) / PerkShopUpgrade.autoSpeed.effectOrDefault(1);
+    return 1000 * Perk.autobuyerFasterDilation.effectOrDefault(1) / PerkShopUpgrade.autoSpeed.effectOrDefault(1);
   }
 
   get isUnlocked() {
-    if (LHC.voidRunning && NullUpgrade.limerick5.isBought) return true;
-    return (Perk.autobuyerDilation.isEffectActive && (!Pelle.isDoomed || PellePerkUpgrade.perkDAU.canBeApplied)) && !player.disablePostReality;
+    if (LHC.voidRunning && LHCNullUpgrade.limerick5.isBought) return true;
+    if (this.id > 3) return (Pelle.isDoomed || Pelle.joined) && ChallengerUpgrade(9).isBought && Perk.autobuyerDilation.isEffectActive;
+    if (ChallengerUpgrade(9).isBought) return Perk.autobuyerDilation.isEffectActive;
+    return Perk.autobuyerDilation.isEffectActive && !Pelle.isDoomed;
   }
 
   get resetTickOn() {
@@ -27,6 +29,7 @@ export class DilationUpgradeAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get bulk() {
+    if (MetaFabricatorUpgrade(18).isBought) return new Decimal('1ee15');
     return Effects.product(PerkShopUpgrade.bulkDilation, Perk.dilationAutobuyerBulk);
   }
 
@@ -36,7 +39,7 @@ export class DilationUpgradeAutobuyerState extends IntervaledAutobuyerState {
     DilationUpgrade[upgradeName].purchase(this.bulk);
   }
 
-  static get entryCount() { return 3; }
+  static get entryCount() { return 6; }
   static get autobuyerGroupName() { return "Dilation Upgrade"; }
   static get isActive() { return player.auto.dilationUpgrades.isActive; }
   static set isActive(value) { player.auto.dilationUpgrades.isActive = value; }

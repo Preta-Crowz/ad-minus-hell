@@ -27,7 +27,7 @@ export default {
   },
   computed: {
     timePlayed() {
-      return `Time Played: ${TimeSpan.fromMilliseconds(new Decimal(this.saveData.realTimePlayed)).toString()}`;
+      return `Time Played: ${TimeSpan.fromMilliseconds(this.saveData.realTimePlayed).toString()}`;
     },
     // Note that all of the four following entries have Pelle-specific resources at the highest priority, which
     // will generally lead to most of them being overridden almost immediately after Dooming (or practically close
@@ -52,7 +52,7 @@ export default {
       return this.compareLayeredValues(
         ["realityShards", "imaginaryMachines", "realityMachines", "eternityPoints", "infinityPoints"],
         ["Reality Shards:", "Reality Machines:", "Reality Machines:", "Eternity Points:", "Infinity Points:"],
-        [format, x => formatMachines(this.saveData.realityMachines, x, 0), format, format, format],
+        [format, x => formatMachines(this.saveData.realityMachines, x), format, format, format],
         ""
       );
     },

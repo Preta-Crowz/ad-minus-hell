@@ -92,6 +92,8 @@ export default {
     Completing a Doomed Reality grants Challengers Essence. <br>
 
     You have <span class="o-ChalEss">{{ format(challengersEssence,2,2) }}</span> Challengers Essence <br><br>
+    Conflicting upgrade effects are disabled; struck-through text marks the overlapping part. <br><br>
+    Maybe some conflicts still remain. <br><br>
 
     
     <primary-button

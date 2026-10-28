@@ -228,7 +228,7 @@ export const CanteReplicators = {
     const l = amount.add(10).log10();
     let g = l.sub(308.25);
     g = g.mul(l.pow(1.2).div(308.25).pow(l.pow(1.1).div(308.25)));
-    if(g.gt(1e10)) g = g.div(g.div(1e10).pow(0.125 * CanteUpgrades.all[13].effectOrDefault(1)));
+    if(g.gt(1e10)) g = g.div(g.div(1e10).pow(new Decimal(0.125).times(CanteUpgrades.all[13].effectOrDefault(1))));
     return g;
   },
 
@@ -240,8 +240,9 @@ export const CanteReplicators = {
       }
     }
 
-    if(v.gte('ee4')) v = v.pow( v.div('ee4').add('e308').log('e308').pow(0.165 * CanteUpgrades.all[13].effectOrDefault(1)).recip() );
-    if(v.gte('ee5')) v = v.div(v.div('ee5').pow(0.8 * CanteUpgrades.all[13].effectOrDefault(1)));
+    if(v.gte('ee4')) v = v.pow(v.div('ee4').add('e308').log('e308')
+      .pow(new Decimal(0.165).times(CanteUpgrades.all[13].effectOrDefault(1))).recip());
+    if(v.gte('ee5')) v = v.div(v.div('ee5').pow(new Decimal(0.8).times(CanteUpgrades.all[13].effectOrDefault(1))));
     if(v.gte('ee8')) v = v.div(v.div('ee8').pow(0.75));
     if(v.gte('ee10')) v = v.div(v.div('ee10').pow(0.666));
     if(v.gte('ee12')) v = v.pow(v.add('ee12').log('ee12').pow(0.95).recip());

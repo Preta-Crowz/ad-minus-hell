@@ -68,8 +68,8 @@ export default {
       return this.item.name.includes("BlackHole");
     },
     formatBlackHoleActivations() {
-      const activations = this.after - this.before;
-      return quantifyHybridSmall("time", activations);
+      const activations = this.after.sub(this.before);
+      return quantifyInt("time", activations);
     },
     isVeryLarge() {
       return this.isBlackHole
@@ -84,7 +84,7 @@ export default {
       // not any text is even shown at all and sometimes this gets checked on variables which don't have values yet
       if (number === undefined) return "";
       // Surrounding text is formatted differently to specify that this is log10
-      if (this.isVeryLarge) return formatInt(Decimal.floor(number.log10()));
+      if (this.isVeryLarge) return format(Decimal.floor(number.max(1).log10()));
       if (Decimal.lt(number, 1e9)) {
         // Both numbers and decimals get passed in here so this is needed
         // Not a fan of this solution but whatever
@@ -206,14 +206,20 @@ export default {
 .c-modal-away-progress__teresa-memories,
 .c-modal-away-progress__effarig-memories,
 .c-modal-away-progress__enslaved-memories,
-.c-modal-away-progress__v-memories {
+.c-modal-away-progress__v-memories,
+.c-modal-away-progress__glitch-memories,
+.c-modal-away-progress__cante-memories,
+.c-modal-away-progress__null-memories {
   filter: brightness(0.8);
 }
 
 .t-dark .c-modal-away-progress__teresa-memories,
 .t-dark .c-modal-away-progress__effarig-memories,
 .t-dark .c-modal-away-progress__enslaved-memories,
-.t-dark .c-modal-away-progress__v-memories {
+.t-dark .c-modal-away-progress__v-memories,
+.t-dark .c-modal-away-progress__glitch-memories,
+.t-dark .c-modal-away-progress__cante-memories,
+.t-dark .c-modal-away-progress__null-memories {
   filter: none;
 }
 
@@ -235,6 +241,19 @@ export default {
 
 .c-modal-away-progress__reality-shards {
   color: var(--color-pelle--base);
+}
+
+.c-modal-away-progress__glitch-memories,
+.c-modal-away-progress__rift-force {
+  color: var(--color-glitch--accent);
+}
+
+.c-modal-away-progress__cante-memories {
+  color: var(--color-cante--base);
+}
+
+.c-modal-away-progress__null-memories {
+  color: var(--color-null--base);
 }
 
 .c-modal-away-progress__disabled b,

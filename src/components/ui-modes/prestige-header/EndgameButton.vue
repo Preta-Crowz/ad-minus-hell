@@ -7,6 +7,7 @@ export default {
       showPelleGlow: false,
       gainedCP: 0,
       gainedDP: 0,
+      gainedEssence: new Decimal(),
       isFlipped: false
     };
   },
@@ -27,8 +28,11 @@ export default {
   },
   methods: {
     update() {
-      this.canEndgame = isEndgameAvailable();
+      this.canEndgame = Pelle.isDoomed && player.antimatter.gte(DC.E9E15) &&
+        !Slabdrill.isCursed && (!Slabdrill.isDestroyed || player.celestials.slabdrill.hasBoughtNinthDimension);
       this.showPelleGlow = true;
+      this.isFlipped = player.universes.current === 2;
+      this.gainedEssence.copyFrom(this.canEndgame ? Endgame.challengersEssenceGain() : DC.D0);
       if (!this.canEndgame) {
         this.gainedCP = 0;
         this.gainedDP = 0;
@@ -36,12 +40,9 @@ export default {
       }
       this.gainedCP = gainedCelestialPoints();
       this.gainedDP = gainedDoomedParticles();
-      this.isFlipped = player.universes.current === 2;
     },
     handleClick() {
-      if (this.canEndgame) {
-        Endgame.newEndgame();
-      }
+      if (this.canEndgame) Endgame.hotkeyReset();
     }
   }
 };
@@ -72,6 +73,8 @@ export default {
           class="infotooltiptext"
         >
           <div>Another End, and a New Beginning...</div>
+          <div v-if="gainedEssence.gt(0)">{{ quantify("Challengers Essence", gainedEssence, 2) }}</div>
+          <div v-else>Challengers Essence requires ee100 Antimatter in a Doomed Reality.</div>
         </div>
       </div>
     </button>

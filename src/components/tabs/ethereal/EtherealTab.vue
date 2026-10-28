@@ -10,7 +10,7 @@ export default {
     return {
       etherealPower: new Decimal(),
       etherealPowerPerSecond: new Decimal(),
-      cosmicSector: 0,
+      cosmicSector: new Decimal(),
       nextSectorAt: new Decimal(),
       sectorBoost: new Decimal(),
       isExtended: false,
@@ -95,7 +95,7 @@ export default {
     update() {
       this.etherealPower.copyFrom(Currency.etherealPower.value);
       this.etherealPowerPerSecond.copyFrom(getEtherealPowerGainPerSecond());
-      this.cosmicSector = Ethereal.cosmicSector;
+      this.cosmicSector.copyFrom(Ethereal.cosmicSector);
       this.nextSectorAt.copyFrom(Ethereal.sectorThreshold);
       this.sectorBoost.copyFrom(Ethereal.sectorBoost);
       this.isExtended = player.endgame.ethereal.isExtended;
@@ -151,7 +151,7 @@ export default {
       </div>
       <div>
         <span class="c-normal-ethereal-text">Your Cosmic Sector is </span>
-        <span class="c-really-cool-ethereal-text">{{ formatInt(cosmicSector) }}</span>
+        <span class="c-really-cool-ethereal-text">{{ formatHybridLarge(cosmicSector, 3) }}</span>
         <span class="c-normal-ethereal-text">, which is currently multiplying all Celestial Dimensions and delaying
         the Celestial Matter Softcap by </span>
         <span class="c-really-cool-ethereal-text">{{ formatX(sectorBoost, 3) }}</span><span class="c-normal-ethereal-text">.</span>

@@ -23,7 +23,7 @@ export default {
       isBought: false,
       isAffordable: false,
       isCharged: false,
-      showingCharged: false,
+      showingCharged: false
     };
   },
   computed: {
@@ -35,14 +35,12 @@ export default {
     },
     config() {
       const config = this.upgrade.config;
-      return this.showChargedEffect
-        ? config.charged
-        : config;
+      return this.showChargedEffect ? config.charged : config;
     },
     classObject() {
       return {
         "o-eternity-upgrade": true,
-        "o-eternity-upgrade--bought": this.isBought && !this.charged &&
+        "o-eternity-upgrade--bought": this.isBought && !this.isCharged &&
           !(this.chargePossible && (this.showingCharged || this.shiftDown)),
         "o-eternity-upgrade--available": !this.isBought && this.isAffordable,
         "o-eternity-upgrade--unavailable": !this.isBought && !this.isAffordable,
@@ -52,7 +50,7 @@ export default {
       };
     },
     hasEU2() {
-      return Perk.autounlockEU2.canBeApplied && !player.disablePostReality;
+      return Perk.autounlockEU2.canBeApplied;
     }
   },
   methods: {
@@ -81,12 +79,12 @@ export default {
       :config="config"
     />
     <div v-if="!isBought && hasEU2">
-      Auto: {{ format(config.cost / 1e10) }} Eternity Points
+      Auto: {{ format(upgrade.config.cost / 1e10) }} Eternity Points
     </div>
     <CostDisplay
       v-else-if="!isBought"
       br
-      :config="config"
+      :config="upgrade.config"
       name="Eternity Point"
     />
   </button>

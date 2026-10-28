@@ -19,7 +19,6 @@ EventHub.logic.on(GAME_EVENT.BIG_CRUNCH_AFTER, () => prestigeNotify(T.Infinity.$
 EventHub.logic.on(GAME_EVENT.ETERNITY_RESET_AFTER, () => prestigeNotify(T.Eternity.$prestigeLevel));
 EventHub.logic.on(GAME_EVENT.REALITY_RESET_AFTER, () => prestigeNotify(T.Reality.$prestigeLevel));
 EventHub.logic.on(GAME_EVENT.DOOM_REALITY_AFTER, () => prestigeNotify(T.Doom.$prestigeLevel));
-EventHub.logic.on(GAME_EVENT.ARMAGEDDON_AFTER, () => prestigeNotify(T.Armageddon.$prestigeLevel));
 EventHub.logic.on(GAME_EVENT.ENDGAME_RESET_AFTER, () => prestigeNotify(T.Endgame.$prestigeLevel));
 
 // Used by while and until - in order to get the text corrext, we need to invert the boolean if it's an until
@@ -72,9 +71,7 @@ function findLastPrestigeRecord(layer) {
     case "REALITY":
       return `${format(player.records.recentRealities[0][1], 2)} RM`;
     case "DOOM":
-      return `Dooming your Reality does not give a currency`;
-    case "ARMAGEDDON":
-      return `There is no currency logging for Armageddon (yet)`;
+      return "Dooming your Reality does not give a currency";
     case "ENDGAME":
       return `${format(player.records.recentEndgames[0][1], 2)} CP`;
     default:
@@ -155,6 +152,11 @@ export const AutomatorCommands = [
           return false;
         }
       }
+      if (ctx.PrestigeEvent[0].tokenType === T.Doom) {
+        V.addError(ctx.PrestigeEvent, "There is no autobuyer for this prestige layer",
+          "Use the prestige command or WAIT/UNTIL instead");
+        return false;
+      }
       if (ctx.PrestigeEvent[0].tokenType === T.Endgame) {
         if (!EndgameMilestone.autobuyerEndgame.isReached) {
           V.addError(ctx.PrestigeEvent, "Endgame autobuyer is not unlocked",
@@ -164,7 +166,7 @@ export const AutomatorCommands = [
         if (advSetting) {
           V.addError((ctx.duration || ctx.xHighest)[0],
             "Auto Endgame cannot be set to a duration or x highest",
-            "Use CP for Auto Endgame");
+            "Set a fixed CP amount for the Endgame autobuyer");
           return false;
         }
       }
@@ -173,6 +175,7 @@ export const AutomatorCommands = [
     },
     compile: ctx => {
       const isReality = ctx.PrestigeEvent[0].tokenType === T.Reality;
+      const isEndgame = ctx.PrestigeEvent[0].tokenType === T.Endgame;
       const on = Boolean(ctx.On || ctx.duration || ctx.xHighest || ctx.currencyAmount);
       const duration = ctx.duration ? ctx.duration[0].children.$value : undefined;
       const xHighest = ctx.xHighest ? ctx.xHighest[0].children.$value : undefined;
@@ -198,6 +201,9 @@ export const AutomatorCommands = [
           if (isReality) {
             autobuyer.rm = new Decimal(fixedAmount);
             currSetting = `${format(autobuyer.rm, 2)} RM`;
+          } else if (isEndgame) {
+            autobuyer.amountCP = new Decimal(fixedAmount);
+            currSetting = `${format(autobuyer.amountCP, 2)} CP`;
           } else {
             autobuyer.amount = new Decimal(fixedAmount);
             currSetting = `${fixedAmount} ${ctx.PrestigeEvent[0].image === "infinity" ? "IP" : "EP"}`;
@@ -421,7 +427,7 @@ export const AutomatorCommands = [
           S.commandState = { timeMs: 0 };
           AutomatorData.logCommandEvent(`Pause started (waiting ${timeString})`, ctx.startLine);
         } else {
-          S.commandState.timeMs += Math.max(Time.unscaledDeltaTime.totalMilliseconds.toNumber(), AutomatorBackend.currentInterval);
+          S.commandState.timeMs += Decimal.max(Time.trueDeltaTime.totalMilliseconds, AutomatorBackend.currentInterval).toNumber();
         }
         const finishPause = S.commandState.timeMs >= duration;
         if (finishPause) {
@@ -472,6 +478,11 @@ export const AutomatorCommands = [
       if (ctx.PrestigeEvent && ctx.PrestigeEvent[0].tokenType === T.Infinity && ctx.Respec) {
         V.addError(ctx.Respec, "There's no 'respec' for infinity",
           "Remove 'respec' from the command");
+      }
+      if (ctx.PrestigeEvent && ctx.Respec && ctx.PrestigeEvent[0].tokenType === T.Doom) {
+        V.addError(ctx.Respec, "There's no 'respec' for this prestige layer",
+          "Remove 'respec' from the command");
+        return false;
       }
       return true;
     },
@@ -915,9 +926,6 @@ export const AutomatorCommands = [
         case T.Doom:
           prestigeName = "Doom";
           break;
-        case T.Armageddon:
-          prestigeName = "Armageddon";
-          break;
         case T.Endgame:
           prestigeName = "Endgame";
           break;
@@ -1027,7 +1035,8 @@ export const AutomatorCommands = [
         const prestigeOccurred = S.commandState.prestigeLevel >= prestigeLevel;
         const prestigeName = ctx.PrestigeEvent[0].image.toUpperCase();
         if (prestigeOccurred) {
-          const timeWaited = TimeSpan.fromMilliseconds(new Decimal(Date.now() - AutomatorData.waitStart)).toStringShort();
+          const timeWaited = TimeSpan.fromMilliseconds(
+            new Decimal(Date.now() - AutomatorData.waitStart)).toStringShort();
           AutomatorData.logCommandEvent(`Continuing after WAIT (${prestigeName} occurred for
             ${findLastPrestigeRecord(prestigeName)}, after ${timeWaited})`, ctx.startLine);
           AutomatorData.isWaiting = false;

@@ -110,7 +110,9 @@ get increaseWithMult() {
   }
 
   tick() {
-    if (this.willEndgame && isEndgameAvailable()) Endgame.newEndgame();
+    if (Pelle.isDoomed && player.antimatter.gte(DC.E9E15) && this.willEndgame && isEndgameAvailable()) {
+      Endgame.newEndgame();
+    }
   }
 
   reset() {

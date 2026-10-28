@@ -9,7 +9,7 @@ export const Hadrons = {
     return DC.D1.timesEffectsOf(Achievement(235), Achievement(247)).times(
       DivinityMilestone.firstDivine.isReached && !player.disablePostReality ? 1.25 : 1).times(
       DivinityMilestone.divineDimensions.isReached && !player.disablePostReality ? 1.25 : 1).div(
-      1 - DivineDimensions.conversionFormula3).times(
+      DivineDimensions.conversionFormula3Remainder).times(
       Decimal.pow(DivinityMilestone.finalRebirth.isReached && !player.disablePostReality ? 1.05 :
       (DivinityMilestone.pelleQoL.isReached && !player.disablePostReality ? 1.04 : 1.025), this.hadrons.totalExotic)).times(
       DivinityMilestone.celestialSurge.isReached && !player.disablePostReality ? 4 : 1).times(

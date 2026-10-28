@@ -1,3 +1,5 @@
+import { DC } from "../../../constants";
+
 export const celestialEternityPlusUpgrades = {
   megaCelTickspeedReduction: {
     id: "megaCelTickspeedReduction",
@@ -23,6 +25,6 @@ export const celestialEternityPlusUpgrades = {
     id: "oldStoneSlabAndSteelDrill",
     cost: DC.E4000,
     description: () => (player.celestials.slabdrill.isWarping ? "Unlock the Cursed Reality" : "Unlock Pelle's Domain"),
-    onPurchased: () => Pelle.quotes.reachGoal.show()
+    onPurchased: () => Pelle.quotes.reachGoal?.show()
   }
 };

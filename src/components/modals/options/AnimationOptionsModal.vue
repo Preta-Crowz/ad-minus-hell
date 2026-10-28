@@ -17,24 +17,19 @@ export default {
       dilationUnlocked: false,
       tachyonsUnlocked: false,
       realityUnlocked: false,
-      animatedThemeUnlocked: false,
-      alphaUnlocked: false,
-      etherealExtended: false,
+      metaUnlocked: false,
       lhcUnlocked: false,
+      animatedThemeUnlocked: false,
       bigCrunch: false,
       eternity: false,
       dilation: false,
       tachyonParticles: false,
       reality: false,
+      meta: false,
+      hadrons: false,
       background: false,
       blobSnowflakes: 16,
-      isS11Active: false,
-      isBlackHoleUnlocked: false,
-      blobHole: false,
-      isS11Unlocked: false,
-      alpha: false,
-      stars: false,
-      hadrons: false
+      isS11Active: false
     };
   },
   computed: {
@@ -49,6 +44,9 @@ export default {
     },
     fullCompletion() {
       return player.records.fullGameCompletions > 0;
+    },
+    isInHell() {
+      return Hell.isInside;
     }
   },
   watch: {
@@ -67,6 +65,12 @@ export default {
     reality(newValue) {
       player.options.animations.reality = newValue;
     },
+    meta(newValue) {
+      player.options.animations.meta = newValue;
+    },
+    hadrons(newValue) {
+      player.options.animations.hadrons = newValue;
+    },
     background(newValue) {
       player.options.animations.background = newValue;
     },
@@ -75,15 +79,6 @@ export default {
     },
     blobHole(newValue) {
       player.options.animations.blobHole = newValue;
-    },
-    alpha(newValue) {
-      player.options.brightAlpha = newValue;
-    },
-    stars(newValue) {
-      player.options.animations.stars = newValue;
-    },
-    hadrons(newValue) {
-      player.options.animations.hadrons = newValue;
     }
   },
   methods: {
@@ -92,6 +87,8 @@ export default {
       this.infinityUnlocked = this.fullCompletion || progress.isInfinityUnlocked;
       this.eternityUnlocked = this.fullCompletion || progress.isEternityUnlocked;
       this.realityUnlocked = this.fullCompletion || progress.isRealityUnlocked;
+      this.metaUnlocked = progress.isMetaUnlocked;
+      this.lhcUnlocked = ExpansionPack.alphaPack.isBought;
       // 136 is given upon dilating
       this.dilationUnlocked = this.realityUnlocked || Achievement(136).canBeApplied;
       this.tachyonsUnlocked = this.realityUnlocked || Currency.tachyonParticles.gt(0);
@@ -99,9 +96,6 @@ export default {
       this.isS11Active = Theme.currentName() === "S11";
       this.isS11Unlocked = Themes.available().map(t => t.name).includes("S11");
       this.isBlackHoleUnlocked = BlackHoles.areUnlocked;
-      this.alphaUnlocked = Alpha.isUnlocked;
-      this.etherealExtended = player.endgame.ethereal.isExtended;
-      this.lhcUnlocked = ExpansionPack.alphaPack.isBought;
 
       const options = player.options.animations;
       this.bigCrunch = options.bigCrunch;
@@ -109,12 +103,10 @@ export default {
       this.dilation = options.dilation;
       this.tachyonParticles = options.tachyonParticles;
       this.reality = options.reality;
+      this.meta = options.meta;
+      this.hadrons = options.hadrons;
       this.background = options.background;
       this.blobSnowflakes = options.blobSnowflakes;
-      this.blobHole = options.blobHole;
-      this.alpha = player.options.brightAlpha;
-      this.stars = options.stars;
-      this.hadrons = options.hadrons;
     },
     adjustSliderValue(value) {
       this.blobSnowflakes = value;
@@ -129,7 +121,16 @@ export default {
     <template #header>
       Animation Options
     </template>
-    <div class="c-modal-options__button-container">
+    <div
+      v-if="isInHell"
+      class="c-hell-options-note"
+    >
+      Animations are disabled inside of Hell.
+    </div>
+    <div
+      class="c-modal-options__button-container"
+      :class="{ 'c-hell-options-locked': isInHell }"
+    >
       <ModalOptionsToggleButton
         v-if="infinityUnlocked"
         v-model="bigCrunch"
@@ -156,9 +157,14 @@ export default {
         text="Reality:"
       />
       <ModalOptionsToggleButton
-        v-if="isS11Unlocked && isBlackHoleUnlocked"
-        v-model="blobHole"
-        text="Always use Blobhole:"
+        v-if="metaUnlocked"
+        v-model="meta"
+        text="Meta:"
+      />
+      <ModalOptionsToggleButton
+        v-if="lhcUnlocked"
+        v-model="hadrons"
+        text="Hadrons:"
       />
       <div v-if="!isS11Active">
         <ModalOptionsToggleButton
@@ -188,26 +194,20 @@ export default {
           @input="adjustSliderValue($event)"
         />
       </div>
-      <ModalOptionsToggleButton
-        v-if="alphaUnlocked"
-        v-model="alpha"
-        text="Brighter Alpha:"
-      />
-      <ModalOptionsToggleButton
-        v-if="etherealExtended"
-        v-model="stars"
-        text="Stars:"
-      />
-      <ModalOptionsToggleButton
-        v-if="lhcUnlocked"
-        v-model="hadrons"
-        text="Hadrons:"
-      />
     </div>
   </ModalWrapperOptions>
 </template>
 
 <style scoped>
+.c-hell-options-locked {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.c-hell-options-note {
+  margin-bottom: 1rem;
+}
+
 .c-blobflake-slider {
   padding: 1.2rem;
 }

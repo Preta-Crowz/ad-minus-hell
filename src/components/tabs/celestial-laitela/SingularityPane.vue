@@ -1,3 +1,4 @@
+
 <script>
 export default {
   name: "SingularityPane",
@@ -23,7 +24,7 @@ export default {
     };
   },
   computed: {
-    isDoomed: () => Pelle.isDoomed && !PelleDestructionUpgrade.singularityMilestones.canBeApplied,
+    isDoomed: () => Pelle.isDoomed && !ChallengerUpgrade(17).isBought,
     singularityFormText() {
       const formText = this.singularitiesGained.eq(1) ? "all Dark Energy into a Singularity"
         : `all Dark Energy into ${quantify("Singularity", this.singularitiesGained, 2)}`;
@@ -64,12 +65,12 @@ export default {
       return this.willCondenseOnDecrease
         ? `Decreasing the cap will immediately auto-condense for
           ${quantify("Singularity", singularities, 2)}!`
-        : null;
+        : "You can shift click to decrease the cap to zero";
     },
     increaseTooltip() {
-      return this.singularityCapIncreases.gte(5e11)
-        ? `The cap over 5e11 is more stronger. ${formatX(Decimal.pow10(new Decimal(this.singularityCapIncreases.log(10)).sub(10).floor()), 2, 2)}`
-        : null;
+      return this.singularityCapIncreases.gte(this.maxCap)
+        ? "You cannot increase the cap any further!"
+        : "You can shift click to increase the cap to when it would take 1s";
     }
   },
   methods: {
@@ -82,6 +83,7 @@ export default {
       this.canPerformSingularity = Singularity.capIsReached;
       this.unlockedBulkSingularity = Currency.singularities.gte(10);
       this.singularityCap.copyFrom(Singularity.cap);
+      this.maxCap = Singularity.maxCap;
       this.baseTimeToSingularity.copyFrom(Singularity.timePerCondense);
       this.currentTimeToSingularity.copyFrom(Singularity.timeUntilCap);
       this.extraTimeAfterSingularity.copyFrom(Singularity.timeDelayFromAuto);
@@ -96,11 +98,11 @@ export default {
     doSingularity() {
       Singularity.perform();
     },
-    increaseCap() {
-      Singularity.increaseCap();
+    increaseCap(t = false) {
+      Singularity.increaseCap(t);
     },
-    decreaseCap() {
-      Singularity.decreaseCap();
+    decreaseCap(t = false) {
+      Singularity.decreaseCap(t);
     },
     formatRate(rate) {
       if (rate.lt(1 / 60)) return `${format(rate.mul(3600), 2, 3)} per hour`;
@@ -147,15 +149,17 @@ export default {
           class="c-laitela-singularity__cap-control"
           :class="{ 'c-laitela-singularity__cap-control--available' : singularityCapIncreases.gt(0) }"
           :ach-tooltip="decreaseTooltip"
-          @click="decreaseCap"
+          @click.exact="decreaseCap(false)"
+          @click.shift.exact="decreaseCap(true)"
         >
           Decrease Singularity cap.
         </button>
         <button
           class="c-laitela-singularity__cap-control"
-          :class="{ 'c-laitela-singularity__cap-control--available' : true }"
+          :class="{ 'c-laitela-singularity__cap-control--available' : singularityCapIncreases.lt(maxCap) }"
           :ach-tooltip="increaseTooltip"
-          @click="increaseCap"
+          @click.exact="increaseCap(false)"
+          @click.shift.exact="increaseCap(true)"
         >
           Increase Singularity cap.
         </button>

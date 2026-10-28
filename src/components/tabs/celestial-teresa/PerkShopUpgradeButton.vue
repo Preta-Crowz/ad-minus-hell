@@ -22,7 +22,7 @@ export default {
       isCapped: false,
       isCharged: false,
       otherCurr: false,
-      displayEffect: false,
+      displayEffect: true,
       chargesLeft: 0,
       viewingCharge: false,
     };
@@ -32,18 +32,20 @@ export default {
     classObject() {
       return {
         "o-teresa-shop-button": true,
-        "o-teresa-shop-button--available": ((this.isAvailableForPurchase && !this.isCapped) ||
-          (this.chargesLeft > 0 && !this.isCharged)) && !(this.viewingCharge && this.chargesLeft <= 0),
-        "o-teresa-shop-button--capped": (this.isCapped && !this.viewingCharge) || this.isCharged,
-        "o-teresa-shop-button--pelle-disabled": (this.isDoomed && !PelleDestructionUpgrade.teresaShop.canBeApplied) &&
+        "o-teresa-shop-button--available": this.viewingCharge
+          ? this.upgrade.canCharge
+          : this.isAvailableForPurchase && !this.isCapped,
+        "o-teresa-shop-button--capped": this.viewingCharge
+          ? !this.upgrade.canCharge
+          : this.isCapped || this.isCharged,
+        "o-teresa-shop-button--pelle-disabled": this.isDoomed &&
           (this.upgrade === PerkShopUpgrade.musicGlyph || this.upgrade === PerkShopUpgrade.fillMusicGlyph)
       };
     },
     effectConfig() {
-      const upgrade = this.upgrade;
       return {
-        effect: () => upgrade.chargedValue(),
-        formatEffect: upgrade.config.formatEffect
+        effect: () => this.upgrade.chargedValue,
+        formatEffect: this.upgrade.config.formatEffect
       };
     },
   },
@@ -52,15 +54,15 @@ export default {
       this.isAvailableForPurchase = this.upgrade.isAvailableForPurchase;
       this.isCapped = this.upgrade.isCapped;
       this.isCharged = this.upgrade.isCharged;
-      this.otherCurr = (this.upgrade === PerkShopUpgrade.addCharges);
+      this.otherCurr = this.upgrade === PerkShopUpgrade.addCharges;
       this.displayEffect = this.upgrade.displayEffect;
       this.chargesLeft = Teresa.chargesLeft;
       this.viewingCharge = this.upgrade.viewCharge;
     },
     performActions() {
-      if (!this.viewingCharge) this.upgrade.purchase();
-      if (this.viewingCharge && this.chargesLeft > 0) this.upgrade.charge();
-    },
+      if (!this.upgrade.viewCharge) this.upgrade.purchase();
+      else if (this.upgrade.canCharge) this.upgrade.charge();
+    }
   }
 };
 </script>
@@ -75,14 +77,18 @@ export default {
         :config="upgrade.config"
         :length="70"
       />
+      <span v-if="viewingCharge && !isCharged && !upgrade.canCharge">
+        <br>
+        {{ chargesLeft <= 0 ? "No charges available." : `Requires ${formatInt(upgrade.chargeRequirement)} purchases; you have ${formatInt(upgrade.boughtAmount)}.` }}
+      </span>
+      <br>
       <EffectDisplay
         v-if="displayEffect"
-        br
         :config="effectConfig"
       />
+      <br>
       <CostDisplay
         v-if="!isCapped && !viewingCharge"
-        br
         :config="upgrade.config"
         :name="otherCurr ? 'Celestial Point' : 'Perk Point'"
       />

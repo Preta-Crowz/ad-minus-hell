@@ -21,7 +21,7 @@ class RiftMilestoneState extends GameMechanicState {
 
   get isUnlocked() {
     if (this.resource === "decay" && PelleRifts.chaos.milestones[0].isEffectActive) return true;
-    return this.requirement <= PelleRifts[this.resource].percentage;
+    return Decimal.lte(this.requirement, PelleRifts[this.resource].percentage);
   }
 
   get isEffectActive() {
@@ -95,8 +95,8 @@ class RiftState extends GameMechanicState {
 
   get percentage() {
     if (this.reducedTo > 1) return this.reducedTo;
-    if (!this.config.spendable) return Math.min(this.realPercentage, this.reducedTo);
-    return Math.min(this.config.percentage(this.totalFill) - this.spentPercentage, this.reducedTo);
+    if (!this.config.spendable) return Decimal.min(this.realPercentage, this.reducedTo).toNumber();
+    return Decimal.min(this.config.percentage(this.totalFill).sub(this.spentPercentage), this.reducedTo).toNumber();
   }
 
   get milestones() {
@@ -124,10 +124,11 @@ class RiftState extends GameMechanicState {
   }
 
   get maxValue() {
-    return this.config.percentageToFill(1 + this.spentPercentage);
+    return this.config.percentageToFill(4 + this.spentPercentage);
   }
 
   get isMaxed() {
+    if (ChallengerUpgrade(19).isBought) return false;
     return this.percentage >= 1;
   }
 
@@ -137,7 +138,7 @@ class RiftState extends GameMechanicState {
 
   toggle() {
     const active = PelleRifts.all.filter(r => r.isActive).length;
-    if (!this.isActive && active === 2) GameUI.notify.error(`You can only have 2 rifts active at the same time!`);
+    if (!this.isActive && active === 3) GameUI.notify.error(`You can only have 3 rifts active at the same time!`);
     else this.rift.active = !this.rift.active;
   }
 
@@ -153,21 +154,29 @@ class RiftState extends GameMechanicState {
     }
     if (!this.isActive || this.isMaxed) return;
 
+    if (ChallengerUpgrade(19).isBought) diff = diff.mul(10);
+    
     if (this.fillCurrency.value instanceof Decimal) {
       // Don't drain resources if you only have 1 of it.
       // This is in place due to the fix to replicanti below.
       if (this.fillCurrency.value.lte(1)) return;
-      const afterTickAmount = this.fillCurrency.value.times(Decimal.pow(new Decimal(1 - Pelle.riftDrainPercent), new Decimal(diff).div(1000)));
-      const spent = this.fillCurrency.gte(DC.E9E15) ? DC.E9E15 : this.fillCurrency.value.minus(afterTickAmount);
-      // We limit this to 1 instead of 0 specifically for the case of replicanti; certain interactions with offline
-      // time can cause it to drain to 0, where it gets stuck unless you reset it with some prestige
-      this.fillCurrency.value = this.fillCurrency.value.minus(spent).max(1);
-      this.totalFill = this.totalFill.plus(spent).min(this.maxValue);
+      if(this.fillCurrency.value.gt('ee10')){
+        this.totalFill = this.totalFill.plus(this.fillCurrency.value);
+      }
+      else{
+        const afterTickAmount = this.fillCurrency.value.times(Decimal.pow(1 - Pelle.riftDrainPercent, diff.div(1e3)));
+        const spent = this.fillCurrency.value.sub(afterTickAmount);
+        // We limit this to 1 instead of 0 specifically for the case of replicanti; certain interactions with offline
+        // time can cause it to drain to 0, where it gets stuck unless you reset it with some prestige
+        if (!ChallengerUpgrade(19).isBought) this.fillCurrency.value = this.fillCurrency.value.minus(spent).max(1);
+        this.totalFill = this.totalFill.plus(spent);
+      }
     } else {
-      const afterTickAmount = this.fillCurrency.value * (Decimal.pow(new Decimal(1 - Pelle.riftDrainPercent), new Decimal(diff).div(1000))).toNumber();
+      // eslint-disable-next-line max-len
+      const afterTickAmount = this.fillCurrency.value * Decimal.pow(1 - Pelle.riftDrainPercent, diff.div(100)).toNumber();
       const spent = this.fillCurrency.value - afterTickAmount;
-      this.fillCurrency.value = Math.max(this.fillCurrency.value - spent, 0);
-      this.totalFill = Math.clampMax(this.totalFill + spent, this.maxValue);
+      if (!ChallengerUpgrade(19).isBought) this.fillCurrency.value = Math.max(this.fillCurrency.value - spent, 0);
+      this.totalFill = Decimal.clampMax(this.totalFill.add(spent), this.maxValue);
     }
     if (PelleRifts.vacuum.milestones[0].canBeApplied) Glyphs.refreshActive();
     this.checkMilestoneStates();

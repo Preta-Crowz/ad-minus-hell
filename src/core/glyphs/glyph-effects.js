@@ -1,5 +1,3 @@
-import { Pelle } from "../globals";
-
 import { GlyphCombiner } from "@/core/secret-formula";
 
 class GlyphEffectState {
@@ -17,6 +15,18 @@ class GlyphEffectState {
   }
 }
 
+export const GlyphEffect = {
+  dimBoostPower: new GlyphEffectState("powerdimboost", {
+    adjustApply: value => Decimal.max(1, value)
+  }),
+  ipMult: new GlyphEffectState("infinityIP", {
+    adjustApply: value => Decimal.max(1, value)
+  }),
+  epMult: new GlyphEffectState("timeEP", {
+    adjustApply: value => Decimal.max(1, value)
+  })
+};
+
 /**
  * This returns just the value, unlike getTotalEffect(), which outputs the softcap status as well
  * This variant is used by GameCache
@@ -33,7 +43,8 @@ export function getAdjustedGlyphEffectUncached(effectKey) {
  * @return {number | Decimal}
  */
 export function getAdjustedGlyphEffect(effectKey) {
-  return GameCache.glyphEffects.value[effectKey];
+  // TODO: make it always be decimal by default
+  return new Decimal(GameCache.glyphEffects.value[effectKey]);
 }
 
 /**
@@ -55,10 +66,10 @@ export function getGlyphEffectValues(effectKey) {
   if (!orderedEffectList.includes(effectKey)) {
     throw new Error(`Unknown Glyph effect requested "${effectKey}"'`);
   }
-  return player.reality.glyphs.active
-    .filter(glyph => ((1 << GlyphEffects[effectKey].bitmaskIndex) & glyph.effects) !== 0)
-    .filter(glyph => generatedTypes.includes(glyph.type) === GlyphEffects[effectKey].isGenerated)
+  const r = player.reality.glyphs.active
+    .filter(glyph => glyph.effects.includes(effectKey))
     .map(glyph => getSingleGlyphEffectFromBitmask(effectKey, glyph));
+  return r;
 }
 
 // Combines all specified glyph effects, reduces some boilerplate
@@ -72,10 +83,10 @@ function getTotalEffect(effectKey) {
 export function separateEffectKey(effectKey) {
   let type = "";
   let effect = "";
-  for (let i = 0; i < GLYPH_TYPES.length; i++) {
-    if (effectKey.substring(0, GLYPH_TYPES[i].length) === GLYPH_TYPES[i]) {
-      type = GLYPH_TYPES[i];
-      effect = effectKey.substring(GLYPH_TYPES[i].length);
+  for (let i = 0; i < GlyphInfo.glyphTypes.length; i++) {
+    if (effectKey.substring(0, GlyphInfo.glyphTypes[i].length) === GlyphInfo.glyphTypes[i]) {
+      type = GlyphInfo.glyphTypes[i];
+      effect = effectKey.substring(GlyphInfo.glyphTypes[i].length);
       break;
     }
   }
@@ -88,8 +99,22 @@ export function separateEffectKey(effectKey) {
 export function getGlyphEffectValuesFromBitmask(bitmask, level, baseStrength, type) {
   // If we don't specifically exclude companion glyphs, the first-reality EP record is wrong within Doomed since its
   // value is encoded in the rarity field
-  const strength = Slabdrill.isCursed ? rarityToStrength(Math.clamp((Slabdrill.currentStage - 4) * 20, 0, 100)) : ((Pelle.isDoomed && !PelleDestructionUpgrade.glyphRarity.canBeApplied && type !== "companion") ? Pelle.glyphStrength : baseStrength);
+  const strength = Pelle.isDoomed && !PelleDestructionUpgrade.glyphRarity.canBeApplied && type !== "companion"
+    ? Pelle.glyphStrength
+    : baseStrength;
   return getGlyphEffectsFromBitmask(bitmask)
+    .map(effect => ({
+      id: effect.id,
+      value: effect.effect(level, strength)
+    }));
+}
+
+// eslint-disable-next-line max-params
+export function getGlyphEffectValuesFromArray(array, level, baseStrength, type) {
+  const strength = Pelle.isDoomed && !PelleDestructionUpgrade.glyphRarity.canBeApplied && type !== "companion"
+    ? Pelle.glyphStrength
+    : baseStrength;
+  return getGlyphEffectsFromArray(array)
     .map(effect => ({
       id: effect.id,
       value: effect.effect(level, strength)
@@ -99,10 +124,11 @@ export function getGlyphEffectValuesFromBitmask(bitmask, level, baseStrength, ty
 // Pulls out a single effect value from a glyph's bitmask, returning just the value (nothing for missing effects)
 export function getSingleGlyphEffectFromBitmask(effectName, glyph) {
   const glyphEffect = GlyphEffects[effectName];
-  if ((glyph.effects & (1 << glyphEffect.bitmaskIndex)) === 0) {
-    return undefined;
-  }
-  return glyphEffect.effect(getAdjustedGlyphLevel(glyph), Slabdrill.isCursed ? rarityToStrength(Math.clamp((Slabdrill.currentStage - 4) * 20, 0, 100)) : ((Pelle.isDoomed && !PelleDestructionUpgrade.glyphRarity.canBeApplied) ? Pelle.glyphStrength : glyph.strength));
+  if (!glyph.effects.includes(effectName)) return undefined;
+  const strength = Pelle.isDoomed && !PelleDestructionUpgrade.glyphRarity.canBeApplied
+    ? Pelle.glyphStrength
+    : glyph.strength;
+  return glyphEffect.effect(getAdjustedGlyphLevel(glyph), strength);
 }
 
 // Note this function is used for glyph bitmasks, news ticker bitmasks, and offline achievements

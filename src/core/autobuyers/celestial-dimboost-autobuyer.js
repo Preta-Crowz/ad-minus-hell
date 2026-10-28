@@ -74,7 +74,7 @@ export class CelestialDimBoostAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get canTick() {
-    return CelestialDimBoost.canBeBought && CelestialDimBoost.requirement.isSatisfied && super.canTick;
+    return super.canTick && CelestialDimBoost.canBeBought && CelestialDimBoost.requirement.isSatisfied;
   }
 
   get resetTickOn() {

@@ -40,7 +40,7 @@ export default {
       return this.costDisplay.length > 20;
     },
     purchaseTooltip() {
-      return `Purchased ${quantifyHybridLarge("time", this.purchases)}`;
+      return `Purchased ${quantify("time", this.purchases)}`;
     },
     showCostTitle() {
       return this.cost.log10().lt(1e5);

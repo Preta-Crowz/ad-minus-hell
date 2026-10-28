@@ -24,6 +24,8 @@ export default {
     return {
       canBeBought: false,
       isBought: false,
+      isUseless: false,
+      isPermanentlyLocked: false,
     };
   },
   computed: {
@@ -32,8 +34,12 @@ export default {
     },
     classObject() {
       return {
+        "c-reality-upgrade-btn--useless": this.isUseless,
         "c-reality-upgrade-btn--bought": this.isBought && !this.isUseless,
-        "c-reality-upgrade-btn--unavailable": !this.isBought && !this.canBeBought,
+        "c-reality-upgrade-btn--locked": this.isPermanentlyLocked,
+        "c-reality-upgrade-btn--unavailable": !this.isBought && !this.canBeBought && !this.isPermanentlyLocked,
+        "o-pelle-disabled": this.isUseless,
+        "o-pelle-disabled-pointer": this.isUseless,
         "o-size": true,
       };
     },
@@ -43,6 +49,8 @@ export default {
       const upgrade = this.upgrade;
       this.canBeBought = upgrade.canBeBought;
       this.isBought = !upgrade.isRebuyable && upgrade.isBought;
+      this.isUseless = upgrade.isUseless || false;
+      this.isPermanentlyLocked = upgrade.isPermanentlyLocked || false;
     },
   }
 };
@@ -52,7 +60,7 @@ export default {
     <button
       :class="classObject"
       class="l-reality-upgrade-btn c-reality-upgrade-btn"
-      style="width: 18rem; height: 12rem"
+      style="width: 20rem; height: 13.5rem"
       @click.exact="upgrade.purchase()"
     >
       <HintText
@@ -62,7 +70,19 @@ export default {
         {{ upgrade.name }}
       </HintText>
       <span>
-        <DescriptionDisplay :config="config" />
+        <template v-if="config.descriptionParts">
+          <span
+            v-for="(part, index) in config.descriptionParts"
+            :key="index"
+            :class="{ 'o-pelle-disabled': part.conflict }"
+          >
+            {{ part.text.trim() }}{{ index < config.descriptionParts.length - 1 ? " " : "" }}
+          </span>
+        </template>
+        <template v-else>
+          <DescriptionDisplay :config="config" />
+        </template>
+        <div v-if="config.overlapNote">{{ config.overlapNote }}</div>
         <template>
           <EffectDisplay
             :config="config"

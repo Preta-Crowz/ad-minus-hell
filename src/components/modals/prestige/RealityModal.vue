@@ -18,23 +18,24 @@ export default {
       hasFilter: false,
       glyphs: [],
       bestLevel: new Decimal(),
-      levelDifference: new Decimal(),
+      levelDifference: 0,
       selectedGlyph: undefined,
       canRefresh: false,
       level: new Decimal(),
-      simRealities: new Decimal(0),
+      simRealities: new Decimal(),
       realityMachines: new Decimal(),
-      shardsGained: new Decimal(0),
+      shardsGained: 0,
       effarigUnlocked: false,
       willAutoPurge: false,
     };
   },
   computed: {
     firstRealityText() {
+      const time = timeDisplayNoDecimals(new Decimal(30 * 60000));
       return `Reality will reset everything except Challenge records and anything under the General header on the
         Statistics tab. The first ${formatInt(13)} rows of Achievements are also reset,
         but you will automatically get one Achievement back every
-        ${timeDisplayNoDecimals(new Decimal(30 * 60000))}. You will also gain Reality Machines based on your Eternity Points, a
+        ${time} You will also gain Reality Machines based on your Eternity Points, a
         Glyph with a level based on your Eternity Points, Replicanti, and Dilated Time, a Perk Point to spend
         on quality of life upgrades, and unlock various upgrades.`;
     },
@@ -57,8 +58,8 @@ export default {
     },
     gained() {
       const gainedResources = [];
-      gainedResources.push(`${quantifyHybridLarge("Reality", this.simRealities)}`);
-      gainedResources.push(`${quantifyHybridLarge("Perk Point", this.simRealities)}`);
+      gainedResources.push(`${quantify("Reality", this.simRealities)}`);
+      gainedResources.push(`${quantify("Perk Point", this.simRealities)}`);
       gainedResources.push(`${quantify("Reality Machine", this.realityMachines, 2)}`);
       if (this.effarigUnlocked) {
         gainedResources.push(`${quantify("Relic Shard", this.shardsGained, 2)}`);
@@ -67,9 +68,9 @@ export default {
     },
     levelStats() {
       // Bit annoying to read due to needing >, <, and =, with = needing a different format.
-      return `You will get a level ${formatHybridLarge(this.level, 3)} Glyph on Reality, which is
+      return `You will get a level ${formatInt(this.level)} Glyph on Reality, which is
         ${this.level.eq(this.bestLevel) ? "equal to" : `
-        ${quantifyHybridLarge("level", this.levelDifference)}
+        ${quantifyInt("level", this.levelDifference)}
         ${this.level.gt(this.bestLevel) ? "higher" : "lower"} than`} your best.`;
     },
     confirmationToDisable() {
@@ -90,11 +91,11 @@ export default {
       this.effarigUnlocked = TeresaUnlocks.effarig.canBeApplied;
       this.hasFilter = EffarigUnlock.glyphFilter.isUnlocked;
       this.level.copyFrom(gainedGlyphLevel().actualLevel);
-      this.simRealities.copyFrom(new Decimal(simulatedRealityCount(false)).add(1));
-      this.hasSpace = new Decimal(GameCache.glyphInventorySpace.value).gte(this.simRealities);
+      this.simRealities = simulatedRealityCount(false).add(1);
+      this.hasSpace = Decimal.fromNumber(GameCache.glyphInventorySpace.value).gte(this.simRealities);
       const simRMGained = MachineHandler.gainedRealityMachines.times(this.simRealities);
       this.realityMachines.copyFrom(simRMGained.clampMax(MachineHandler.distanceToRMCap));
-      this.shardsGained.copyFrom(Effarig.shardsGained.times(simulatedRealityCount(false) + 1));
+      this.shardsGained = simulatedRealityCount(false).add(1).mul(Effarig.shardsGained);
       this.willAutoPurge = player.reality.autoAutoClean;
       if (this.firstReality) return;
       for (let i = 0; i < this.glyphs.length; ++i) {
@@ -102,12 +103,12 @@ export default {
         const newGlyph = GlyphSelection.glyphList(
           GlyphSelection.choiceCount, gainedGlyphLevel(), { isChoosingGlyph: false }
         )[i];
-        if (currentGlyph.level.eq(newGlyph.level)) continue;
+        if (currentGlyph.level === newGlyph.level) continue;
         currentGlyph.level = newGlyph.level;
         currentGlyph.effects = newGlyph.effects;
       }
       this.bestLevel.copyFrom(player.records.bestReality.glyphLevel);
-      this.levelDifference.copyFrom(Decimal.abs(this.bestLevel.sub(this.level)));
+      this.levelDifference = Decimal.abs(this.bestLevel.sub(this.level));
     },
     glyphClass(index) {
       return {
@@ -167,6 +168,18 @@ export default {
         :show-sacrifice="canSacrifice"
         @click.native="select(index)"
       />
+       </div>
+	    <div
+      v-if="!firstReality"
+      class="l-glyph-selection__row"
+    >
+      <PrimaryButton
+	      class="l-glyph-equip-button"
+        v-for="(glyph, index) in glyphs"
+        @click.native="select(index)"
+      >
+      Select glyph {{index+1}}
+      </PrimaryButton>
     </div>
     <div v-if="!firstReality">
       {{ levelStats }}
@@ -179,7 +192,7 @@ export default {
       <br>
       After choosing this Glyph the game will simulate the rest of your Realities,
       <br>
-      automatically choosing another {{ quantifyHybridSmall("Glyph", simRealities.sub(1)) }}
+      automatically choosing another {{ quantify("Glyph", simRealities.sub(1)) }}
       based on your Glyph filter settings.
     </div>
     <div v-if="willAutoPurge">

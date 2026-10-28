@@ -1,12 +1,14 @@
 <script>
 import DilationButton from "./DilationButton";
 import DilationUpgradeButton from "./DilationUpgradeButton";
+import PrimaryButton from "@/components/PrimaryButton";
 
 export default {
   name: "TimeDilationTab",
   components: {
     DilationButton,
-    DilationUpgradeButton
+    DilationUpgradeButton,
+    PrimaryButton
   },
   data() {
     return {
@@ -16,16 +18,13 @@ export default {
       galaxyThreshold: new Decimal(),
       baseGalaxies: new Decimal(),
       totalGalaxies: new Decimal(),
-      tachyonGalaxyGain: 1,
+      tachyonGalaxyGain: new Decimal(),
       hasPelleDilationUpgrades: false,
+      inHell: false,
       galaxyTimeEstimate: "",
       maxDT: new Decimal(),
       toMaxTooltip: "",
       isHovering: false,
-      isEndgameUnlocked: false,
-      scaleStart: new Decimal(),
-      viewSoftcap: false,
-      softcapStart: new Decimal()
     };
   },
   computed: {
@@ -73,18 +72,20 @@ export default {
       return DilationUpgrade.ttGenerator;
     },
     baseGalaxyText() {
-      return `${formatHybridLarge(this.baseGalaxies, 3)} Base`;
+      return `${format(this.baseGalaxies, 3)} Base`;
     },
     hasMaxText: () => PlayerProgress.realityUnlocked() && !Pelle.isDoomed,
     allRebuyables() {
       const upgradeRows = [];
       upgradeRows.push(this.rebuyables);
+      if (this.inHell) upgradeRows.push([DilationUpgrade.hellDilationPenalty]);
       if (this.hasPelleDilationUpgrades) upgradeRows.push(this.pelleRebuyables);
       return upgradeRows;
     },
     allSingleUpgrades() {
       const upgradeRows = [];
       upgradeRows.push(...this.upgrades);
+      if (this.inHell) upgradeRows.push([DilationUpgrade.hellDoubleGalaxies, DilationUpgrade.hellTdMultReplicanti]);
       if (this.hasPelleDilationUpgrades) upgradeRows.push(this.pelleUpgrades);
       upgradeRows.push([this.ttGenerator]);
       return upgradeRows;
@@ -94,9 +95,9 @@ export default {
     update() {
       this.tachyons.copyFrom(Currency.tachyonParticles);
       this.dilatedTime.copyFrom(Currency.dilatedTime);
-      const rawDTGain = getDilationGainPerSecond();
+      const rawDTGain = getDilationGainPerSecond().times(getGameSpeedupForDisplay());
       this.galaxyTimeEstimate = getDilationTimeEstimate(this.galaxyThreshold);
-      if (PelleRifts.paradox.isActive) {
+      if (PelleRifts.paradox.isActive && this.dilatedTime.lte("ee10")) {
         // The number can be small and either positive or negative with the rift active, which means that extra care
         // needs to be taken to get the calculation as close to correct as possible. This relies on some details
         // related to tick microstructure to make things accurate, and it seems to be to roughly 1 part in 5e6
@@ -111,22 +112,32 @@ export default {
       this.baseGalaxies.copyFrom(player.dilation.baseTachyonGalaxies);
       this.totalGalaxies.copyFrom(player.dilation.totalTachyonGalaxies);
       this.hasPelleDilationUpgrades = PelleRifts.paradox.milestones[0].canBeApplied;
-      if ((this.baseGalaxies.lt(500) || Alpha.isDestroyed) && DilationUpgrade.doubleGalaxies.isBought) {
-        this.tachyonGalaxyGain = DilationUpgrade.doubleGalaxies.effectValue;
+      if (this.baseGalaxies.lt(500) && DilationUpgrade.doubleGalaxies.isBought) {
+        this.tachyonGalaxyGain = new Decimal(DilationUpgrade.doubleGalaxies.effectValue);
       } else {
-        this.tachyonGalaxyGain = 1;
+        this.tachyonGalaxyGain = new Decimal(1);
       }
-      this.tachyonGalaxyGain *= DilationUpgrade.galaxyMultiplier.effectValue;
+      this.tachyonGalaxyGain = this.tachyonGalaxyGain.times(DilationUpgrade.hellDoubleGalaxies.effectOrDefault(1));
+      this.tachyonGalaxyGain = this.tachyonGalaxyGain.times(DilationUpgrade.galaxyMultiplier.effectValue);
+      this.inHell = Hell.isInside;
       this.maxDT.copyFrom(player.records.thisReality.maxDT);
 
       const estimateText = getDilationTimeEstimate(this.maxDT);
       if (this.dilatedTimeIncome.lte(0)) this.toMaxTooltip = "No DT gain";
       else this.toMaxTooltip = estimateText.startsWith("<") ? "Currently Increasing" : estimateText;
-
-      this.isEndgameUnlocked = PlayerProgress.endgameUnlocked();
-      this.scaleStart.copyFrom(DilationUpgradeScaling.PRIMARY_SCALING);
-      this.viewSoftcap = this.maxDT.gte(this.softcapStart);
-      this.softcapStart.copyFrom(DilationSoftcapStart.PRIMARY_THRESHOLD());
+    },
+    bulk(){
+      DilationUpgrades.rebuyable[0].purchase(1e300);
+      if (!Pelle.isDoomed || ChallengerUpgrade(9).isBought || PelleDestructionUpgrade.x3TPUpgrade.canBeApplied) {
+        DilationUpgrades.rebuyable[2].purchase(1e300);
+      }
+      if(PelleRifts.paradox.milestones[0].canBeApplied){
+        DilationUpgrade.dtGainPelle.purchase(1e300);
+        DilationUpgrade.galaxyMultiplier.purchase(1e300);
+        DilationUpgrade.tickspeedPower.purchase(1e300);
+      }
+      // do resetting one last
+      DilationUpgrades.rebuyable[1].purchase(1e300);
     }
   }
 };
@@ -153,7 +164,7 @@ export default {
     </span>
     <span>
       Next
-      <span v-if="tachyonGalaxyGain > 1">{{ formatHybridLarge(tachyonGalaxyGain, 3) }}</span>
+      <span v-if="tachyonGalaxyGain.gt(1)">{{ format(tachyonGalaxyGain, 3, 0) }}</span>
       {{ pluralize("Tachyon Galaxy", tachyonGalaxyGain) }} at
       <span
         class="c-dilation-tab__galaxy-threshold"
@@ -163,7 +174,7 @@ export default {
       <span
         class="c-dilation-tab__galaxies"
         :ach-tooltip="baseGalaxyText"
-      >{{ formatHybridLarge(totalGalaxies, 3) }}</span>
+      >{{ format(totalGalaxies, 3, 0) }}</span>
       {{ pluralize("Tachyon Galaxy", totalGalaxies) }}
     </span>
     <span v-if="hasMaxText">
@@ -173,12 +184,12 @@ export default {
         class="max-accent"
       >{{ format(maxDT, 2, 1) }}</span>.
     </span>
-    <span v-if="isEndgameUnlocked">
-      Past {{ format(scaleStart, 2, 1) }} Dilated Time, all rebuyable Dilation Upgrades will scale faster.
-    </span>
-    <span v-if="viewSoftcap">
-      Dilated Time has been softcapped. This effect started at {{ format(softcapStart, 2, 1) }} Dilated Time.
-    </span>
+    <PrimaryButton
+      class="o-primary-btn--subtab-option"
+      @click="bulk()">
+      max rebuyable
+    </PrimaryButton>
+    
     <div class="l-dilation-upgrades-grid">
       <div
         v-for="(upgradeRow, row) in allRebuyables"

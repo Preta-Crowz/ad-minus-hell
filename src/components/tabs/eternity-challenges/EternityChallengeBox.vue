@@ -64,6 +64,9 @@ export default {
     },
     name() {
       return `EC${this.challenge.id}`;
+    },
+    overrideLabel() {
+      return Hell.isInside && this.challenge.id === 12 ? "Trapped" : "";
     }
   },
   methods: {
@@ -99,6 +102,7 @@ export default {
     :is-running="isRunning"
     :is-completed="isCompleted"
     :can-be-unlocked="canBeUnlocked"
+    :override-label="overrideLabel"
     :completion-count="completions"
     @start="start"
   >
@@ -106,7 +110,7 @@ export default {
       <DescriptionDisplay :config="config" />
     </template>
     <template #bottom>
-      <div :style="{ visiblity: completions < 5 ? 'visible' : 'hidden' }">
+      <div :style="{ visibility: completions < 5 ? 'visible' : 'hidden' }">
         <div>
           Completed {{ quantifyInt("time", completions) }}
         </div>

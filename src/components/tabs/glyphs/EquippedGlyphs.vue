@@ -16,7 +16,6 @@ export default {
       undoAvailable: false,
       undoVisible: false,
       cosmeticGlow: false,
-      hasCursedGlyphs: false
     };
   },
   computed: {
@@ -30,7 +29,7 @@ export default {
       return this.slotCount + 1;
     },
     respecTooltip() {
-      const reset = this.hasCursedGlyphs ? "Entering Core" : (Pelle.isDoomed ? "Armageddon" : "Reality");
+      const reset = Pelle.isDoomed ? "Armageddon" : "Reality";
       return this.respec
         ? `Respec is active and will place your currently - equipped Glyphs into your inventory after ${reset}.`
         : `Your currently-equipped Glyphs will stay equipped on ${reset}.`;
@@ -43,7 +42,6 @@ export default {
         : "Undo is only available for Glyphs equipped during this Reality";
     },
     unequipText() {
-      if (this.hasCursedGlyphs) return "Unequip Glyphs on Entering Core";
       if (Pelle.isDoomed) return "Unequip Glyphs on Armageddon";
       return "Unequip Glyphs on Reality";
     },
@@ -67,8 +65,8 @@ export default {
     // cause container overflow due to another button being removed entirely when doomed
     unequipClass() {
       return {
-        "l-glyph-equip-button": this.isDoomed || this.hasCursedGlyphs,
-        "l-glyph-equip-button-short": !this.isDoomed && !this.hasCursedGlyphs,
+        "l-glyph-equip-button": this.isDoomed,
+        "l-glyph-equip-button-short": !this.isDoomed,
       };
     }
   },
@@ -83,10 +81,9 @@ export default {
       this.undoSlotsAvailable = this.respecIntoProtected
         ? Glyphs.totalSlots - GameCache.glyphInventorySpace.value - Glyphs.inventoryList.length > 0
         : GameCache.glyphInventorySpace.value > 0;
-      this.undoVisible = TeresaUnlocks.undo.canBeApplied;
+      this.undoVisible = TeresaUnlocks.undo.canBeApplied && !Pelle.isDoomed;
       this.undoAvailable = this.undoVisible && this.undoSlotsAvailable && player.reality.glyphs.undo.length > 0;
       this.cosmeticGlow = player.reality.glyphs.cosmetics.glowNotification;
-      this.hasCursedGlyphs = SlabdrillUnlocks.breakInfinity.isUnlocked;
     },
     glyphPositionStyle(idx) {
       const angle = 2 * Math.PI * idx / this.slotCount;
@@ -125,7 +122,7 @@ export default {
       this.$recompute("slotCount");
     },
     undo() {
-      if (!this.undoAvailable || Pelle.isDoomed || Slabdrill.isCursed) return;
+      if (!this.undoAvailable || Pelle.isDoomed) return;
       if (player.options.confirmations.glyphUndo) Modal.glyphUndo.show();
       else Glyphs.undo();
     },
@@ -178,6 +175,7 @@ export default {
           :glyph="glyph"
           :circular="true"
           :is-active-glyph="true"
+          :size="'5rem'"
           class="c-equipped-glyph"
           @clicked="clickGlyph(glyph, idx)"
           @shiftClicked="clickGlyph(glyph, idx, true)"

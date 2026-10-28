@@ -11,9 +11,9 @@ export default {
       type: Array,
       required: true
     },
-    isObscured: {
-      type: Boolean,
-      required: false
+    isAchievementObscured: {
+      type: Function,
+      required: true
     }
   },
   data() {
@@ -28,16 +28,18 @@ export default {
         "l-achievement-grid__row": true,
         "c-achievement-grid__row--completed": this.isCompleted
       };
-    }
+    },
+    inRow(){
+      return this.row.filter(x => x != undefined);
+    },
   },
   methods: {
     update() {
-      this.isCompleted = this.row.every(a => a.isUnlocked);
+      this.isCompleted = this.row.every(a => a ? a.isUnlocked : true );
       this.isHidden = this.isCompleted && player.options.hideCompletedAchievementRows;
     },
-    specialObscured(ach) {
-      if (!Achievement(258).isUnlocked) return ach.id === 258;
-      return false;
+    specialObscured(achievement) {
+      return achievement.id === 258 && !Achievement(258).isUnlocked;
     }
   }
 };
@@ -49,10 +51,10 @@ export default {
     :class="classObject"
   >
     <normal-achievement
-      v-for="(achievement, i) in row"
+      v-for="(achievement, i) in inRow"
       :key="i"
       :achievement="achievement"
-      :is-obscured="isObscured || specialObscured(achievement)"
+      :is-obscured="isAchievementObscured(achievement) || specialObscured(achievement)"
       class="l-achievement-grid__cell"
     />
   </div>

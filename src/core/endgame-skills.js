@@ -12,7 +12,7 @@ export class EndgameSkillPurchaseType {
   */
   set amount(value) { throw new NotImplementedError(); }
 
-  add(amount) { this.amount += amount; }
+  add(amount) { this.amount = this.amount.add(amount); }
 
   /**
   * @abstract
@@ -32,13 +32,18 @@ export class EndgameSkillPurchaseType {
   get costIncrement() { throw new NotImplementedError(); }
 
   get bulkPossible() {
-    return Decimal.affordGeometricSeries(this.currency.value, this.cost, this.costIncrement, 0).toNumber();
+    let amount = Decimal.affordGeometricSeries(this.currency.value, this.cost, this.costIncrement, 0);
+    if (amount.gt(0) && !this.currency.gte(this.bulkCost(amount))) amount = amount.sub(1);
+    const nextAmount = amount.plus(1);
+    if (nextAmount.gt(amount) && this.currency.gte(this.bulkCost(nextAmount))) amount = nextAmount;
+    return amount;
   }
 
-  // Note: This is actually just the cost of the largest term of the geometric series. If buying CP/DP without the
-  // perk that makes them free, this will be incorrect, but the CP/DP object already overrides this anyway
   bulkCost(amount) {
-    return this.cost.times(this.costIncrement.pow(amount - 1));
+    const purchaseCount = new Decimal(amount);
+    const ratio = this.costIncrement;
+    if (ratio.eq(1)) return this.cost.times(purchaseCount);
+    return this.cost.times(ratio.pow(purchaseCount).sub(1)).div(ratio.sub(1));
   }
 
   purchase(bulk) {
@@ -46,10 +51,9 @@ export class EndgameSkillPurchaseType {
     let purchased = false;
     const amount = this.bulkPossible;
     const buyFn = cost => this.currency.purchase(cost);
-    // This will sometimes buy one too few for CP/DP, so we just have to buy 1 after.
-    if (bulk && buyFn(this.bulkCost(amount - 1))) {
-      Currency.endgameSkills.add(amount - 1);
-      this.add(amount - 1);
+    if (bulk && amount.gt(0) && buyFn(this.bulkCost(amount))) {
+      Currency.endgameSkills.add(amount);
+      this.add(amount);
       purchased = true;
     }
     if (buyFn(this.cost)) {
@@ -61,7 +65,7 @@ export class EndgameSkillPurchaseType {
   }
 
   get canAfford() {
-    return this.currency.gte(this.cost) && player.endgames > 0;
+    return this.currency.gte(this.cost) && player.endgames.gt(0);
   }
 
   reset() {
@@ -70,42 +74,33 @@ export class EndgameSkillPurchaseType {
 }
 
 EndgameSkillPurchaseType.gg = new class extends EndgameSkillPurchaseType {
-  get amount() { return player.endgameMasteries.ggBought; }
-  set amount(value) { player.endgameMasteries.ggBought = value; }
+  get amount() { return new Decimal(player.endgameMasteries.ggBought); }
+  set amount(value) { player.endgameMasteries.ggBought = new Decimal(value); }
 
   get currency() { return Currency.galaxyGeneratorGalaxies; }
   get costBase() { return DC.E10; }
   get costIncrement() { return DualityUpgrade(27).isBought ? new Decimal(1.1) : DC.E2; }
 
-  bulkCost(amount) {
-    return this.costIncrement.pow(amount + this.amount).subtract(this.cost);
-  }
 }();
 
 EndgameSkillPurchaseType.cp = new class extends EndgameSkillPurchaseType {
-  get amount() { return player.endgameMasteries.cpBought; }
-  set amount(value) { player.endgameMasteries.cpBought = value; }
+  get amount() { return new Decimal(player.endgameMasteries.cpBought); }
+  set amount(value) { player.endgameMasteries.cpBought = new Decimal(value); }
 
   get currency() { return Currency.celestialPoints; }
   get costBase() { return DC.D1; }
   get costIncrement() { return DC.E1; }
 
-  bulkCost(amount) {
-    return this.costIncrement.pow(amount + this.amount).subtract(this.cost);
-  }
 }();
 
 EndgameSkillPurchaseType.dp = new class extends EndgameSkillPurchaseType {
-  get amount() { return player.endgameMasteries.dpBought; }
-  set amount(value) { player.endgameMasteries.dpBought = value; }
+  get amount() { return new Decimal(player.endgameMasteries.dpBought); }
+  set amount(value) { player.endgameMasteries.dpBought = new Decimal(value); }
 
   get currency() { return Currency.doomedParticles; }
   get costBase() { return DC.D1; }
   get costIncrement() { return DC.E1; }
 
-  bulkCost(amount) {
-    return this.costIncrement.pow(amount + this.amount).subtract(this.cost);
-  }
 }();
 
 export const EndgameSkills = {
@@ -141,13 +136,13 @@ export const EndgameSkills = {
   },
 
   totalPurchased() {
-    return EndgameSkillPurchaseType.gg.amount +
-          EndgameSkillPurchaseType.cp.amount +
-          EndgameSkillPurchaseType.dp.amount;
+    return EndgameSkillPurchaseType.gg.amount
+      .plus(EndgameSkillPurchaseType.cp.amount)
+      .plus(EndgameSkillPurchaseType.dp.amount);
   },
 
   calculateEndgameMasteriesCost() {
-    let list = EndgameMastery.permaMasteries.isBought
+    const list = EndgameMastery.permaMasteries.isBought
       ? EndgameMastery.boughtEM().filter(m => m.id >= 180 && m.id < 280)
       : EndgameMastery.boughtEM().filter(m => m.id < 280);
     let totalCost = list.map(em => em.cost).reduce(Number.sumReducer, 0);

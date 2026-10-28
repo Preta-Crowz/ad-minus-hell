@@ -1,13 +1,13 @@
 const rebuyable = props => {
   props.cost = () => getHybridCostScaling(
-    player.reality.dualityRebuyables[props.id],
-    1e20,
-    props.initialCost,
-    props.costMult,
-    props.costMult,
+    new Decimal(player.reality.dualityRebuyables[props.id]),
+    new Decimal(1e20),
+    new Decimal(props.initialCost),
+    new Decimal(props.costMult),
+    new Decimal(props.costMult),
     DC.E309,
-    1e3,
-    props.costMult
+    new Decimal(1e3),
+    new Decimal(props.costMult)
   );
   const { effect } = props;
   if (props.isDecimal) props.effect = () => player.disablePostReality ? DC.D1 : Decimal.pow(effect, player.reality.dualityRebuyables[props.id]);
@@ -269,7 +269,7 @@ export const dualityUpgrades = [
       player.requirementChecks.reality.maxGlyphs <= -15 && gainedGlyphLevel().actualLevel.gte(385000),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     description: "Tesseracts increase Galaxy strength",
-    effect: () => player.disablePostReality ? 1 : Tesseracts.effectiveCount / 100,
+    effect: () => player.disablePostReality ? 1 : Tesseracts.effectiveCount.div(100),
     formatEffect: value => `${formatX(value)}`
   },
   {
@@ -279,7 +279,7 @@ export const dualityUpgrades = [
     formatCost: x => format(x, 1),
     requirement: () => `Have ${format(105.5e6, 2, 2)} ${player.universes.current === 2 ? "Matter" : "Antimatter"} Galaxies in Ra's Reality
       with Celestial Matter toggled off`,
-    hasFailed: () => !Ra.isRunning || !player.requirementChecks.reality.noCelMatter,
+    hasFailed: () => !player.requirementChecks.reality.noCelMatter,
     checkRequirement: () => Ra.isRunning && player.requirementChecks.reality.noCelMatter &&
       player.galaxies.gte(105.5e6),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,

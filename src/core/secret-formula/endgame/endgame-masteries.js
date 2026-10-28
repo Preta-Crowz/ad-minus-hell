@@ -1,3 +1,5 @@
+import { DC } from "../../constants";
+
 export const endgameMasteries = [
   {
     id: 11,
@@ -5,8 +7,8 @@ export const endgameMasteries = [
     requirement: [],
     reqType: EM_REQUIREMENT_TYPE.ALL,
     description: () => `Generate ${formatInt(1)} Perk Point per minute per Endgame`,
-    effect: () => player.disablePostReality ? 0 : player.endgames,
-    formatEffect: value => `${formatHybridSmall(value, 3)}/min`
+    effect: () => player.disablePostReality ? DC.D0 : player.endgames,
+    formatEffect: value => `${formatSmall(value, 3)}/min`
   },
   {
     id: 21,
@@ -92,8 +94,11 @@ export const endgameMasteries = [
     requirement: [61],
     reqType: EM_REQUIREMENT_TYPE.AT_LEAST_ONE,
     description: () => `Start with ${formatInt(5)} of each basic Glyph on Endgame at ${formatInt(4)} effects, ${formatPercents(1)} rarity, and level based on Endgames and peak GL`,
-    effect: () => player.disablePostReality ? DC.D1 : (EffarigUnlock.endgame.canBeApplied ? player.records.bestEndgame.glyphLevel : new Decimal(1 - ((1 / Math.max(player.endgames, 1)) ** 0.1)).times(player.records.bestEndgame.glyphLevel)),
-    formatEffect: value => formatHybridSmall(value, 3)
+    effect: () => player.disablePostReality ? DC.D1 : (EffarigUnlock.endgame?.canBeApplied
+      ? player.records.bestEndgame.glyphLevel
+      : new Decimal(1).sub(Decimal.max(player.endgames, 1).reciprocal().pow(0.1))
+        .times(player.records.bestEndgame.glyphLevel)),
+    formatEffect: value => formatSmall(value, 3)
   },
   {
     id: 81,
@@ -132,7 +137,7 @@ export const endgameMasteries = [
     requirement: [81],
     reqType: EM_REQUIREMENT_TYPE.AT_LEAST_ONE,
     description: () => `Delay the Infinity Challenge ${formatInt(8)} Reward Hardcap based on Endgames`,
-    effect: () => player.disablePostReality ? 1 : player.endgames,
+    effect: () => player.disablePostReality ? DC.D1 : player.endgames,
     formatEffect: value => formatPow(value, 2)
   },
   {
@@ -141,7 +146,7 @@ export const endgameMasteries = [
     requirement: [82],
     reqType: EM_REQUIREMENT_TYPE.AT_LEAST_ONE,
     description: "Delay the Infinity Dimension Compression Start based on Endgames",
-    effect: () => player.disablePostReality ? 1 : player.endgames,
+    effect: () => player.disablePostReality ? DC.D1 : player.endgames,
     formatEffect: value => formatPow(value, 2)
   },
   {
@@ -150,7 +155,7 @@ export const endgameMasteries = [
     requirement: [83],
     reqType: EM_REQUIREMENT_TYPE.AT_LEAST_ONE,
     description: "Delay the Time Dimension Compression Start based on Endgames",
-    effect: () => player.disablePostReality ? 1 : player.endgames,
+    effect: () => player.disablePostReality ? DC.D1 : player.endgames,
     formatEffect: value => formatPow(value, 2)
   },
   {
@@ -271,7 +276,12 @@ export const endgameMasteries = [
     requirement: [141],
     reqType: EM_REQUIREMENT_TYPE.AT_LEAST_ONE,
     description: () => `Make the Infinity Point formula better`,
-    effect: () => player.disablePostReality ? Effects.min(308, Achievement(103), TimeStudy(111)) : Effects.min(308, Achievement(103), TimeStudy(111)) / ((Decimal.log10(Decimal.log10(Currency.celestialPoints.value.plus(1)).add(1)).div(20)).add(1)).toNumber(),
+    effect: () => {
+      const base = Effects.min(308, Achievement(103), TimeStudy(111));
+      if (player.disablePostReality) return base;
+      const divisor = Decimal.log10(Decimal.log10(Currency.celestialPoints.value.plus(1)).add(1)).div(20).add(1);
+      return base.div(divisor);
+    },
     formatEffect: value => `log(x)/${format(Effects.min(308, Achievement(103), TimeStudy(111)), 2, 2)} ➜ log(x)/${format(value, 2, 2)}`
   },
   {

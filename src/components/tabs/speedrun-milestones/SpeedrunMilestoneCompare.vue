@@ -7,17 +7,17 @@ export default {
       required: true
     },
     currTime: {
-      type: Number,
+      type: [Number, Object],
       required: false,
       default: 0,
     },
     refTime: {
-      type: Number,
+      type: [Number, Object],
       required: false,
       default: 0,
     },
     bestTime: {
-      type: Number,
+      type: [Number, Object],
       required: true,
     },
     runIndices: {
@@ -32,30 +32,40 @@ export default {
   },
   computed: {
     classObject() {
-      const hasTime = this.currTime > 0 && this.refTime > 0;
+      const currTime = new Decimal(this.currTime ?? 0);
+      const refTime = new Decimal(this.refTime ?? 0);
+      const bestTime = new Decimal(this.bestTime ?? 0);
+      const hasTime = currTime.gt(0) && refTime.gt(0);
       return {
         "l-speedrun-milestone-entry": true,
-        "l-milestone-slow": hasTime && this.currTime > this.refTime,
-        "l-milestone-fast": hasTime && this.currTime < this.refTime,
-        "l-milestone-fastest": hasTime && this.currTime < this.bestTime,
+        "l-milestone-slow": hasTime && currTime.gt(refTime),
+        "l-milestone-fast": hasTime && currTime.lt(refTime),
+        "l-milestone-fastest": hasTime && currTime.lt(bestTime),
       };
     },
   },
   methods: {
     update() {
-      this.realTime = player.records.realTimePlayed;
+      this.realTime = new Decimal(player.records.realTimePlayed);
     },
     timeString(ms, showGap) {
-      const timeStr = TimeSpan.fromMilliseconds(new Decimal(ms)).toStringShort(true, true);
-      const diff = this.currTime > 0 ? this.currTime - ms : this.realTime - ms;
-      let gapStr = TimeSpan.fromMilliseconds(new Decimal(Math.abs(diff))).toStringShort(true, true);
-      gapStr = `${this.currTime > ms ? "-" : "+"}${gapStr}`;
-      return ms > 0
+      const time = new Decimal(ms ?? 0);
+      const currTime = new Decimal(this.currTime ?? 0);
+      const referenceTime = currTime.gt(0) ? currTime : new Decimal(this.realTime);
+      const timeStr = TimeSpan.fromMilliseconds(time).toStringShort(true, true);
+      const diff = referenceTime.minus(time);
+      let gapStr = TimeSpan.fromMilliseconds(diff.abs()).toStringShort(true, true);
+      gapStr = `${referenceTime.gt(time) ? "-" : "+"}${gapStr}`;
+      return time.gt(0)
         ? `${timeStr}${showGap ? ` (${gapStr})` : ""}`
         : "Not reached yet";
     },
     timeStyle(time) {
-      const isFastest = time === [this.currTime, this.refTime, this.bestTime].filter(t => t !== 0).min();
+      const times = [this.currTime, this.refTime, this.bestTime]
+        .map(value => new Decimal(value ?? 0))
+        .filter(value => value.gt(0));
+      const fastestTime = times.length ? times.reduce((fastest, value) => Decimal.min(fastest, value)) : undefined;
+      const isFastest = fastestTime !== undefined && new Decimal(time ?? 0).eq(fastestTime);
       return {
         color: "var(--color-text)",
         opacity: isFastest ? 1 : 0.85,

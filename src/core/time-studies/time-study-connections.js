@@ -45,10 +45,10 @@ TimeStudy.allConnections = (function() {
     [TS(42), TS(51)],
     [TS(42), EC(5)],
 
-    [TS(42), TS(62), () => (!Perk.bypassEC5Lock.isBought || player.disablePostReality)],
+    [TS(42), TS(62), () => !Perk.bypassEC5Lock.isBought],
 
     [TS(51), TS(61)],
-    [EC(5), TS(62), () => (Perk.bypassEC5Lock.isBought && !player.disablePostReality)],
+    [EC(5), TS(62), () => Perk.bypassEC5Lock.isBought],
 
     [TS(61), TS(71)],
     [TS(61), TS(72)],
@@ -79,7 +79,10 @@ TimeStudy.allConnections = (function() {
     [TS(121), TS(131)],
     [TS(122), TS(132)],
     [TS(123), TS(133)],
-    [TS(121), EC(6)],
+
+    [TS(111), EC(6), () => !TeresaUnlocks.EC6RequireActive.canBeApplied],
+    [TS(121), EC(6), () => TeresaUnlocks.EC6RequireActive.canBeApplied],
+    
     [TS(123), EC(8)],
 
     [TS(131), TS(141)],
@@ -104,17 +107,21 @@ TimeStudy.allConnections = (function() {
     [TS(171), EC(3)],
 
     [TS(171), TS(181),
-      () => (!Perk.bypassEC1Lock.isBought || !Perk.bypassEC2Lock.isBought || !Perk.bypassEC3Lock.isBought) || player.disablePostReality],
+      () => !Perk.bypassEC1Lock.isBought || !Perk.bypassEC2Lock.isBought || !Perk.bypassEC3Lock.isBought],
 
-    [EC(1), TS(181), () => (Perk.bypassEC1Lock.isBought && !player.disablePostReality)],
-    [EC(2), TS(181), () => (Perk.bypassEC2Lock.isBought && !player.disablePostReality)],
-    [EC(3), TS(181), () => (Perk.bypassEC3Lock.isBought && !player.disablePostReality)],
+    [EC(1), TS(181), () => Perk.bypassEC1Lock.isBought],
+    [EC(2), TS(181), () => Perk.bypassEC2Lock.isBought],
+    [EC(3), TS(181), () => Perk.bypassEC3Lock.isBought],
 
     [TS(181), EC(10)],
-
-    [EC(10), TS(191)],
-    [EC(10), TS(192)],
-    [EC(10), TS(193)],
+    
+    [TS(181), TS(191), () => !EffarigUnlock.EC10Requirement.canBeApplied],
+    [TS(181), TS(192), () => !EffarigUnlock.EC10Requirement.canBeApplied],
+    [TS(181), TS(193), () => !EffarigUnlock.EC10Requirement.canBeApplied],
+    
+    [EC(10), TS(191), () => EffarigUnlock.EC10Requirement.canBeApplied],
+    [EC(10), TS(192), () => EffarigUnlock.EC10Requirement.canBeApplied],
+    [EC(10), TS(193), () => EffarigUnlock.EC10Requirement.canBeApplied],
 
     [TS(192), TS(201)],
 

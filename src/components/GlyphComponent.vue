@@ -1,5 +1,6 @@
 <script>
-import { GlyphInfo } from "../../src/components/modals/options/SelectGlyphInfoDropdown";
+import { getRarity } from "../core/globals";
+import { GlyphInfoVue } from "../../src/components/modals/options/SelectGlyphInfoDropdown";
 
 import GlyphTooltip from "@/components/GlyphTooltip";
 
@@ -67,85 +68,26 @@ const rarityBorderStyles = {
       colorSplit: [65, 85],
     },
   ],
-  elysian: [
+  overwhelming: [
     {
-      lineType: "bump",
-      colorSplit: [15, 35],
+      lineType: "spike",
+      center: [40, 40],
+      angles: [305,325],
+    },
+    {
+      lineType: "spike",
+      center: [60, 60],
+      angles: [125, 145],
+    },
+    {
+      lineType: "linear",
+      angles: [45],
+      colorSplit: [14, 16, 84, 86],
     },
     {
       lineType: "radial",
       colorSplit: [65, 85],
     },
-    {
-      lineType: "linear",
-      angles: [45, 135],
-      colorSplit: [10, 12, 14, 16, 84, 86, 88, 90],
-    }
-  ],
-  empyrean: [
-    {
-      lineType: "bump",
-      colorSplit: [15, 35],
-    },
-    {
-      lineType: "radial",
-      colorSplit: [65, 85],
-    },
-    {
-      lineType: "linear",
-      angles: [45, 135],
-      colorSplit: [10, 12, 14, 16, 18, 20, 80, 82, 84, 86, 88, 90],
-    }
-  ],
-  sublime: [
-    {
-      lineType: "bump",
-      colorSplit: [15, 40],
-    },
-    {
-      lineType: "radial",
-      colorSplit: [60, 85],
-    },
-    {
-      lineType: "linear",
-      angles: [45, 135],
-      colorSplit: [10, 12, 14, 16, 18, 20, 80, 82, 84, 86, 88, 90],
-    }
-  ],
-  superlunary: [
-    {
-      lineType: "bump",
-      colorSplit: [15, 40],
-    },
-    {
-      lineType: "radial",
-      colorSplit: [60, 85],
-    },
-    {
-      lineType: "linear",
-      angles: [45, 135],
-      colorSplit: [10, 12, 14, 16, 18, 20, 22, 24, 76, 78, 80, 82, 84, 86, 88, 90],
-    }
-  ],
-  perfect: [
-    {
-      lineType: "bump",
-      colorSplit: [15, 40],
-    },
-    {
-      lineType: "radial",
-      colorSplit: [60, 85],
-    },
-    {
-      lineType: "linear",
-      angles: [45, 135],
-      colorSplit: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90],
-    },
-    {
-      lineType: "linear",
-      angles: [0, 90],
-      colorSplit: [10, 12, 14, 16, 18, 20, 80, 82, 84, 86, 88, 90],
-    }
   ],
   cursed: [
     {
@@ -283,9 +225,9 @@ export default {
       default: false
     },
     realityGlyphBoost: {
-      type: Number,
+      type: Decimal | Object,
       required: false,
-      default: 0
+      default: () => new Decimal()
     },
     isInventoryGlyph: {
       type: Boolean,
@@ -300,7 +242,7 @@ export default {
     size: {
       type: String,
       required: false,
-      default: "5rem",
+      default: "4rem",
     },
     glowBlur: {
       type: String,
@@ -346,13 +288,13 @@ export default {
       suppressTooltip: false,
       isTouched: false,
       tooltipEnabled: false,
-      sacrificeReward: 0,
-      uncappedRefineReward: 0,
-      refineReward: 0,
+      sacrificeReward: new Decimal(),
+      uncappedRefineReward: new Decimal(),
+      refineReward: new Decimal(),
       displayLevel: new Decimal(),
       // We use this to not create a ton of tooltip components as soon as the glyph tab loads.
       tooltipLoaded: false,
-      logTotalSacrifice: 0,
+      logTotalSacrifice: new Decimal(),
       realityColor: "",
     };
   },
@@ -361,7 +303,7 @@ export default {
       return Boolean(this.glyph.effects);
     },
     typeConfig() {
-      return GlyphTypes[this.glyph.type];
+      return GlyphInfo[this.glyph.type];
     },
     cosmeticConfig() {
       return CosmeticGlyphTypes[this.glyph.cosmetic ?? this.glyph.type];
@@ -374,6 +316,16 @@ export default {
       // \uE019 = :blobheart:
       if (this.isBlobHeart) return "\uE019";
       if (symbol) return symbol;
+
+      if(!this.glyph.cosmetic){
+        if(this.glyph.type === "effarig" && player.options.themeModern == "S15") return Celestials.teresa.symbol;
+        if(this.glyph.type === "effarig" && player.options.themeModern == "S16") return Celestials.effarig.symbol;
+        if(this.glyph.type === "effarig" && player.options.themeModern == "S17") return Celestials.enslaved.symbol;
+        if(this.glyph.type === "effarig" && player.options.themeModern == "S18") return Celestials.laitela.symbol;
+        if(this.glyph.type === "effarig" && player.options.themeModern == "S14") return "\uF185";
+        if(this.glyph.type === "effarig" && player.options.themeModern == "S13") return Celestials.v.symbol;
+      }
+
       return (this.$viewModel.theme === "S4" && !this.glyph.cosmetic)
         ? CANCER_GLYPH_SYMBOLS[this.glyph.type]
         : this.cosmeticConfig.currentSymbol.symbol;
@@ -485,45 +437,18 @@ export default {
         case 2:
           return "l-glyph-tooltip--up-right";
         default:
-          return "";
+          return "l-glyph-tooltip--down-left";
       }
     },
     // This finds all the effects of a glyph and shifts all their IDs so that type's lowest-ID effect is 0 and all
     // other effects count up to 3 (or 6 for effarig). Used to add dots in unique positions on glyphs to show effects.
     glyphEffects() {
-      let minEffectID = 0;
-      switch (this.glyph.type) {
-        case "time":
-        case "cursed":
-        case "companion":
-          minEffectID = 0;
-          break;
-        case "dilation":
-        case "reality":
-          minEffectID = 4;
-          break;
-        case "replication":
-          minEffectID = 8;
-          break;
-        case "infinity":
-          minEffectID = 12;
-          break;
-        case "power":
-          minEffectID = 16;
-          break;
-        case "effarig":
-          minEffectID = 20;
-          break;
-        default:
-          throw new Error(`Unrecognized glyph type "${this.glyph.type}" in glyph effect icons`);
-      }
-      const effectIDs = [];
-      let remainingEffects = this.glyph.effects >> minEffectID;
-      for (let id = 0; remainingEffects > 0; id++) {
-        if ((remainingEffects & 1) === 1) effectIDs.push(id);
-        remainingEffects >>= 1;
-      }
-      return effectIDs;
+      // Get intIDs, then subtract smallest in next code
+      if (!this.glyph.effects) return {};
+      const subVal = Object.values(GlyphInfo[this.glyph.type].effects().mapToObject(x => x.intID, x => x.intID)).nMin();
+      const glyphEffects = GlyphInfo[this.glyph.type].effects().filter(e => this.glyph.effects.includes(e.id));
+      // eslint-disable-next-line consistent-return
+      return glyphEffects.mapToObject(x => x.intID - subVal, x => x.id);
     },
     isRealityGlyph() {
       return this.glyph.type === "reality";
@@ -542,20 +467,18 @@ export default {
       if (!this.isInventoryGlyph || blacklist.includes(this.glyph.type)) return null;
 
       const options = player.options.showHintText;
-      if (options.glyphInfoType === GlyphInfo.types.NONE ||
+      if (options.glyphInfoType === GlyphInfoVue.types.NONE ||
         (!options.showGlyphInfoByDefault && !this.$viewModel.shiftDown)) {
         return null;
       }
 
-      const typeEnum = GlyphInfo.types;
+      const typeEnum = GlyphInfoVue.types;
       switch (options.glyphInfoType) {
         case typeEnum.LEVEL:
           this.updateDisplayLevel();
-          return formatHybridLarge(new Decimal(this.displayLevel).eq(0) ? this.glyph.level : this.displayLevel, 3);
+          return formatInt(this.displayLevel.eq(0) ? this.glyph.level : this.displayLevel);
         case typeEnum.RARITY:
-          return formatRarity(strengthToRarity(Slabdrill.isCursed
-            ? rarityToStrength(Math.clamp((Slabdrill.currentStage - 4) * 20, 0, 100))
-            : (Pelle.isDoomed && !PelleDestructionUpgrade.glyphRarity.canBeApplied ? Pelle.glyphStrength : this.glyph.strength)));
+          return formatRarity(strengthToRarity(Pelle.isDoomed ? Pelle.glyphStrength : this.glyph.strength));
         case typeEnum.SAC_VALUE:
           return format(this.sacrificeReward, 2, 2);
         case typeEnum.FILTER_SCORE:
@@ -611,17 +534,17 @@ export default {
         ? null
         : GlyphAppearanceHandler.realityColor;
       this.sacrificeReward = GlyphSacrificeHandler.glyphSacrificeGain(this.glyph);
-      this.uncappedRefineReward = ALCHEMY_BASIC_GLYPH_TYPES.includes(this.glyph.type)
+      this.uncappedRefineReward = GlyphInfo[this.glyph.type].hasAlchemyResource
         ? GlyphSacrificeHandler.glyphRawRefinementGain(this.glyph)
-        : 0;
-      this.refineReward = ALCHEMY_BASIC_GLYPH_TYPES.includes(this.glyph.type)
+        : new Decimal();
+      this.refineReward = GlyphInfo[this.glyph.type].hasAlchemyResource
         ? GlyphSacrificeHandler.glyphRefinementGain(this.glyph)
-        : 0;
+        : new Decimal();
       if (this.tooltipLoaded) this.updateDisplayLevel();
     },
     updateDisplayLevel() {
       if (this.ignoreModifiedLevel) {
-        this.displayLevel = DC.D0;
+        this.displayLevel = new Decimal();
         return;
       }
       // We have to consider some odd interactions in order to properly show level. The getAdjustedGlyphLevel() function
@@ -636,10 +559,10 @@ export default {
       //   reality glyph boost based on the rest of its existing set (which is passed in via realityGlyphBoost) and
       //   nothing else. This case applies to glyphs appearing in presets, records, and previews.
       if (this.isActiveGlyph) this.displayLevel = getAdjustedGlyphLevel(this.glyph);
-      else if (this.isInventoryGlyph) this.displayLevel = getAdjustedGlyphLevel(this.glyph, 0);
+      else if (this.isInventoryGlyph) this.displayLevel = getAdjustedGlyphLevel(this.glyph, new Decimal());
       else {
-        this.displayLevel = this.glyph.level.add(
-          (BASIC_GLYPH_TYPES.includes(this.glyph.type) ? this.realityGlyphBoost : 0));
+        this.displayLevel = new Decimal(this.glyph.level)
+          .add(GlyphInfo[this.glyph.type].isBasic ? this.realityGlyphBoost : new Decimal());
       }
     },
     hideTooltip() {
@@ -661,7 +584,7 @@ export default {
       this.$viewModel.tabs.reality.currentGlyphTooltip = this.componentID;
       if (
         AutoGlyphProcessor.sacMode === AUTO_GLYPH_REJECT.SACRIFICE ||
-        (AutoGlyphProcessor.sacMode === AUTO_GLYPH_REJECT.REFINE_TO_CAP && this.refineReward === 0)
+        (AutoGlyphProcessor.sacMode === AUTO_GLYPH_REJECT.REFINE_TO_CAP && this.refineReward.eq(new Decimal()))
       ) {
         this.currentAction = "sacrifice";
       } else {
@@ -673,18 +596,17 @@ export default {
       // If we are just creating the tooltip now, we can't move it yet.
       if (!this.$refs.tooltip) return;
       const tooltipEl = this.$refs.tooltip.$el;
-      if (tooltipEl) {
-        const rect = document.body.getBoundingClientRect();
-        tooltipEl.style.left = `${x - rect.left}px`;
-        tooltipEl.style.top = `${y - rect.top}px`;
-        if (this.$viewModel.tabs.reality.glyphTooltipDirection === 1) {
-          // In case of a really short screen, don't flicker back and forth
-          if (y - tooltipEl.offsetHeight <= 0 && y + tooltipEl.offsetHeight < rect.height) {
-            this.$viewModel.tabs.reality.glyphTooltipDirection = -1;
-          }
-        } else if (y + tooltipEl.offsetHeight >= rect.height) {
-          this.$viewModel.tabs.reality.glyphTooltipDirection = 1;
+      if (!tooltipEl) return;
+      const rect = document.body.getBoundingClientRect();
+      tooltipEl.style.left = `${x - rect.left}px`;
+      tooltipEl.style.top = `${y - rect.top}px`;
+      if (this.$viewModel.tabs.reality.glyphTooltipDirection === 1) {
+        // In case of a really short screen, don't flicker back and forth
+        if (y - tooltipEl.offsetHeight <= 0 && y + tooltipEl.offsetHeight < rect.height) {
+          this.$viewModel.tabs.reality.glyphTooltipDirection = -1;
         }
+      } else if (y + tooltipEl.offsetHeight >= rect.height) {
+        this.$viewModel.tabs.reality.glyphTooltipDirection = 1;
       }
     },
     mouseEnter(ev) {
@@ -773,9 +695,11 @@ export default {
     // Translates 0...3 into equally-spaced coordinates around a circle 90deg apart (0...6 and 45deg for effarig)
     effectIconPos(id) {
       // Place dots clockwise starting from the bottom left
-      const angle = this.glyph.type === "effarig"
-        ? (Math.PI / 4) * (id + 1)
-        : (Math.PI / 2) * (id + 0.5);
+      // eslint-disable-next-line max-len
+      let numOfEffects = GlyphInfo[this.glyph.type].effects().length;
+      if (numOfEffects > 6) numOfEffects += 1;
+      // Take the smallest power of 2, greater than the number of effects
+      const angle = (Math.PI / (numOfEffects / 2)) * (parseInt(id, 10) + (numOfEffects / 8));
       const scale = 0.28 * this.size.replace("rem", "");
       const dx = -scale * Math.sin(angle);
       const dy = scale * (Math.cos(angle) + 0.15);
@@ -800,6 +724,7 @@ export default {
       let borderAttrs;
       if (this.isCursedGlyph) borderAttrs = rarityBorderStyles.cursed;
       else if (this.isCompanionGlyph) borderAttrs = rarityBorderStyles.companion;
+      else if (rarityBorderStyles[getRarity(this.glyph.strength).name.toLowerCase()] === undefined) return null;
       else borderAttrs = rarityBorderStyles[getRarity(this.glyph.strength).name.toLowerCase()];
       const lines = borderAttrs.map(attr => generateGradient(attr, this.borderColor, this.glyph, this.circular));
 
@@ -836,7 +761,7 @@ export default {
       {{ symbol }}
       <template v-if="$viewModel.shiftDown || showGlyphEffectDots">
         <div
-          v-for="x in glyphEffects"
+          v-for="x in Object.keys(glyphEffects)"
           :key="x"
           :style="glyphEffectDots(x)"
         />

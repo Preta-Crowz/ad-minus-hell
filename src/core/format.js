@@ -1,17 +1,40 @@
+import { isDecimal } from "../utility/type-check";
+
 function isEND() {
-  const threshold = GameEnd.endState > END_STATE_MARKERS.END_NUMBERS
+  const threshold = GameEnd.endState >= END_STATE_MARKERS.END_NUMBERS
     ? 1
     : (GameEnd.endState - END_STATE_MARKERS.FADE_AWAY) / 2;
   // Using the Pelle.isDoomed getter here causes this to not update properly after a game restart
   return player.celestials.pelle.doomed && Math.random() < threshold;
 }
 
+function invertOOM(x){
+  let e = x.log10().floor();
+  let m = x.div(Decimal.pow(10, e));
+  e = e.neg();
+  x = new Decimal(10).pow(e).times(m);
+
+  return x
+}
+
+window.formatSmall = function formatSmall(value, places = 2, placesUnder1000 = 3) {
+  if (isEND()) return "END";
+  // eslint-disable-next-line no-param-reassign 
+  if (!isDecimal(value)) value = new Decimal(value);
+  if(value.gte(1)) return format(value, places, placesUnder1000);
+
+  if(value.gte(0.01)) return format(value, 3, 3);
+  value = invertOOM(value);
+  const val = Notation.scientific.format(value, places, placesUnder1000);
+  return val.replace(/([^(?:e|F| )]*)$/, '-$1');
+};
+
 window.format = function format(value, places = 0, placesUnder1000 = 0) {
   if (isEND()) return "END";
-  if (!(value instanceof Decimal)) value = new Decimal(value);
-  if (!Decimal.isFinite(value)) return value.toString();
-  if (value.lt("e9e15")) return Notations.current.format(value, places, placesUnder1000, 3);
-  return LNotations.current.formatLDecimal(value, 3);
+  // eslint-disable-next-line no-param-reassign
+  if (!isDecimal(value)) value = new Decimal(value);
+  if (value.lt("ee100")) return Notations.current.format(value, places, placesUnder1000, 3);
+  return LNotations.current.formatLDecimal(value, places);
 };
 
 window.formatInt = function formatInt(value) {
@@ -21,7 +44,11 @@ window.formatInt = function formatInt(value) {
   if (Notations.current.isPainful && Notations.current.name !== "Standard") {
     return format(value, 2);
   }
-  return formatWithCommas(typeof value === "number" ? value.toFixed(0) : value.toNumber().toFixed(0));
+  if (typeof value === "number") {
+    return value > 1e9 ? format(value, 2, 2) : formatWithCommas(value.toFixed(0));
+  }
+  return (!(value instanceof Decimal) || value.lt(1e9))
+    ? formatWithCommas(value instanceof Decimal ? value.toNumber().toFixed(0) : 1) : format(value, 2, 2);
 };
 
 window.formatFloat = function formatFloat(value, digits) {
@@ -60,7 +87,7 @@ window.formatPostBreak = function formatPostBreak(value, places, placesUnder1000
   }
 
   if (decimal.layer >= 2) {
-    return lNotation.formatLDecimal(decimal, 3);
+    return lNotation.formatLDecimal(decimal, places);
   }
 
   return decimal.sign < 0
@@ -77,22 +104,23 @@ window.formatPow = function formatPow(value, places, placesUnder1000) {
 };
 
 window.formatPercents = function formatPercents(value, places) {
-  return `${format(value * 100, 2, places)}%`;
+  return `${format(Decimal.mul(value, 100), 2, places)}%`;
 };
 
 window.formatDecimalPercents = function formatDecimalPercents(value, places) {
-  return `${format(value.times(100), 2, places)}%`;
+  return `${format(new Decimal(value).times(100), 2, places)}%`;
 };
 
 window.formatRarity = function formatRarity(value) {
   // We can, annoyingly, have rounding error here, so even though only rarities
   // are passed in, we can't trust our input to always be some integer divided by 10.
-  const places = value.toFixed(1).endsWith(".0") ? 0 : 1;
+  if(!isDecimal(value)) value = new Decimal(value);
+  const places = value.mod(1).eq(0) ? 0 : 1;
   return `${format(value, 2, places)}%`;
 };
 
 // We assume 2/0, 2/2 decimal places to keep parameter count sensible; this is used very rarely
-window.formatMachines = function formatMachines(realPart, imagPart, dualPart) {
+window.formatMachines = function formatMachines(realPart, imagPart, dualPart = 0) {
   if (isEND()) return "END";
   const parts = [];
   if (Decimal.neq(realPart, 0)) parts.push(format(realPart, 2));
@@ -114,14 +142,61 @@ window.formatHybridLarge = function formatHybridLarge(value, places, placesUnder
   return `${formatInt(value)}`;
 };
 
-window.formatHybridFloat = function formatHybridFloat(value, digits) {
-  if (new Decimal(value).gt(1e12)) return `${format(value, 3, 0)}`;
-  return `${formatFloat(value, digits)}`;
-};
-
 window.formatDimboostParts = function formatDimboostParts(value, places, placesUnder1000) {
   return formatHybridLarge(value, 3, 0);
 };
+
+window.formatTet = function formatTet(value, places, placesUnder1000) {
+  return `^^${format(value, places, placesUnder1000)}`;
+};
+
+window.formatEffectPos = function formatEffectPos(effect, effectedValue, tet = true) {
+  if (effect.lt(1000)) {
+    // eslint-disable-next-line prefer-template
+    return formatInt(effect, 2, 4) + "%";
+  }
+  if (effect.lt("1e100000") || effectedValue.lt(2)) {
+    return formatX(effect, 2, 2);
+  }
+  if ((effect.lt("10^^100") && tet || effect.lt("10^^4")) || effectedValue.lt(10)) {
+    return formatPow(effect.log10(), 2, 2);
+  }
+  if (tet) {
+    // Not perfect, but idc
+    return formatTet(value.slog(10), 2, 2);
+  }
+  val = new Decimal(effect);
+  val.layer = 1;
+  // eslint-disable-next-line prefer-template
+  return formatInt(effect.slog().sub(1).floor().toNumber()) + "th Expo " + formatPow(val, 2, 2);
+};
+
+// Does not take negative numbers fyi, just ints between 0-1 (excluding)
+window.formatEffectNeg = function formatEffectNeg(effect, effectedValue) {
+  if (effect.gt(0.001)) {
+    // eslint-disable-next-line prefer-template
+    return formatInt(effect, 2, 4) + "%";
+  }
+  if (effect.lt("1e100000") || effectedValue.lt(2)) {
+    // eslint-disable-next-line prefer-template
+    return "/" + format(effect.recip(), 2, 2);
+  }
+  if (effect.recip().lt("10^^4") || effectedValue.lt(10)) {
+    return formatPow(effect.log10(), 2, 2);
+  }
+  val = new Decimal(effect);
+  val.layer = 1;
+  // eslint-disable-next-line prefer-template
+  return formatInt(Math.floor(effect.recip().slog().toNumber() - 1)) + "th Expo " + formatPow(val, 2, 2);
+};
+
+window.formatEffectAuto = function formatEffectAuto(value, effectedValue) {
+  if (value.gt(1)) {
+    return formatEffectPos(value, effectedValue);
+  }
+  return formatEffectNeg(value, effectedValue, false);
+};
+
 
 window.timeDisplay = function timeDisplay(ms) {
   return TimeSpan.fromMilliseconds(ms).toString();
@@ -142,17 +217,6 @@ window.formatWithCommas = function formatWithCommas(value) {
   return decimalPointSplit.join(".");
 };
 
-/**
- * Check if a number or Decimal is equal to 1.
- * @param  {number|Decimal} amount
- * @return {Boolean} - if the {amount} was equal to 1.
- */
-window.isSingular = function isSingular(amount) {
-  if (typeof amount === "number") return amount === 1;
-  if (amount instanceof Decimal) return amount.eq(1);
-  throw `Amount must be either a number or Decimal. Instead, amount was ${amount}`;
-};
-
 // Some letters in the english language pluralize in a different manner than simply adding an 's' to the end.
 // As such, the regex match should be placed in the first location, followed by the desired string it
 // should be replaced with. Note that $ refers to the EndOfLine for regex, and should be included if the plural occurs
@@ -169,14 +233,13 @@ const PLURAL_HELPER = new Map([
 const pluralDatabase = new Map([
   ["Antimatter", "Antimatter"],
   ["Dilated Time", "Dilated Time"],
-  ["Celestial Matter", "Celestial Matter"],
-  ["Divine Matter", "Divine Matter"],
-  ["Divine Energy", "Divine Energy"],
-  ["Supernova", "Supernovae"],
-  ["Nebula", "Nebulae"],
-  ["Null Matter", "Null Matter"],
-  ["Hawking Radiation", "Hawking Radiation"],
-  ["Thermal Radiation", "Thermal Radiation"]
+  ["Meta Relay", "Meta Relays"],
+  ["Artificial Matter", "Artificial Matter"],
+  ["Chaotic Matter", "Chaotic Matter"],
+  ["Abyssal Matter", "Abyssal Matter"],
+  ["Corrupt Matter", "Corrupt Matter"],
+  ["Challengers Essence", "Challengers Essence"],
+  ["Rift Force", "Rift Force"],
 ]);
 
 /**
@@ -190,7 +253,7 @@ const pluralDatabase = new Map([
 window.pluralize = function pluralize(word, amount, plural) {
   if (word === undefined || amount === undefined) throw "Arguments must be defined";
 
-  if (isSingular(amount)) return word;
+  if (Decimal.eq(amount, 1)) return word;
   const existingPlural = plural ?? pluralDatabase.get(word);
   if (existingPlural !== undefined) return existingPlural;
 
@@ -245,34 +308,6 @@ window.quantifyInt = function quantifyInt(name, value) {
 };
 
 /**
- * Returns the value formatted to formatHybridSmall followed by a name, pluralized based on the value input.
- * @param  {string} name                  - name to pluralize and display after {value}
- * @param  {number|Decimal} value         - number to format
- * @return {string} - the formatted {value} followed by the {name} after having been pluralized based on the {value}
- */
-window.quantifyHybridSmall = function quantifyHybridSmall(name, value) {
-  if (name === undefined || value === undefined) throw "Arguments must be defined";
-
-  const number = formatHybridSmall(value, 3);
-  const plural = pluralize(name, value);
-  return `${number} ${plural}`;
-};
-
-/**
- * Returns the value formatted to formatHybridLarge followed by a name, pluralized based on the value input.
- * @param  {string} name                  - name to pluralize and display after {value}
- * @param  {number|Decimal} value         - number to format
- * @return {string} - the formatted {value} followed by the {name} after having been pluralized based on the {value}
- */
-window.quantifyHybridLarge = function quantifyHybridLarge(name, value) {
-  if (name === undefined || value === undefined) throw "Arguments must be defined";
-
-  const number = formatHybridLarge(value, 3);
-  const plural = pluralize(name, value);
-  return `${number} ${plural}`;
-};
-
-/**
  * Creates an enumated string, using the oxford comma, such that "a"; "a and b"; "a, b, and c"
  * @param  {string[]} items - an array of items to enumerate
  * @return {string} - a string of {items}, separated by commas and/or and as needed.
@@ -284,4 +319,13 @@ window.makeEnumeration = function makeEnumeration(items) {
   const commaSeparated = items.slice(0, items.length - 1).join(", ");
   const last = items[items.length - 1];
   return `${commaSeparated}, and ${last}`;
+};
+
+window.makeEnumerationOR = function makeEnumeration(items) {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} or ${items[1]}`;
+  const commaSeparated = items.slice(0, items.length - 1).join(", ");
+  const last = items[items.length - 1];
+  return `${commaSeparated}, or ${last}`;
 };

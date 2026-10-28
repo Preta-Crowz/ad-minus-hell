@@ -166,6 +166,7 @@ export function decimalMigration(player) {
   player.celestials.laitela.lastCheckedMilestones = new Decimal(player.celestials.laitela.lastCheckedMilestones);
   player.celestials.pelle.remnants = new Decimal(player.celestials.pelle.remnants);
   player.celestials.pelle.realityShards = new Decimal(player.celestials.pelle.realityShards);
+  player.celestials.pelle.rebuyables.galaxyGeneratorRSMult = new Decimal(player.celestials.pelle.rebuyables.galaxyGeneratorRSMult ?? 0);
   player.celestials.pelle.records.totalAntimatter = new Decimal(player.celestials.pelle.records.totalAntimatter);
   player.celestials.pelle.records.totalInfinityPoints = new Decimal(player.celestials.pelle.records.totalInfinityPoints);
   player.celestials.pelle.records.totalEternityPoints = new Decimal(player.celestials.pelle.records.totalEternityPoints);
@@ -175,4 +176,8 @@ export function decimalMigration(player) {
   player.celestials.pelle.rifts.paradox.fill = new Decimal(player.celestials.pelle.rifts.paradox.fill);
   player.celestials.pelle.galaxyGenerator.spentGalaxies = new Decimal(player.celestials.pelle.galaxyGenerator.spentGalaxies);
   player.celestials.pelle.galaxyGenerator.generatedGalaxies = new Decimal(player.celestials.pelle.galaxyGenerator.generatedGalaxies);
+  player.celestials.pelle.galaxyGenerator.unspentGalaxies = new Decimal(
+    player.celestials.pelle.galaxyGenerator.unspentGalaxies ??
+      player.celestials.pelle.galaxyGenerator.generatedGalaxies.sub(player.celestials.pelle.galaxyGenerator.spentGalaxies)
+  ).max(0);
 }

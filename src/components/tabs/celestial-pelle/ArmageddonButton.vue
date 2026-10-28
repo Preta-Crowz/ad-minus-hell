@@ -36,10 +36,11 @@ export default {
       this.realityShardGain.copyFrom(Pelle.realityShardGainPerSecond);
       this.nextRealityShardGain.copyFrom(Pelle.nextRealityShardGain);
       this.canArmageddon = Pelle.canArmageddon;
+
     },
     manualArmageddon() {
+      if (Pelle.isDoomed) return Pelle.armageddon(true);
       if (!this.canArmageddon) return;
-
       if (player.options.confirmations.armageddon) Modal.armageddon.show();
       else Pelle.armageddon(true);
     }
@@ -53,6 +54,7 @@ export default {
     @click="manualArmageddon"
   >
     <span v-if="isHeader">You cannot escape a Doomed Reality!<br></span>
+
     <span class="c-remnant-gain-display">
       Armageddon for
       <span class="c-remnant-gain">{{ remnants }}</span>
@@ -87,7 +89,7 @@ export default {
 .l-armageddon-button--header {
   font-size: 1rem;
   font-weight: bold;
-  padding: 0rem;
+  padding: 0;
 }
 
 .c-armageddon-button:hover {

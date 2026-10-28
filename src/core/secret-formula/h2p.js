@@ -1,3 +1,6 @@
+/* eslint-disable max-len */
+import { DC } from "../constants";
+
 import { credits } from "@/core/secret-formula/credits";
 
 export const h2p = {
@@ -245,10 +248,19 @@ ${PlayerProgress.realityUnlocked() ? "- <b>BH</b>: Black Hole<br>" : ""}
 ${MachineHandler.isIMUnlocked ? "- <b>iM</b>: Imaginary Machine<br>" : ""}
 ${Laitela.isUnlocked ? "- <b>DM</b>: Dark Matter<br>" : ""}
 ${Laitela.isUnlocked ? "- <b>DE</b>: Dark Energy<br>" : ""}
+
+${Glitch.isUnlocked ? "- <b>RF</b>: Rift Force<br>" : ""}
+${GlitchSpeedUpgrade(4).isBought ? "- <b>CC</b>: Chaos Cores<br>" : ""}
+${Cante.isUnlocked ? "- <b>ArtM</b>: Artificial Matter<br>" : ""}
+${player.celestials.cante.purges > 0 ? "- <b>CM</b>: Chaotic Matter<br>" : ""}
+${Null.isUnlocked > 0 ? "- <b>AbM</b>: Abssal Matter<br>" : ""}
+${player.celestials.null.corrupts > 0 ? "- <b>CoM</b>: Corrupt Matter<br>" : ""}
+
+
 `,
       isUnlocked: () => true,
       tags: ["abbreviation", "shorten", "am", "ad", "ag", "ip", "nc", "ic", "id", "rg", "ep", "tt", "td", "ec", "tp",
-        "dt", "tg", "rm", "ap", "bh", "im", "dm", "de"],
+        "dt", "tg", "rm", "ap", "bh", "im", "dm", "de", 'artm', 'cm', 'abm', 'com'],
       tab: ""
     }, {
       name: "Antimatter Dimensions",
@@ -438,7 +450,10 @@ Dimensions, Dimension Boosts, and your Antimatter Galaxies. Doing a Big Crunch i
 <br>
 <br>
 You will eventually be able to pass ${formatPostBreak(Number.MAX_VALUE, 6)}, but until then any larger numbers will
-display as ${format(Infinity)}.
+display as Infinity.
+<br>
+Very large number display as ${format(new Decimal('F3.50195'))}.<br>
+Very small number display as ${formatSmall(0.005)} (0.005), ${formatSmall(0.0005)} (0.0005).
 <br>
 <br>
 Each Infinity completed will give an Infinity Point, which can be spent on upgrades in the new Infinity tab.
@@ -578,7 +593,7 @@ applied depends on which Infinity Dimension you purchase. <!-- Sorry Garnet :/ -
 <br>
 <br>
 <b>Infinity Dimension Production:</b> Just like Antimatter Dimensions, each Infinity Dimension produces the
-next lower Infinity Dimension.
+next highest Infinity Dimension.
 <br>
 <br>
 Every crunch, your produced Infinity Dimensions are reset to the amount you purchased. While the production
@@ -901,7 +916,7 @@ would otherwise be able to complete the Reality normally.</b>
 <br>
 <br>
 You need to redo the requirements for each Achievement in order to get their rewards again, but you will also passively
-unlock the next incomplete Achievement every ${timeDisplayNoDecimals(new Decimal(30 * 60000))} without any effort even if you
+unlock the next incomplete Achievement every ${timeDisplayNoDecimals(30 * 60000)} without any effort even if you
 otherwise do not have the requirements to do so. This automatic completion can be disabled, in which case the timer will
 count down to zero and pause, immediately completing another Achievement when unpaused. The timer still progresses
 at the same rate while offline.
@@ -929,7 +944,7 @@ You get exactly ${formatInt(1)} Perk Point per Reality.
 <b>Hotkey: Y</b> will try to perform a Reality reset.
 `,
       isUnlocked: () => PlayerProgress.realityUnlocked() || TimeStudy.reality.isBought,
-      tags: ["rm", "machines", "glyph", "perk", "reset", "prestige", "lategame"],
+      tags: ["rm", "machines", "glyph", "perk", "reset", "prestige", "endgame", "lategame"],
       tab: "reality/upgrades"
     }, {
       name: "Glyphs",
@@ -990,7 +1005,7 @@ slightly shorter descriptions, making it more suitable for sharing with others. 
 in the Statistics page, your equipped Glyphs, and the Upcoming Glyph Selection this Reality.
 `,
       isUnlocked: () => PlayerProgress.realityUnlocked() || TimeStudy.reality.isBought,
-      tags: ["reality", "sacrifice", "level", "lategame"],
+      tags: ["reality", "sacrifice", "level", "endgame", "lategame"],
       tab: "reality/glyphs"
     }, {
       name: "Perks",
@@ -1010,7 +1025,7 @@ diamond-shaped Perks give Automator Points in addition to their normal effect. D
 different colors, roughly indicating which part of the game they affect the most.
 `,
       isUnlocked: () => PlayerProgress.realityUnlocked() || TimeStudy.reality.isBought,
-      tags: ["pp", "reality", "tree", "lategame"],
+      tags: ["pp", "reality", "tree", "endgame", "lategame"],
       tab: "reality/perks"
     }, {
       name: "Automator Overview",
@@ -1048,7 +1063,7 @@ will not be lost or overwritten.
 <b>Hotkey: U</b> will pause/unpause the Automator.
 `,
       isUnlocked: () => Player.automatorUnlocked,
-      tags: ["automation", "reality", "code", "script", "lategame"],
+      tags: ["automation", "reality", "code", "script", "endgame", "lategame"],
       tab: "automation/automator"
     }, {
       name: "Automator Technical Details",
@@ -1104,7 +1119,7 @@ behavior while offline, depending on how exactly your script depends on the game
 Additionally, the PAUSE command may behave oddly due to it also being based on real time.
 `,
       isUnlocked: () => Player.automatorUnlocked,
-      tags: ["automation", "reality", "code", "script", "lategame"],
+      tags: ["automation", "reality", "code", "script", "endgame", "lategame"],
       tab: "automation/automator"
     }, {
       name: "Black Hole",
@@ -1191,15 +1206,13 @@ but the same cost multipliers.
 <b>Hotkey: B</b> will pause/unpause the Black Holes.
 `,
       isUnlocked: () => player.blackHole[0].unlocked,
-      tags: ["reality", "time", "speed", "duration", "interval", "rm", "lategame"],
+      tags: ["reality", "time", "speed", "duration", "interval", "rm", "endgame", "lategame"],
       tab: "reality/hole"
     }, {
       name: "Celestials",
       info: () => `
 Once you get all of the Reality Upgrades, the first Celestial is unlocked. This opens up a new tab for Celestials, next
-to the Reality tab. The first subtab under the Celestials tab shows a map called "Celestial Navigation" which updates as
-you progress through the game. Only part of the map will be visible when first unlocked, but new content will gradually
-be revealed as you approach it, generally with a visual indication of your progress towards the next step.
+to the Reality tab. 
 <br>
 <br>
 Each Celestial has unique mechanics and upgrades, and you need to defeat all seven to beat the game.
@@ -1214,8 +1227,7 @@ Celestials are timeless entities. Unless otherwise stated, any new mechanics int
 by game speed multipliers and instead refer specifically to real time instead of game time.
 `,
       isUnlocked: () => Teresa.isUnlocked,
-      tags: ["reality", "challenges", "lategame"],
-      tab: "celestials/celestial-navigation"
+      tags: ["reality", "challenges", "endgame", "lategame"],
     }, {
       name: "Teresa, Celestial of Reality",
       alias: "Teresa",
@@ -1242,7 +1254,7 @@ ${Teresa.runCompleted
     : "(More information available - complete Teresa's Reality)"}
 `,
       isUnlocked: () => Teresa.isUnlocked,
-      tags: ["rm", "lategame", "perks", "sacrifice", "boo", "ghost", "celestial"],
+      tags: ["rm", "endgame", "lategame", "perks", "sacrifice", "boo", "ghost", "celestial"],
       tab: "celestials/teresa"
     }, {
       name: "Effarig, Celestial of Ancient Relics",
@@ -1286,7 +1298,7 @@ ${Ra.unlocks.glyphEffectCount.canBeApplied
 <br>
 `,
       isUnlocked: () => TeresaUnlocks.effarig.canBeApplied,
-      tags: ["glyph", "sacrifice", "shards", "reality", "spectralflame", "lategame", "celestial"],
+      tags: ["glyph", "sacrifice", "shards", "reality", "spectralflame", "lategame", "endgame", "celestial"],
       tab: "celestials/effarig"
     }, {
       name: "Advanced Glyph Mechanics",
@@ -1356,7 +1368,8 @@ will always be the one equipped. Just like other groups of circular Glyphs, you 
 in order to bring up a modal summarizing the whole set of Glyphs.
 `,
       isUnlocked: () => EffarigUnlock.adjuster.isUnlocked,
-      tags: ["glyph", "weight", "adjustment", "sacrifice", "filter", "threshold", "set", "save", "reality", "lategame"],
+      tags: ["glyph", "weight", "adjustment", "sacrifice", "filter", "threshold", "set", "save", "reality", "lategame",
+        "endgame"],
       tab: "celestials/glyphfilter"
     }, {
       name: "The Nameless Ones, Celestial of Time",
@@ -1412,7 +1425,7 @@ ${Enslaved.isCompleted
 The Nameless Ones will not directly unlock the next Celestial.
 `,
       isUnlocked: () => EffarigUnlock.eternity.isUnlocked,
-      tags: ["reality", "time", "blackhole", "lategame", "testers", "celestial",
+      tags: ["reality", "time", "blackhole", "lategame", "endgame", "testers", "celestial",
         ...credits.people.map(p => p.name)
       ],
       tab: "celestials/enslaved"
@@ -1437,7 +1450,7 @@ Dimensions tab. Additionally, your current Infinity Points will now also show a 
 If affordable, the Infinity button itself will visually change and bring you to the Infinity Dimension tab when clicked.
 `,
       isUnlocked: () => Enslaved.isCompleted,
-      tags: ["reality", "lategame", "tesseract", "id", "celestial"],
+      tags: ["reality", "lategame", "endgame", "tesseract", "id", "celestial"],
       tab: "celestials/tesseract"
     }, {
       name: "V, Celestial of Achievements",
@@ -1492,7 +1505,7 @@ ${VUnlocks.vAchievementUnlock.isUnlocked
     : "<span style='color: var(--color-bad);'>(unlock V's Reality to see further details)</span>"}
 `,
       isUnlocked: () => Achievement(151).isUnlocked,
-      tags: ["reality", "lategame", "girlfriend", "challenges", "achievement", "space", "theorems",
+      tags: ["reality", "lategame", "endgame", "girlfriend", "challenges", "achievement", "space", "theorems",
         "study", "triad", "celestial"],
       tab: "celestials/v"
     }, {
@@ -1544,7 +1557,7 @@ ${Ra.unlocks.vUnlock.canBeApplied
 <br>
 Ra will not directly unlock the next Celestial.`,
       isUnlocked: () => VUnlocks.raUnlock.isUnlocked,
-      tags: ["reality", "memories", "razenpok", "levels", "glyphs", "lategame",
+      tags: ["reality", "memories", "razenpok", "levels", "glyphs", "lategame", "endgame",
         "effarig", "teresa", "nameless", "v", "celestial"],
       tab: "celestials/ra"
     }, {
@@ -1574,7 +1587,7 @@ with a higher refinement value.
 `,
       isUnlocked: () => Ra.unlocks.unlockGlyphAlchemy.canBeApplied,
       // Oh god I'm so sorry this is so many words
-      tags: ["reality", "lategame", "ra", "effarig", "alchemy", "power", "infinity", "time", "replication",
+      tags: ["reality", "lategame", "endgame", "ra", "effarig", "alchemy", "power", "infinity", "time", "replication",
         "dilation", "cardinality", "eternity", "dimensionality", "inflation", "alternation", "synergism", "momentum",
         "decoherence", "force", "exponential", "uncountability", "boundless", "unpredictability", "multiversal",
         "reaction"],
@@ -1602,7 +1615,7 @@ be applied, moving lines will be shown from all reagents to the product. If a co
 that the reaction cannot proceed due to not having enough of that reagent to get more of the product due to its cap.
 `,
       isUnlocked: () => Ra.unlocks.unlockGlyphAlchemy.canBeApplied,
-      tags: ["reality", "lategame", "ra", "effarig", "alchemy", "power", "infinity", "time", "replication",
+      tags: ["reality", "lategame", "endgame", "ra", "effarig", "alchemy", "power", "infinity", "time", "replication",
         "dilation", "cardinality", "eternity", "dimensionality", "inflation", "alternation", "synergism", "momentum",
         "decoherence", "force", "exponential", "uncountability", "boundless", "unpredictability", "multiversal",
         "reaction"],
@@ -1635,7 +1648,7 @@ modifiers to game speed.
 Imaginary Machine upgrades will unlock the final two Celestials.
 `,
       isUnlocked: () => MachineHandler.isIMUnlocked,
-      tags: ["imaginary", "machines", "reality", "lategame"],
+      tags: ["imaginary", "machines", "reality", "lategame", "endgame"],
       tab: "reality/imag_upgrades"
     }, {
       name: "Lai'tela, Celestial of Dimensions",
@@ -1684,7 +1697,7 @@ to Dark Energy gain.
 Lai'tela will not directly unlock the next Celestial.
 `,
       isUnlocked: () => Laitela.isUnlocked,
-      tags: ["omsi", "reality", "dark", "matter", "dimensions", "lategame", "ascend", "celestial"],
+      tags: ["omsi", "reality", "dark", "matter", "dimensions", "lategame", "endgame", "ascend", "celestial"],
       tab: "celestials/laitela"
     }, {
       name: "Continuum",
@@ -1711,7 +1724,7 @@ so all the related autobuyer settings for these autobuyers are now hidden on tha
       // Apparently continuumUnlocked is really important in a lot of places and if we keep it unlocked
       // Things break, so we check for the iMU instead.
       isUnlocked: () => ImaginaryUpgrade(15).isBought,
-      tags: ["continuum", "purchase", "reality", "lategame"],
+      tags: ["continuum", "purchase", "reality", "lategame", "endgame"],
       tab: ""
     }, {
       name: "Singularities",
@@ -1746,7 +1759,7 @@ Independently of the milestone type, milestones also have an icon indicating wha
 <i class="fas fa-compress-arrows-alt"></i> These milestones improve Lai'tela based on something outside of Lai'tela
 `,
       isUnlocked: () => Laitela.isUnlocked,
-      tags: ["reality", "lategame", "laitela", "dark"],
+      tags: ["reality", "lategame", "endgame", "laitela", "dark"],
       tab: ""
     }, {
       name: "Pelle, Celestial of Antimatter",
@@ -1790,64 +1803,151 @@ ${Pelle.isDoomed
 }
 `,
       isUnlocked: () => Pelle.isUnlocked,
-      tags: ["reality", "antimatter", "lategame", "final", "hevipelle", "celestial", "doom"],
+      tags: ["reality", "antimatter", "lategame", "endgame", "final", "hevipelle", "celestial", "doom"],
       tab: "celestials/pelle"
     }, {
       name: "Pelle Strikes",
       info: () => `
-Pelle Strikes are encountered on different events in the Doomed Reality. You have encountered the first Pelle Strike by
-reaching Infinity for the first time within a Doomed Reality. More Strikes eventually occur by further progression.
-Each Pelle Strike adds a nerf to a specific aspect of the game, which can be seen by clicking on the Strike name.
-Each Pelle Strike also unlocks a Rift bar.
-<br>
-<br>
-Rift bars can be filled by clicking them to toggle between "Idle" and "Filling", although only two Rifts can be
-"Filling" at any given time. When active, Rifts consume ${formatInt(3)}% of a Rift-specific resource per second. Each
-Rift offers a Rift-specific effect which are based on the total amount filled.
-${PelleStrikes.eternity.hasStrike
-    ? `An exception for this is Decay/Collapse/Disarray, whose effect gets capped once you have drained a total of
-    ${formatPostBreak(DC.E2000)} Replicanti.`
-    : ""}
-In addition, each Rift offers three milestone rewards for filling them up to a certain percentage.
+        Pelle Strikes are encountered on different events in the Doomed Reality. You have encountered the first Pelle Strike by
+        reaching Infinity for the first time within a Doomed Reality. More Strikes eventually occur by further progression.
+        Each Pelle Strike adds a nerf to a specific aspect of the game, which can be seen by clicking on the Strike name.
+        Each Pelle Strike also unlocks a Rift bar.
+        <br>
+        <br>
+        Rift bars can be filled by clicking them to toggle between "Idle" and "Filling", although only two Rifts can be
+        "Filling" at any given time. When active, Rifts consume ${formatInt(3)}% of a Rift-specific resource per second. Each
+        Rift offers a Rift-specific effect which are based on the total amount filled.
+        ${PelleStrikes.eternity.hasStrike
+            ? `An exception for this is Decay/Collapse/Disarray, whose effect gets capped once you have drained a total of
+            ${formatPostBreak(DC.E2000)} Replicanti.`
+            : ""}
+        In addition, each Rift offers three milestone rewards for filling them up to a certain percentage.
 `,
       isUnlocked: () => PelleStrikes.infinity.hasStrike,
-      tags: ["reality", "antimatter", "lategame", "final", "pelle", "strike", "rift", "celestial"],
+      tags: ["reality", "antimatter", "lategame", "endgame", "final", "pelle", "strike", "rift", "celestial"],
       tab: "celestials/pelle"
     }, {
       name: "The Galaxy Generator",
       info: () => `
-When you reach ${formatInt(100)}% Recursion/Dispersion/Destruction, you unlock the <b>Galaxy Generator</b>, which can
-passively generate Galaxies. Generated Galaxies are like Replicanti Galaxies and Tachyon Galaxies in that they affect
-tickspeed as if they were Antimatter Galaxies, but they do not increase the cost of your next Antimatter Galaxy. You
-also unlock five new upgrades. The first upgrade increases the base amount of Galaxies generated. The other four
-upgrades then give a multiplier to this base amount. The first two upgrades can be bought by spending antimatter and
-Generated Galaxies. Replicanti or Tachyon Galaxies cannot be spent for purchasing those upgrades.
-<br>
-<br>
-The <b>Galaxy Generator</b> has a maximum number of Galaxies it can generate, which can only be increased by draining
-Rifts once the current cap has been reached.`,
+        When you reach ${formatInt(100)}% Recursion/Dispersion/Destruction, you unlock the <b>Galaxy Generator</b>, which can
+        passively generate Galaxies. Generated Galaxies are like Replicanti Galaxies and Tachyon Galaxies in that they affect
+        tickspeed as if they were Antimatter Galaxies, but they do not increase the cost of your next Antimatter Galaxy. You
+        also unlock five new upgrades. The first upgrade increases the base amount of Galaxies generated. The other four
+        upgrades then give a multiplier to this base amount. The first two upgrades can be bought by spending antimatter and
+        Generated Galaxies. Replicanti or Tachyon Galaxies cannot be spent for purchasing those upgrades.
+        <br>
+        <br>
+        The <b>Galaxy Generator</b> has a maximum number of Galaxies it can generate, which can only be increased by draining
+        Rifts once the current cap has been reached.`,
       isUnlocked: () => Pelle.hasGalaxyGenerator,
-      tags: ["reality", "antimatter", "lategame", "final", "pelle", "galaxy",
+      tags: ["reality", "antimatter", "lategame", "endgame", "final", "pelle", "galaxy",
         "galaxies", "generator", "celestial"],
       tab: "celestials/pelle"
     }, {
-      name: "Endgame",
+      name: "Glitch Challenges",
+      tags: ["Glitch", "Challenges", "Celestial", "Rifts"],
+      tab: "glitch/entropy",
+      isUnlocked: () => true,
       info: () => `
-After reaching ${format(DC.E9E15)} antimatter in the Doomed Reality, you will be able to do an <b>Endgame</b>.
-This resets everything except things under the General tab in Statistics, Achievements in rows ${formatInt(19)}+,
-and challenge times. You will get one Endgame for performing an Endgame reset. Endgames grant milestones to make
-the game faster and easier, both outside and inside the Doomed Reality.
-<br>
-<br>
-After performing an <b>Endgame</b>, you will get two different resources: Celestial Points and Doomed Particles.
-Celestial Points are used for purchasing Celestial Dimensions, and Doomed Particles are for nerfing the Doomed Reality
-and re-enabling things inside of it. You will eventually be able to pass ${format(DC.E9E15)} antimatter,
-but for now it is impossible.
+      Glitch's Challenges prove you can handle <i>his</i> Reality. <br>
+      Some of Glitch's Challenges can only be completed at certain parts of the game, so try to get them soon. <br>
+      Glitch will warn you if you will be locked out of completing a Challenge which can be disabled in confirmations. <br>
+      
+      Completing a Challenge also fills a Rift with Entropy, which unlock more Rewards. <br>
+      Completing all of the Challenges unlocks Glitch, The Celestial of Programing. <br>
 `,
-      isUnlocked: () => PlayerProgress.endgameUnlocked(),
-      tags: ["endgame", "cp", "celp", "dp", "points", "particles", "end", "reset", "prestige", "enter",
-        "simulation", "supersonic", "seven"],
-      tab: "endgame/endgame"
+    }, {
+      name: "Meta",
+      alias: "Meta Reset",
+      tags: ["Glitch", "Meta", "Celestial", "EXV", "EX-V", "VEX", "V-EX"],
+      tab: "meta/metaFabricator",
+      isUnlocked: () => PlayerProgress.metaUnlocked(),
+      info: () => `
+      Meta is a reset for making the Meta Fabricator once complete you will be able to enter the Meta realm.<br><br>
+      
+      The Fabricator has 5 rebuyable upgrades and 20 single purchase. <br>
+      There are also milestone 4 for Metas and 4 for speed. <br>
+
+      Going Meta will reset Celestials and Achivements along with all of Reality.
+      `,
+    },{
+      name: "Cante",
+      tags: ["Cante", "Recplicanor", "Celestial", "Artificial Matter", "Chaotic Matter"],
+      tab: "meta/CanteTab",
+      isUnlocked: () => Cante.isUnlocked,
+      info: () => `
+      Cante is unlocked via Ra at level 150. <br>
+      Replicators have requierments but will stay unlokced. <br>
+      The Replicator muliplier is how much is added <b>not</b> multiplied. <br>
+      Cante has Replicators with can be reforged to make Artificial Matter. <br>
+      Artificial Matter is used to make replicators faster and buy upgrades. <br>
+      <br>
+      ${ Cante.purged ?
+        `Purging is like reforgeing but you get Chaotic Matter instead. <br>
+        Chaotic Matter boost every Replicators base and per purchase multiplier. <br>
+        Chaotic Matter is only used for buying upgrades. <br>` : ''
+      }
+      `,
+    },{
+      name: "Null",
+      tags: ["Null", "Cycle", "Dark Circles", "Abyssal Matter"],
+      tab: "meta/NullTab",
+      isUnlocked: () => Ra.unlocks.nullUnlock.isUnlocked,
+      info: () => `
+      Null is unlocked via Ra at level 150. <br>
+      To start Null you need a passcode which he says, you may have to remove some words. <br>
+
+      Null has Cycles, the last one makes Abyssal Matter and the 1st Cycle. <br>
+      Abyssal Matter is used to make Cycles faster and buy upgrades <br>
+
+      Each Cycle's multipler deceases based on how much you have. <br>
+      <br>
+      ${ Null.isCorrupt ?
+        `Corrupt is like Parallax. <br>
+        Corrupts generate Corrupt Matter based on the highest unlocked Cycle. <br>
+        Corrupt Matter is only used for buying upgrades. <br>` : ''
+      }
+
+      `,
+    }, {
+      name: "Mod",
+      alias: "Mod",
+      tags: ["Glitch", "Challenges", "Celestial", "Mod"],
+      isUnlocked: () => true,
+      info: () => `
+      This Mod changes: <br>
+      Four Achievement info, unlock requirements and two Rewards. <br>
+
+      Lower EC1 eternity requirement. <br>
+
+      Teresa RM pouring cap and pouring speed. <br>
+      V Achievement requirements and for Unlocking V. <br>
+      Ra memory level cap. <br>
+      Alchemy cap. <br>
+      One Pelle Quote. <br>
+      End tab names. <br>
+      End Game. <br>
+      <br>
+      And Adds: <br>
+      New Teresa pouring Milestone. <br>
+      New Effarig upgrade. <br>
+      New Hard V Achievement. <br>
+      <br>
+      <br>
+      QOL: <br>
+      Buy max AD Autobuyer upgrades. <br>
+      Toggle ADs buy max. <br>
+      Sticky Header for modern UI, The Prestige buttons and Currencys will scroll down with you. <br>
+      Complete ECs based on the amount of EP that you would have needed to complete that Challenge. <br>
+      Time study Export, Respec and Import are added to the side of the Time Theorem shop. <br>
+      Shift clicking some rebuyable upgrades bulk buys 25. <br>
+      Shift clicking the Infinity Prestige button will buy a Tesseract without switching tabs. <br>
+      STD coins are gained over time at one per 2.5 minutes. <br>
+      <br>
+      Other: <br>
+      News ticker speed can go upto 1000%. <br>
+      One secret theme for each vanilla Celestial. <br>
+      `,
     }
   ]
 };

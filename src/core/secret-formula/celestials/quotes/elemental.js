@@ -416,7 +416,7 @@ export const elementalQuotes = {
   },
   initial: {
     id: 3,
-    requirement: () => player.endgames >= 1,
+    requirement: () => player.endgames.gte(1),
     lines: [
       "So...",
       "They found it.",

@@ -1,3 +1,5 @@
+import { DC } from "../../../constants";
+
 function rebuyable(config) {
   const effectFunction = config.effect || (x => x);
   const { id, maxUpgrades, description, isDisabled, noLabel, onPurchased, isDecimal } = config;

@@ -40,7 +40,13 @@ export const GameSaveSerializer = {
   // confuse your saves with AD saves but can still import AD saves (this will
   // also require changing some other code slightly, particularly decode).
   startingString: {
-    savefile: "AntimatterDimensionsEndgameSavefileFormat",
+    savefile: "AntimatterDimensionsVSavefileFormat",
+    "automator script": "AntimatterDimensionsVAutomatorScriptFormat",
+    "automator data": "AntimatterDimensionsVAutomatorDataFormat",
+    "glyph filter": "AntimatterDimensionsVGlyphFilterFormat",
+  },
+  oldStartingString: {
+    savefile: "AntimatterDimensionsSavefileFormat",
     "automator script": "AntimatterDimensionsAutomatorScriptFormat",
     "automator data": "AntimatterDimensionsAutomatorDataFormat",
     "glyph filter": "AntimatterDimensionsGlyphFilterFormat",
@@ -55,7 +61,7 @@ export const GameSaveSerializer = {
   // This should always be three characters long, and should ideally go AAA, AAB, AAC, etc.
   // so that we can do inequality tests on it to compare versions (though skipping a version
   // shouldn't be a problem).
-  version: "AAB",
+  version: "AAC",
   // Steps are given in encoding order.
   // Export and cloud save use the same steps because the maximum ~15% saving
   // from having them be different seems not to be worth it.
@@ -102,9 +108,16 @@ export const GameSaveSerializer = {
     // and whether it's a save or automator script. We can change the last 3 letters
     // of the string savefiles start with from AAA to something else,
     // if we want a new version of savefile encoding.
+    if(version == 'AAC'){
+      return this.steps.filter(i => (!i.condition) || i.condition(version)).concat({
+        encode: x => `${GameSaveSerializer.startingString[type] + GameSaveSerializer.version}${x}`,
+        decode: x => x.slice(GameSaveSerializer.startingString[type].length + 3)
+      });
+    }
+
     return this.steps.filter(i => (!i.condition) || i.condition(version)).concat({
-      encode: x => `${GameSaveSerializer.startingString[type] + GameSaveSerializer.version}${x}`,
-      decode: x => x.slice(GameSaveSerializer.startingString[type].length + 3)
+      encode: x => `${GameSaveSerializer.oldStartingString[type] + GameSaveSerializer.version}${x}`,
+      decode: x => x.slice(GameSaveSerializer.oldStartingString[type].length + 3)
     });
   },
   // Apply each step's encode function in encoding order.
@@ -122,11 +135,12 @@ export const GameSaveSerializer = {
   // old automator scripts (where this function is also used) are very unlikely
   // to start with our magic string because it is longer than a few characters.
   decodeText(text, type) {
-    if (text.startsWith("AntimatterDimensionsSavefileFormat")) {
-      text = text.replace("AntimatterDimensionsSavefileFormat", "AntimatterDimensionsEndgameSavefileFormat");
-    }
     if (text.startsWith(this.startingString[type])) {
       const len = this.startingString[type].length;
+      const version = text.slice(len, len + 3);
+      return this.getSteps(type, version).reduceRight((x, step) => step.decode(x, type), text);
+    } else if(text.startsWith(this.oldStartingString[type])){
+      const len = this.oldStartingString[type].length;
       const version = text.slice(len, len + 3);
       return this.getSteps(type, version).reduceRight((x, step) => step.decode(x, type), text);
     }

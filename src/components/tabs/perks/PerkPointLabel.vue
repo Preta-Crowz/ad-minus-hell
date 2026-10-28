@@ -8,10 +8,10 @@ export default {
   },
   data() {
     return {
-      pp: new Decimal(0),
+      pp: new Decimal(),
       treeLayout: 0,
       physicsEnabled: false,
-      physicsOverride: false,
+      physicsOverride: false
     };
   },
   computed: {
@@ -21,6 +21,9 @@ export default {
     physicsText() {
       const enableStr = (this.physicsOverride ?? this.physicsEnabled) ? "Enabled" : "Disabled";
       return `${enableStr}${this.physicsOverride === undefined ? "" : " (fixed)"}`;
+    },
+    canUnlockAll() {
+      return this.pp.gte(1) && Perks.all.some(perk => perk.canBeBought);
     }
   },
   created() {
@@ -63,6 +66,12 @@ export default {
       PerkNetwork.currentLayout = PerkLayouts[this.treeLayout];
       PerkNetwork.setPhysics(player.options.perkPhysicsEnabled);
       PerkNetwork.moveToDefaultLayoutPositions(this.treeLayout);
+    },
+    unlockAll() {
+      if (!this.canUnlockAll) return;
+      Perks.buyAllAvailable();
+      PerkNetwork.updatePerkColor();
+      PerkNetwork.updatePerkSize();
     }
   }
 };
@@ -75,6 +84,14 @@ export default {
     Perk choices are permanent and cannot be respecced.
     <br>
     Diamond-shaped perks also give Automator Points.
+    <br>
+    <PrimaryButton
+      class="o-primary-btn c-button-perk-layout"
+      :enabled="canUnlockAll"
+      @click="unlockAll"
+    >
+      Unlock all
+    </PrimaryButton>
     <br>
     <div class="perk-settings">
       <PrimaryButton

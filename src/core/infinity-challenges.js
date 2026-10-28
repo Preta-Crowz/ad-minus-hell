@@ -1,7 +1,7 @@
 import { GameMechanicState } from "./game-mechanics";
 
 export function tryCompleteInfinityChallenges() {
-  if (EternityMilestone.autoIC.isReached || (PelleDestructionUpgrade.autoICComp.canBeApplied && !player.disablePostReality)) {
+  if (EternityMilestone.autoIC.isReached || PelleDestructionUpgrade.autoICComp.canBeApplied) {
     const toComplete = InfinityChallenges.all.filter(x => x.isUnlocked && !x.isCompleted);
     for (const challenge of toComplete) challenge.complete();
   }
@@ -25,20 +25,22 @@ class InfinityChallengeState extends GameMechanicState {
   }
 
   get unlockAM() {
-    return this.config.unlockAM();
+    return this.config.unlockAM;
   }
 
   get isUnlocked() {
-    return player.records.thisEternity.maxAM.gte(this.unlockAM) ||
-      (Achievement(133).isUnlocked && !Pelle.isDoomed && (!player.disablePostReality || SlabdrillUnlocks.eternityChallengeTen.isUnlocked)) ||
+    if (this.config.hellOnly && !Hell.isInside) return false;
+    return player.records.thisEternity.maxAM.gte(this.unlockAM) || (Achievement(133).isUnlocked && !Pelle.isDoomed) ||
       (PelleUpgrade.keepInfinityChallenges.canBeApplied && Pelle.cel.records.totalAntimatter.gte(this.unlockAM));
   }
 
   get isRunning() {
+    if (Hell.isBigRipChallenge(this.id)) return true;
     return player.challenge.infinity.current === this.id;
   }
 
   requestStart() {
+    if (Hell.isTrapped) return;
     if (!this.isUnlocked) return;
     if (GameEnd.creditsEverClosed) return;
     if (!player.options.confirmations.challenges) {
@@ -49,7 +51,7 @@ class InfinityChallengeState extends GameMechanicState {
   }
 
   start() {
-    if (this.id === 8 && Alpha.isRunning && Alpha.currentStage < 8) return;
+    if (Hell.isTrapped) return;
     if (!this.isUnlocked || this.isRunning) return;
     // Forces big crunch reset but ensures IP gain, if any.
     bigCrunchReset(true, true);
@@ -93,7 +95,7 @@ class InfinityChallengeState extends GameMechanicState {
   }
 
   get goal() {
-    return this.config.goal();
+    return this.config.goal;
   }
 
   updateChallengeTime() {
@@ -106,6 +108,7 @@ class InfinityChallengeState extends GameMechanicState {
   }
 
   exit() {
+    if (Hell.isTrapped) return;
     player.challenge.infinity.current = 0;
     bigCrunchReset(true, false);
     if (!Enslaved.isRunning) Tab.dimensions.antimatter.show();
@@ -135,7 +138,15 @@ export const InfinityChallenges = {
   /**
    * @type {InfinityChallengeState[]}
    */
-  all: InfinityChallenge.index.compact(),
+  _withHell: InfinityChallenge.index.compact(),
+  get all() {
+    return Hell.isInside ? InfinityChallenges._withHell : InfinityChallenges._base;
+  },
+  // Hell has different unlock thresholds, so unlock logic needs the list ordered by them
+  get byUnlock() {
+    return [...InfinityChallenges.all].sort((a, b) => (a.unlockAM.gt(b.unlockAM) ? 1 : -1));
+  },
+  _base: InfinityChallenge.index.compact().filter(ic => !ic.config.hellOnly),
   completeAll() {
     for (const challenge of InfinityChallenges.all) challenge.complete();
   },
@@ -143,7 +154,7 @@ export const InfinityChallenges = {
     player.challenge.infinity.completedBits = 0;
   },
   get nextIC() {
-    return InfinityChallenges.all.find(x => !x.isUnlocked);
+    return InfinityChallenges.byUnlock.find(x => !x.isUnlocked);
   },
   get nextICUnlockAM() {
     return this.nextIC?.unlockAM;
@@ -156,8 +167,7 @@ export const InfinityChallenges = {
     // Disable the popup if the user will automatically complete the IC.
     if (EternityMilestone.autoIC.isReached) return;
     if (InfinityChallenges.nextIC === undefined) return;
-    if (player.celestials.slabdrill.core.isActive) return;
-    for (const ic of InfinityChallenges.all) {
+    for (const ic of InfinityChallenges.byUnlock) {
       if (ic.isUnlocked || ic.isCompleted) continue;
       if (value.lt(ic.unlockAM)) break;
       // This has a reasonably high likelihood of happening when the player isn't looking at the game, so

@@ -206,6 +206,10 @@ body.t-s12 {
   border-left-color: var(--color-pelle--base);
 }
 
+.o-tab-btn--hell::after {
+  border-left-color: #b3120f;
+}
+
 .o-tab-btn--universes::after {
   animation: a-universes-glow-border-left 10s infinite;
 }
@@ -430,6 +434,16 @@ body.t-s12 {
 
 .o-tab-btn--divinity .o-subtab__tooltip::after {
   border-top-color: var(--color-pelle--base);
+}
+
+.o-tab-btn--hell .o-subtab__tooltip {
+  color: #ff3b30;
+  background: #1a0000;
+  border-color: #b3120f;
+}
+
+.o-tab-btn--hell .o-subtab__tooltip::after {
+  border-top-color: #b3120f;
 }
 
 .o-tab-btn--universes .o-subtab__tooltip {

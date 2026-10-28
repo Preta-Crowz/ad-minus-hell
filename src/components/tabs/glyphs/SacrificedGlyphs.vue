@@ -1,5 +1,10 @@
 <script>
+import { GlyphInfo } from "../../../core/secret-formula/index";
+
+import { DC } from "@/core/constants";
+
 import TypeSacrifice from "./TypeSacrifice";
+
 
 export default {
   name: "SacrificedGlyphs",
@@ -12,25 +17,23 @@ export default {
       hasDragover: false,
       hasAlteration: false,
       hideAlteration: false,
-      maxSacrifice: new Decimal(0),
-      teresaMult: new Decimal(0),
+      maxSacrifice: 0,
+      teresaMult: 0,
       lastMachinesTeresa: new Decimal(0),
     };
   },
   computed: {
-    types: () => GLYPH_TYPES.filter(type => type !== "cursed" && type !== "companion"),
+    types: () => GlyphInfo.sacrificeGlyphTypes,
     lastMachines() {
-      return this.lastMachinesTeresa.gte(DC.E20000)
-        ? `${quantify("Dual Machine", this.lastMachinesTeresa.dividedBy(DC.E20000), 2)}`
-        : (this.lastMachinesTeresa.lt(DC.E10000)
-          ? `${quantify("Reality Machine", this.lastMachinesTeresa, 2)}`
-          : `${quantify("Imaginary Machine", this.lastMachinesTeresa.dividedBy(DC.E10000), 2)}`);
+      return this.lastMachinesTeresa.lt(DC.E10000)
+        ? `${quantify("Reality Machine", this.lastMachinesTeresa, 2)}`
+        : `${quantify("Imaginary Machine", this.lastMachinesTeresa.dividedBy(DC.E10000), 2)}`;
     },
     dropDownIconClass() {
       return this.hideAlteration ? "far fa-plus-square" : "far fa-minus-square";
     },
     isDoomed() {
-      return (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied);
+      return Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied;
     },
     addThreshold() {
       return GlyphAlteration.additionThreshold;
@@ -63,14 +66,14 @@ export default {
   methods: {
     update() {
       this.anySacrifices = GameCache.logTotalGlyphSacrifice !== 0;
-      this.hasAlteration = Ra.unlocks.alteredGlyphs.canBeApplied && !player.disablePostReality;
+      this.hasAlteration = Ra.unlocks.alteredGlyphs.canBeApplied;
       this.hideAlteration = player.options.hideAlterationEffects;
-      this.maxSacrifice.copyFrom(GlyphSacrificeHandler.maxSacrificeForEffects);
-      this.teresaMult.copyFrom(Teresa.runRewardMultiplier);
+      this.maxSacrifice = GlyphSacrificeHandler.maxSacrificeForEffects;
+      this.teresaMult = Teresa.runRewardMultiplier;
       this.lastMachinesTeresa.copyFrom(player.celestials.teresa.lastRepeatedMachines);
     },
     dragover(event) {
-      if (Pelle.isDoomed) return;
+      if (this.isDoomed) return;
       if (!event.dataTransfer.types.includes(GLYPH_MIME_TYPE)) return;
       event.preventDefault();
       this.hasDragover = true;
@@ -102,7 +105,7 @@ export default {
       player.options.hideAlterationEffects = !player.options.hideAlterationEffects;
     },
     glyphSymbol(type) {
-      return this.cosmeticTypes[type].currentSymbol.symbol;
+      return GlyphInfo[type].regularGlyphSymbol;
     }
   }
 };

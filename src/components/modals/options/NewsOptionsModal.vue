@@ -22,6 +22,7 @@ export default {
       MatureChance: 0,
       speed: 1,
       includeAnimated: false,
+      onlyVisNews: false
     };
   },
   computed: {
@@ -46,25 +47,7 @@ export default {
         tooltip: false
       };
     },
-    sliderPropsENDChance() {
-      return {
-        min: 0,
-        max: 1,
-        interval: 0.01,
-        width: "98%",
-        tooltip: false
-      };
-    },
-    sliderPropsStoryChance() {
-      return {
-        min: 0,
-        max: 1,
-        interval: 0.01,
-        width: "98%",
-        tooltip: false
-      };
-    },
-    sliderPropsMatureChance() {
+    sliderPropsCategoryChance() {
       return {
         min: 0,
         max: 1,
@@ -76,8 +59,8 @@ export default {
     sliderPropsSpeed() {
       return {
         min: 0.5,
-        max: 2,
-        interval: 0.01,
+        max: 10,
+        interval: 0.05,
         width: "98%",
         tooltip: false
       };
@@ -108,6 +91,9 @@ export default {
     includeAnimated(newValue) {
       player.options.news.includeAnimated = newValue;
     },
+    onlyVisNews(newValue) {
+      player.options.news.onlyVisNews = newValue;
+    },
   },
   methods: {
     update() {
@@ -119,31 +105,26 @@ export default {
       this.StoryChance = options.StoryChance;
       this.MatureChance = options.MatureChance;
       this.speed = options.speed;
+      this.onlyVisNews = options.onlyVisNews;
       this.includeAnimated = options.includeAnimated;
     },
     adjustSliderValueRepeatBuffer(value) {
       this.repeatBuffer = value;
-      player.options.repeatBuffer = this.repeatBuffer;
     },
     adjustSliderValueAIChance(value) {
       this.AIChance = value;
-      player.options.AIChance = this.AIChance;
     },
     adjustSliderValueENDChance(value) {
       this.ENDChance = value;
-      player.options.ENDChance = this.ENDChance;
     },
     adjustSliderValueStoryChance(value) {
       this.StoryChance = value;
-      player.options.StoryChance = this.StoryChance;
     },
     adjustSliderValueMatureChance(value) {
       this.MatureChance = value;
-      player.options.MatureChance = this.MatureChance;
     },
     adjustSliderValueSpeed(value) {
       this.speed = value;
-      player.options.speed = this.speed;
     }
   }
 };
@@ -182,25 +163,25 @@ export default {
       <b>{{ formatPercents(parseFloat(ENDChance)) }} Endgame messages</b>
       <SliderComponent
         class="o-primary-btn--slider__slider"
-        v-bind="sliderPropsENDChance"
+        v-bind="sliderPropsCategoryChance"
         :value="ENDChance"
         @input="adjustSliderValueENDChance($event)"
       />
     </div>
     <div class="o-primary-btn o-primary-btn--option-wide o-primary-btn--slider">
-      <b>{{ formatPercents(parseFloat(StoryChance)) }} Life's and Midnight's Story </b>
+      <b>{{ formatPercents(parseFloat(StoryChance)) }} Story messages</b>
       <SliderComponent
         class="o-primary-btn--slider__slider"
-        v-bind="sliderPropsStoryChance"
+        v-bind="sliderPropsCategoryChance"
         :value="StoryChance"
         @input="adjustSliderValueStoryChance($event)"
       />
     </div>
     <div class="o-primary-btn o-primary-btn--option-wide o-primary-btn--slider">
-      <b>{{ formatPercents(parseFloat(MatureChance)) }} Mature Messages </b>
+      <b>{{ formatPercents(parseFloat(MatureChance)) }} Mature messages</b>
       <SliderComponent
         class="o-primary-btn--slider__slider"
-        v-bind="sliderPropsMatureChance"
+        v-bind="sliderPropsCategoryChance"
         :value="MatureChance"
         @input="adjustSliderValueMatureChance($event)"
       />
@@ -218,6 +199,11 @@ export default {
       v-model="includeAnimated"
       class="o-primary-btn o-primary-btn--option-wide"
       text="Animation Effects:"
+    />
+    <ModalOptionsToggleButton
+      v-model="onlyVisNews"
+      class="o-primary-btn o-primary-btn--option-wide"
+      text="Only Vis News:"
     />
   </ModalWrapperOptions>
 </template>

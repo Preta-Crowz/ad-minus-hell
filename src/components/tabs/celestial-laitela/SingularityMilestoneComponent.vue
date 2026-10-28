@@ -83,14 +83,14 @@ export default {
           return `In ${TimeSpan.fromSeconds(new Decimal(thisSingularityTime.add(extraTime))).toStringShort()} (manual)`;
         case SINGULARITY_MILESTONE_RESOURCE.AUTO_TIME:
           thisSingularityTime = Decimal.clampMin(0, this.currentCondenseTime.add(this.autoCondenseDelay));
-          extraTime = Decimal.ceil(condenseCount.sub(1)).times(this.baseCondenseTime.add(this.autoCondenseDelay));
+          extraTime = Decimal.ceil(condenseCount.sub(1)).mul(this.baseCondenseTime.add(this.autoCondenseDelay));
           timeText = `In ${TimeSpan.fromSeconds(new Decimal(thisSingularityTime.add(extraTime))).toStringShort()}`;
           return this.autoSingActive ? timeText : `Auto-Singularity is OFF`;
         default:
           throw new Error("Unrecognized Singularity Milestone mode");
       }
     },
-    isDoomed: () => Pelle.isDoomed && !PelleDestructionUpgrade.singularityMilestones.canBeApplied,
+    isDoomed: () => Pelle.isDoomed && !ChallengerUpgrade(17).isBought,
   },
   methods: {
     update() {

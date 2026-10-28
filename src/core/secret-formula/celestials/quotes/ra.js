@@ -1,3 +1,16 @@
+const celBackground = cel => [[cel, 0]];
+const RaMulti = ["Ra", "Rancey", "Repress"];
+
+const flashCelestial = [
+  ["ra", 0.4],
+  ["laitela", 0.4],
+  ["pelle", 0.4],
+  ["teresa", 0.4],
+  ["effarig", 0.4],
+  ["enslaved", 0.4],
+  ["v", 0.4]
+];
+
 export const raQuotes = {
   unlock: {
     id: 0,
@@ -6,6 +19,8 @@ export const raQuotes = {
       "I am here! I am the one you are looking for... I think...",
       "What even was I again?",
       "Oh right, the Celestial of Memories.",
+      {text: "Get away from ME.", displayed: () => {return Parallax.parallaxes.gte(4) }, name: 'Null', background: celBackground('null'), glitched: true}
+
     ]
   },
   realityEnter: {
@@ -115,7 +130,7 @@ export const raQuotes = {
   },
   maxLevels: {
     id: 13,
-    requirement: () => Ra.totalPetLevel === Ra.maxTotalPetLevel,
+    requirement: () => Ra.totalPetLevel >= Ra.maxTotalPetLevel,
     lines: [
       "Finally, I remember everything.",
       "This darkness that banished me.",
@@ -123,85 +138,20 @@ export const raQuotes = {
       "They were right to banish me.",
       "My powers...",
       "They steal, they corrupt.",
+      {text: "Is this the cause of it?", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
+      {text: "Did they take it from here", displayed: () => CanteUpgrades.all[19].isUnlocked, name: "Glitch", background: celBackground('glitch'), glitched: true},
       "Please leave.",
       "I do not want to hurt you too.",
     ]
   },
-  expansionPacks: {
+  CandN: {
     id: 14,
     lines: [
-      "Because, V, you aren't nearly as strong as me.",
-      "Even if I can't entirely remember exactly how strong you are.",
-      "I do remember this, though.",
-      "I nearly defeated Lai'tela by erasing her memories.",
-      "If I had, I would've taken her role, and then only Pelle would be in my way.",
-      "There's no way you could best that, V.",
-      "Even in my current state, I-",
-      "Oh, uh...",
-      "Hi, Lai'tela..."
-    ]
-  },
-  raPack: {
-    id: 15,
-    requirement: () => ExpansionPack.raPack.isBought,
-    lines: [
-      "Wait...",
-      "More memories?",
-      "How did you-",
-      "I didn't even realize I-",
-      "Never mind, there are probably things I'm forgetting.",
-      "Can you help me again?",
-      "I want to remember..."
-    ]
-  },
-  doubleCap: {
-    id: 16,
-    requirement: () => Ra.totalPetLevel >= 200,
-    lines: [
-      "So many memories...",
-      "I didn't realize I had forgotten this much...",
-      "I suppose I shouldn't be surprised though.",
-      "Wait, Destroyer...",
-      "Who's the Elemental?"
-    ]
-  },
-  supernova: {
-    id: 17,
-    requirement: () => Ra.totalPetLevel >= 500,
-    lines: [
-      "I am starting to remember...",
-      "The Elemental, he was my friend once...",
-      "We did so much together...",
-      "But then he left.",
-      "Perhaps he still remembers me...",
-      "Do you think you could find him?",
-      "Do you know where he is?"
-    ]
-  },
-  millenium: {
-    id: 18,
-    requirement: () => Ra.totalPetLevel >= 1000,
-    lines: [
-      "The Elemental had a sort of power...",
-      "He showed us, but none of us could master it.",
-      "We didn't understand at the time.",
-      "It was a Galaxy, wasn't it?",
-      "And... he gave it to you...",
-      "The rest of us, we found other means of Tickspeed empowerment...",
-      "But it wasn't nearly as powerful as what he theorized Galaxies to be.",
-      "Anyone who could create one was bound to destroy us all.",
-      "And that is why when Lai'tela created this prison for me...",
-      "She made sure to nullify any Tickspeed empowerments.",
-      "That includes your Galaxies as you can see.",
-      "I was surprised that with so much power, you still lost so many times.",
-      "...",
-      "Perhaps I am remembering a bit too much, aren't I?",
-      "Yes, even to me you had lost, when you failed to restore all my memories.",
-      "And yet, now you show me things I never thought I had...",
-      "You seem to be doing fine though.",
-      "Pelle told me that you were coming to meet us soon.",
-      "I'm excited, so don't leave me waiting...",
-      "I suppose I'll see you then."
-    ]
+      { text: "Hi $1, I need you to Remember two other Celestials.", name: "Glitch", background: celBackground("glitch"), 1: RaMulti},
+      "Huh why... I don't want to cause any more damage.",
+      { text: "I'm not doing it again... not to the others, I've done enough.", background: flashCelestial},
+      { text: "Ra it's Cante and Null... We need them...", name: "Glitch", background: celBackground("glitch")},
+      "Fine, My head will hurt a lot more after this, I better be getting a Reward from this...",
+    ],
   },
 };

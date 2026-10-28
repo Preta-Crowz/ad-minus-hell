@@ -1,32 +1,34 @@
 <script>
+import { DC } from "@/core/constants";
+
 export default {
   name: "RealityButton",
   data() {
     return {
       canReality: false,
       showSpecialEffect: false,
-      beatingAlpha: false,
-      readyToWarp: false,
-      isWarping: false,
-      cursed: false,
-      trapped: false,
-      overridden: false,
-      destroyed: false,
       hasRealityStudy: false,
       machinesGained: new Decimal(),
       projectedRM: new Decimal(),
       newIMCap: new Decimal(),
       newDMCap: new Decimal(),
-      realityTime: 0,
+      realityTime: new Decimal(),
       glyphLevel: new Decimal(),
       nextGlyphPercent: 0,
-      nextMachineEP: 0,
-      shardsGained: new Decimal(0),
-      currentShardsRate: new Decimal(0),
-      bestShardRate: new Decimal(0),
-      bestShardRateVal: new Decimal(0),
-      ppGained: 0,
-      celestialRunText: ["", "", "", "", ""]
+      nextMachineEP: new Decimal(),
+      shardsGained: new Decimal(),
+      currentShardsRate: new Decimal(),
+      bestShardRate: new Decimal(),
+      bestShardRateVal: new Decimal(),
+      ppGained: new Decimal(),
+      celestialRunText: ["", "", "", "", ""],
+      readyToWarp: false,
+      isWarping: false,
+      cursed: false,
+      trapped: false,
+      goodbyeReady: false,
+      overridden: false,
+      destroyed: false
     };
   },
   computed: {
@@ -35,20 +37,20 @@ export default {
       return "No Machines gained";
     },
     formatMachineStats() {
-      if (!PlayerProgress.realityUnlocked() && this.nextMachineEP.gt("1e8000")) {
+      if (!PlayerProgress.realityUnlocked() && this.nextMachineEP.gt("1e10000")) {
         return `(Capped this Reality!)`;
       }
       if (this.machinesGained.gt(0) && this.machinesGained.lt(100)) {
         return `(Next at ${format(this.nextMachineEP, 2)} EP)`;
       }
-      if (this.machinesGained.eq(0) && this.newIMCap.eq(0)) {
+      if (this.machinesGained.eq(0) && this.newIMCap.eq(0) && this.newDMCap.eq(0)) {
         return `(Projected: ${format(this.projectedRM, 2)} RM)`;
-      }
-      if (this.newIMCap.neq(0) && this.newDMCap.eq(0)) {
-        return `(iM Cap: ${formatMachines(0, this.newIMCap, 0)})`;
       }
       if (this.newDMCap.neq(0)) {
         return `(jM Cap: ${formatMachines(0, 0, this.newDMCap)})`;
+      }
+      if (this.newIMCap.neq(0)) {
+        return `(iM Cap: ${formatMachines(0, this.newIMCap)})`;
       }
       if (this.machinesGained.lt(Number.MAX_VALUE)) {
         return `(${format(this.machinesGained.divide(this.realityTime), 2, 2)} RM/min)`;
@@ -56,27 +58,26 @@ export default {
       return "";
     },
     formatGlyphLevel() {
-      if (this.glyphLevel.gte(10000)) return `Glyph level: ${formatHybridLarge(this.glyphLevel, 3)}`;
-      return `Glyph level: ${formatHybridLarge(this.glyphLevel, 3)} (${this.nextGlyphPercent} to next)`;
+      const cap = this.glyphLevel.min(Glyphs.levelCap)
+      if (this.glyphLevel.gte(1e4)) return `Glyph level: ${formatInt(this.glyphLevel)} ${ cap.neq(this.glyphLevel) ? `(caped)` : ''}`;
+      return `Glyph level: ${formatInt(this.glyphLevel)} (${this.nextGlyphPercent} to next)`;
     },
-    showsRate() {
-      return this.currentsRate;
+    showShardsRate() {
+      return this.currentShardsRate;
     },
     shardsGainedText() {
       return quantify("Relic Shard", this.shardsGained, 2);
     },
-    warpMessage() {
-      return this.isWarping ? "Curse Your Reality" : "Enter Pelle's Domain";
-    },
     classObject() {
       return {
-        "c-reality-button--unlocked": this.canReality || (this.readyToWarp && !this.destroyed),
-        "c-reality-button--locked": !this.canReality && (!this.readyToWarp || this.destroyed),
+        "c-reality-button--unlocked": this.canReality,
+        "c-reality-button--locked": !this.canReality,
         "c-reality-button--special": this.showSpecialEffect,
-        "c-reality-button--alpha": this.beatingAlpha,
         "c-reality-button--warp": this.readyToWarp && !this.cursed && !this.destroyed,
-        "c-reality-button--cursed": this.cursed && (!this.canReality || this.trapped) && !this.overridden,
-        "c-reality-button--escape": this.cursed && this.canReality && (!this.trapped || this.overridden)
+        "c-reality-button--cursed": this.cursed && (!this.canReality || this.trapped || !this.goodbyeReady) &&
+          !this.overridden,
+        "c-reality-button--escape": this.cursed && this.canReality && this.goodbyeReady &&
+          (!this.trapped || this.overridden)
       };
     }
   },
@@ -84,50 +85,51 @@ export default {
     percentToNextGlyphLevelText() {
       const glyphState = getGlyphLevelInputs();
       let level = glyphState.actualLevel;
-      const decimalPoints = this.glyphLevel.gt(1000) ? 0 : 1;
-      return `${formatDecimalPercents(Decimal.min(((level.sub(Decimal.floor(level)))), 0.999), decimalPoints)}`;
+      if (!level.isFinite()) level = new Decimal();
+      const decimalPoints = this.glyphLevel.gt(1e3) ? 0 : 1;
+      return `${formatPercents(level.sub(level.floor()).clampMax(0.999), decimalPoints)}`;
     },
     update() {
       this.hasRealityStudy = TimeStudy.reality.isBought;
       this.canReality = isRealityAvailable();
       this.showSpecialEffect = this.hasSpecialReward();
-      this.beatingAlpha = Alpha.isRunning && Currency.eternityPoints.value.add(1).log10().gt(4000);
       this.readyToWarp = CelestialEternityPlusUpgrade.oldStoneSlabAndSteelDrill.isBought;
       this.isWarping = player.celestials.slabdrill.isWarping;
       this.cursed = Slabdrill.isCursed;
       this.trapped = player.celestials.slabdrill.goodbyeTick >= 3000;
-      this.overridden = player.records.totalRealityAntimatter.gte(DC.ENUMMAX);
+      this.goodbyeReady = Slabdrill.currentStage >= 10;
+      this.overridden = Slabdrill.currentStage >= 11 && player.records.totalAntimatter.gte(DC.ENUMMAX);
       this.destroyed = Slabdrill.isDestroyed;
       if (!this.canReality) {
-        this.sGained = new Decimal(0);
+        this.shardsGained = new Decimal();
         return;
       }
       function EPforRM(rm) {
         const adjusted = Decimal.divide(rm, MachineHandler.realityMachineMultiplier);
         if (adjusted.lte(1)) return Decimal.pow10(4000);
-        if (adjusted.lte(10)) return Decimal.pow10(4000 / 27 * (adjusted.toNumber() + 26));
-        let result = Decimal.pow10((adjusted.log10().div(3).add(1)).times(4000));
-        if (!PlayerProgress.realityUnlocked() && result.gte("1e6000")) {
-          result = result.div("1e6000").pow(4).times("1e6000");
+        if (adjusted.lte(10)) return Decimal.pow10(adjusted.add(26).mul(4000).div(27));
+        let result = Decimal.pow10(adjusted.max(1).log10().div(3).add(1).mul(4e3));
+        if (!PlayerProgress.realityUnlocked() && result.gte("1e8000")) {
+          result = result.div("1e8000").pow(4).times("1e8000");
         }
         return result;
       }
 
-      const multiplier = simulatedRealityCount(false) + 1;
+      const multiplier = simulatedRealityCount(false).add(1);
       this.projectedRM = MachineHandler.gainedRealityMachines.times(multiplier)
         .clampMax(MachineHandler.hardcapRM);
-      this.newIMCap.copyFrom(MachineHandler.projectedIMCap);
-      this.newDMCap.copyFrom(MachineHandler.projectedDMCap);
+      this.newIMCap = MachineHandler.projectedIMCap;
+      this.newDMCap = MachineHandler.projectedDMCap;
       this.machinesGained = this.projectedRM.clampMax(MachineHandler.distanceToRMCap);
-      this.realityTime = Time.thisRealityRealTime.totalMinutes.toNumber();
+      this.realityTime.copyFrom(Time.thisRealityRealTime.totalMinutes);
       this.glyphLevel.copyFrom(gainedGlyphLevel().actualLevel);
       this.nextGlyphPercent = this.percentToNextGlyphLevelText();
-      this.nextMachineEP = EPforRM(this.machinesGained.plus(1));
-      this.ppGained = multiplier;
-      this.shardsGained.copyFrom(Effarig.shardsGained.times(multiplier));
+      this.nextMachineEP.copyFrom(EPforRM(this.machinesGained.plus(1)));
+      this.ppGained.copyFrom(multiplier);
+      this.shardsGained.copyFrom(Effarig.shardsGained.mul(multiplier));
       this.currentShardsRate.copyFrom(this.shardsGained.div(Time.thisRealityRealTime.totalMinutes));
-      this.bestShardRate.copyFrom(player.records.thisReality.bestRSmin.times(multiplier));
-      this.bestShardRateVal.copyFrom(player.records.thisReality.bestRSminVal.times(multiplier));
+      this.bestShardRate.copyFrom(multiplier.mul(player.records.thisReality.bestRSmin));
+      this.bestShardRateVal.copyFrom(multiplier.mul(player.records.thisReality.bestRSminVal));
 
       const teresaReward = this.formatScalingMultiplierText(
         "Glyph Sacrifice",
@@ -141,18 +143,11 @@ export default {
         [Teresa.isRunning, teresaReward, teresaThreshold]];
     },
     handleClick() {
-      if (this.cursed && this.canReality && this.overridden) {
-        Modal.trueEscape.show();
-      }
-      else if (this.cursed && this.canReality && !this.trapped) {
-        Modal.exitCurse.show();
-      }
-      else if (this.readyToWarp && !this.isWarping && !this.cursed && !this.destroyed) {
-        requestRealityWarp();
-      }
-      else if (this.canReality && (!this.trapped || this.destroyed)) {
-        requestManualReality();
-      }
+      if (this.cursed && !this.goodbyeReady) return;
+      if (this.cursed && this.canReality && this.overridden) Modal.trueEscape.show();
+      else if (this.cursed && this.canReality && !this.trapped) Modal.exitCurse.show();
+      else if (this.readyToWarp && !this.isWarping && !this.cursed && !this.destroyed) requestRealityWarp();
+      else if (this.canReality && (!this.trapped || this.destroyed)) requestManualReality();
     },
     formatScalingMultiplierText(resource, before, after) {
       return `${resource} ${formatX(before, 2, 2)} ➜ ${formatX(after, 2, 2)}`;
@@ -166,7 +161,7 @@ export default {
       if (Teresa.isRunning && Teresa.rewardMultiplier(Currency.antimatter.value).gt(Teresa.runRewardMultiplier)) {
         return true;
       }
-      return Currency.eternityPoints.value.add(1).log10().gt(4000) &&
+      return Currency.eternityPoints.value.max(1).log10().gte(4000) &&
         ((Effarig.isRunning && !EffarigUnlock.reality.isUnlocked) || (Enslaved.isRunning && !Enslaved.isCompleted));
     }
   }
@@ -184,14 +179,11 @@ export default {
         <template v-if="cursed && canReality && overridden">
           <div>ESCAPE</div>
         </template>
-        <template v-else-if="cursed && (!canReality || trapped) && !overridden">
+        <template v-else-if="cursed && (!canReality || trapped || !goodbyeReady)">
           <div>You cannot escape a Cursed Reality</div>
         </template>
-        <template v-else-if="cursed && canReality && !trapped">
+        <template v-else-if="cursed">
           <div>Escape the Cursed Reality...</div>
-        </template>
-        <template v-else-if="readyToWarp && !cursed && !destroyed">
-          <div>{{ warpMessage }}</div>
         </template>
         <template v-else-if="canReality">
           <div class="c-reality-button__header">
@@ -207,11 +199,11 @@ export default {
           <div>Purchase the study in the Eternity tab to unlock a new Reality</div>
         </template>
         <div
-          v-if="canReality && (!readyToWarp || destroyed)"
+          v-if="canReality"
           class="infotooltiptext"
         >
           <div>Other resources gained:</div>
-          <div>{{ quantifyHybridLarge("Perk Point", ppGained) }}</div>
+          <div>{{ quantifyInt("Perk Point", ppGained) }}</div>
           <div v-if="shardsGained.neq(0)">
             {{ shardsGainedText }} ({{ format(currentShardsRate, 2) }}/min)
             <br>

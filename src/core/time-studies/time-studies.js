@@ -86,7 +86,7 @@ export function buyStudiesUntil(id, ec = -1) {
 
   const pacePaths = currTree.pacePaths
     .map(pathName => NormalTimeStudies.pathList.find(p => p.name === pathName).path);
-  if (V.isFullyCompleted && !Pelle.isDoomed) {
+  if (V.isFullyCompleted) {
     const allPace = NormalTimeStudies.paths[TIME_STUDY_PATH.ACTIVE]
       .concat(NormalTimeStudies.paths[TIME_STUDY_PATH.PASSIVE])
       .concat(NormalTimeStudies.paths[TIME_STUDY_PATH.IDLE]);
@@ -142,7 +142,7 @@ export function respecTimeStudies(auto) {
   }
   player.timestudy.studies = [];
   GameCache.timeStudies.invalidate();
-  player.celestials.v.STSpent = 0;
+  player.celestials.v.STSpent = new Decimal(0);
   const ecStudy = TimeStudy.eternityChallenge.current();
   if (ecStudy !== undefined) {
     ecStudy.refund();
@@ -166,8 +166,8 @@ export class TimeStudyState extends GameMechanicState {
 
   get STCost() {
     const base = this.config.STCost;
-    return VUnlocks.raUnlock.canBeApplied && !player.disablePostReality
-      ? base - 2
+    return (VUnlocks.raUnlock.canBeApplied && this.id < 400)
+      ? Decimal.sub(base, 2)
       : base;
   }
 

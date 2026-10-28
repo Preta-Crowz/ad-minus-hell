@@ -12,11 +12,6 @@ export default {
       required: true
     }
   },
-  data() {
-    return {
-      isFlipped: false
-    };
-  },
   computed: {
     challenge() {
       return InfinityChallenge(this.id);
@@ -29,7 +24,7 @@ export default {
         Challenge-specific restrictions and modifiers active.
         To complete the Challenge${this.challengeIsCompleted ? "" : " and gain its reward"},
         you must reach the Challenge goal of
-        ${format(InfinityChallenge(this.id).goal)} ${this.isFlipped ? "Matter" : "Antimatter"}.
+        ${format(InfinityChallenge(this.id).goal)} Antimatter.
         You do not start with any Dimension Boosts or Galaxies, regardless of upgrades.`;
     },
     entranceLabel() {
@@ -55,9 +50,6 @@ export default {
     this.on$(GAME_EVENT.REALITY_RESET_AFTER, this.emitClose);
   },
   methods: {
-    update() {
-      this.isFlipped = player.universes.current === 2;
-    },
     handleYesClick() {
       this.challenge.start();
     },

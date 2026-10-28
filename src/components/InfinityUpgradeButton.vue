@@ -36,6 +36,9 @@ export default {
     isBasedOnInfinities() {
       return /(18|27|36|45)Mult/u.test(this.upgrade.id) || this.upgrade.id === "infinitiedMult";
     },
+    isBreakUpgrade() {
+      return BreakInfinityUpgrade.all.includes(this.upgrade) || BreakInfinityUpgrade.hellUpgrades.includes(this.upgrade);
+    },
     shiftDown() {
       return ui.view.shiftDown;
     },
@@ -73,8 +76,8 @@ export default {
       // seems more likely to be read).
       const upgrade = this.upgrade;
       this.isBought = upgrade.isBought || upgrade.isCapped;
-      this.chargePossible = (Ra.unlocks.chargedInfinityUpgrades.canBeApplied && !player.disablePostReality) &&
-        upgrade.hasChargeEffect && (!Pelle.isDoomed || PelleCelestialUpgrade.raTeresa2.canBeApplied);
+      this.chargePossible = upgrade.hasChargeEffect && (this.isBreakUpgrade ||
+        (Ra.unlocks.chargedInfinityUpgrades.canBeApplied && (!Pelle.isDoomed || ChallengerUpgrade(16).isBought)));
       this.canBeBought = upgrade.canBeBought;
       this.canBeCharged = upgrade.canCharge;
       this.isCharged = upgrade.isCharged;
@@ -89,13 +92,13 @@ export default {
       this.isDisabled = upgrade.config.isDisabled && upgrade.config.isDisabled(upgrade.config.effect());
       this.isUseless = Pelle.uselessInfinityUpgrades.includes(upgrade.id) && Pelle.isDoomed;
       this.hasTS31 = TimeStudy(31).canBeApplied;
-      if (!this.isDisabled && this.isImprovedByTS31) this.ts31Effect = Decimal.pow(upgrade.config.effect(), 100);
+      if (!this.isDisabled && this.isImprovedByTS31) this.ts31Effect = Decimal.pow(upgrade.config.effect(), 4);
       if (upgrade.id !== "challengeMult") return;
       this.showWorstChallenge = upgrade.effectValue !== upgrade.cap &&
-        player.challenge.normal.bestTimes.reduce(Decimal.sumReducer).lt(DC.BEMAX) && !upgrade.isCharged && !this.showChargedEffect;
+        player.challenge.normal.bestTimes.sum().lt(Number.MAX_VALUE);
       const worstChallengeTime = GameCache.worstChallengeTime.value;
-      const worstChallengeIndex = 2 + player.challenge.normal.bestTimes.decimalIndexOf(worstChallengeTime);
-      this.worstChallengeString = `(Challenge ${worstChallengeIndex}: ${timeDisplayShort(new Decimal(worstChallengeTime))})`;
+      const worstChallengeIndex = 2 + player.challenge.normal.bestTimes.indexOf(worstChallengeTime);
+      this.worstChallengeString = `(Challenge ${worstChallengeIndex}: ${timeDisplayShort(worstChallengeTime)})`;
     }
   }
 };

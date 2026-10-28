@@ -1,4 +1,5 @@
 import { BitPurchasableMechanicState, RebuyableMechanicState } from "./game-mechanics";
+import { DC } from "./constants";
 
 class ImaginaryUpgradeState extends BitPurchasableMechanicState {
   constructor(config) {
@@ -59,7 +60,7 @@ class ImaginaryUpgradeState extends BitPurchasableMechanicState {
   // Note we don't actually show the modal if we already failed or unlocked it
   tryShowWarningModal(specialLockText) {
     if (this.isPossible && !this.isAvailableForPurchase) {
-      Modal.upgradeLock.show({ upgrade: this, isImaginary: true, isDual: false, isEndgame: false, specialLockText });
+      Modal.upgradeLock.show({ upgrade: this, isImaginary: true, specialLockText });
     }
   }
 
@@ -76,11 +77,12 @@ class ImaginaryUpgradeState extends BitPurchasableMechanicState {
   }
 
   get pelleDisabled() {
-    return Pelle.isDoomed && this.isDisabledInDoomed;
-  }
-
-  get isDisabledInDoomed() {
-    return this.config.isDisabledInDoomed ? this.config.isDisabledInDoomed() : false;
+    if (ChallengerUpgrade(18).isBought) return false;
+    if (!Pelle.isDoomed) return false;
+    const key = this.config.name.replace(/\s+([a-z])/gi, (_, letter) => letter.toUpperCase());
+    const upgradeKey = key[0].toLowerCase() + key.slice(1);
+    const upgrade = PelleImaginaryUpgrade[upgradeKey];
+    return upgrade ? !upgrade.canBeApplied : Boolean(this.config.isDisabledInDoomed);
   }
 
   tryUnlock() {
@@ -106,14 +108,13 @@ class ImaginaryUpgradeState extends BitPurchasableMechanicState {
     }
     if (this.id === 22) {
       for (const key of Object.keys(player.reality.glyphs.sac)) {
-        player.reality.glyphs.sac[key] = player.reality.glyphs.sac[key].add(ImaginaryUpgrade(22).effectValue);
+        if(key == "glitch") continue;
+        player.reality.glyphs.sac[key] = ImaginaryUpgrade(22).effectValue;
       }
     }
     if (this.id === 25) {
       TabNotification.pelleUnlock.tryTrigger();
-    }
-    if (this.id === 30) {
-      TabNotification.alphaUnlock.tryTrigger();
+      Glitch.quotes.battlePelle.show();
     }
   }
 }
@@ -132,11 +133,11 @@ class RebuyableImaginaryUpgradeState extends RebuyableMechanicState {
   }
 
   get pelleDisabled() {
-    return Pelle.isDoomed && this.isDisabledInDoomed;
-  }
-
-  get isDisabledInDoomed() {
-    return this.config.isDisabledInDoomed ? this.config.isDisabledInDoomed() : false;
+    if (ChallengerUpgrade(18).isBought) return false;
+    if (!Pelle.isDoomed) return false;
+    const key = this.config.name.replace(/\s+([a-z])/gi, (_, letter) => letter.toUpperCase());
+    const upgradeKey = key[0].toLowerCase() + key.slice(1);
+    return !PelleImaginaryUpgrade[upgradeKey]?.canBeApplied;
   }
 
   set boughtAmount(value) {
@@ -149,29 +150,9 @@ class RebuyableImaginaryUpgradeState extends RebuyableMechanicState {
     }
   }
 
-  bulkPurchase() {
-    if (!this.isAffordable) return false;
-    this.boughtAmount += getInverseHybridCostScaling(
-      Currency.imaginaryMachines.value,
-      1e15,
-      this.config.initialCost,
-      this.config.costMult,
-      this.config.costMult / 2,
-      DC.E309,
-      1e3,
-      this.config.costMult
-    ).sub(player.reality.imaginaryRebuyables[this.id]).toNumber();
-    Currency.imaginaryMachines.subtract(getHybridCostScaling(
-      player.reality.imaginaryRebuyables[this.id] - 1,
-      1e15,
-      this.config.initialCost,
-      this.config.costMult,
-      this.config.costMult / 2,
-      DC.E309,
-      1e3,
-      this.config.costMult
-    ));
-    return true;
+  purchaseHybrid(){
+    const value = Decimal.log(this.currency.value.div(this.config.initialCost).add(1), this.config.costMult).add(1).floor();
+    this.boughtAmount = value;
   }
 }
 
@@ -188,14 +169,14 @@ export const ImaginaryUpgrades = {
   all: ImaginaryUpgradeState.index.compact(),
   get totalRebuyables() {
     const rebuyables = player.reality.imaginaryRebuyables;
-    let total = 0;
-    for (const i in rebuyables) total += rebuyables[i];
+    let total = DC.D0;
+    for (const i in rebuyables) total = total.add(rebuyables[i]);
     return total;
   },
   get totalSinglePurchase() {
     return this.all.countWhere(u => u.isBought);
   },
   get allBought() {
-    return (player.reality.imaginaryUpgradeBits >> 7) + 1 === 1 << (GameDatabase.reality.imaginaryUpgrades.length - 5);
+    return (player.reality.imaginaryUpgradeBits >> 6) + 1 === 1 << (GameDatabase.reality.imaginaryUpgrades.length - 5);
   }
 };

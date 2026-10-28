@@ -24,30 +24,28 @@ export default {
       isCompleted: false,
       isBroken: false,
       isUnlocked: false,
-      normalLockedAt: new Decimal(),
-      alphaLockedAt: new Decimal(),
+      lockedAt: new Decimal(),
       reward: ""
     };
   },
   computed: {
-    shiftDown() {
-      return ui.view.shiftDown;
-    },
     showingCharged() {
-      return (this.shiftDown || this.challenge.isCharged) && Ascensions.oc3A.isUnlocked && player.endgame.overcharge.allowComplex;
+      return (ui.view.shiftDown || this.challenge.isCharged) && Ascensions.oc3A.isUnlocked &&
+        player.endgame.overcharge.allowComplex && this.challenge.config.charged !== undefined;
     },
     descriptionDisplayConfig() {
       if (this.isUnlocked) {
         return this.challenge.config;
       }
       return {
-        description: `Infinity ${formatInt(this.lockedAt)} times to unlock.`
+        description: `Infinity ${formatInt(this.challenge.config.lockedAt)} times to unlock.`
       };
     },
     name() {
       return `C${this.challenge.id}`;
     },
     overrideLabel() {
+      if (Hell.isInside && Hell.trappedNormalChallenges.includes(this.challenge.id)) return "Trapped";
       return this.isBroken ? "Broken" : "";
     },
   },
@@ -57,12 +55,11 @@ export default {
       this.isUnlocked = this.challenge.isUnlocked;
       // This stops normal challenges from appearing like they're running during IC1
       this.isRunning = this.challenge.isOnlyActiveChallenge;
-      this.normalLockedAt = this.challenge.config.lockedAt;
-      this.alphaLockedAt = this.challenge.config.alphaLockedAt;
-      this.lockedAt = Alpha.isRunning ? this.alphaLockedAt : this.normalLockedAt;
+      this.lockedAt = this.challenge.config.lockedAt;
       this.isBroken = Enslaved.isRunning && Enslaved.BROKEN_CHALLENGES.includes(this.challenge.id);
       this.isCompleted = this.challenge.isCompleted && !this.isBroken;
-      this.reward = this.showingCharged ? this.challenge.config.charged.reward() : this.challenge.config.reward();
+      const reward = this.showingCharged ? this.challenge.config.charged.reward : this.challenge.config.reward;
+      this.reward = typeof reward === "function" ? reward() : reward;
     }
   }
 };
@@ -84,7 +81,7 @@ export default {
     </template>
     <template #bottom>
       <span :class="{ 'o-pelle-disabled': isDisabled }">Reward: {{ reward }}</span>
-      <div v-if="showingCharged">
+      <div v-if="showingCharged && challenge.config.charged.effect">
         <EffectDisplay
           br
           :config="challenge.config.charged"

@@ -18,6 +18,8 @@ function mergeIntoGlobal(object) {
 import * as Utils from "./core/utils";
 mergeIntoGlobal(Utils);
 
+Decimal.NUMBER_MAX_VALUE = new Decimal(Number.MAX_VALUE);
+
 import * as GameDB from "./core/secret-formula";
 mergeIntoGlobal(GameDB);
 
@@ -25,8 +27,8 @@ mergeIntoGlobal(GameDB);
 // any more globals to the component files
 
 import * as AutomatorBlockEditor from "@/components/tabs/automator/AutomatorBlockEditor";
-mergeIntoGlobal(AutomatorBlockEditor);
-
+ mergeIntoGlobal(AutomatorBlockEditor);
+ 
 import * as AutomatorBlocks from "@/components/tabs/automator/AutomatorBlocks";
 mergeIntoGlobal(AutomatorBlocks);
 

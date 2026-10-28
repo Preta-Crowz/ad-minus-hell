@@ -1,7 +1,27 @@
 import { BitUpgradeState } from "../game-mechanics";
 import { GameDatabase } from "../secret-formula/game-database";
+import { deepmergeAll } from "@/utility/deepmerge";
 
 import { Quotes } from "./quotes";
+
+function normalizePlayerValues(values, defaults) {
+  if (defaults instanceof Decimal || typeof defaults === "number") {
+    return typeof values === "string" && values !== "" ? new Decimal(values) : values;
+  }
+  if (Array.isArray(values) && Array.isArray(defaults)) {
+    for (let index = 0; index < Math.min(values.length, defaults.length); index++) {
+      values[index] = normalizePlayerValues(values[index], defaults[index]);
+    }
+    return values;
+  }
+  if (values && defaults && typeof values === "object" && typeof defaults === "object" &&
+    !(values instanceof Decimal) && !(values instanceof Set)) {
+    for (const key of Object.keys(defaults)) {
+      if (key in values) values[key] = normalizePlayerValues(values[key], defaults[key]);
+    }
+  }
+  return values;
+}
 
 export const Alpha = {
   displayName: "Alpha",
@@ -16,6 +36,13 @@ export const Alpha = {
     return this.currentStage >= 28;
   },
   initializeRun() {
+    if (!player.celestials.alpha.records.records?.totalEndgameAntimatter?.gt(DC.E1)) {
+      const snapshot = deepmergeAll([{}, player]);
+      // Nested snapshots would otherwise grow the save exponentially
+      delete snapshot.celestials.alpha.records;
+      delete snapshot.celestials.slabdrill.records;
+      player.celestials.alpha.records = snapshot;
+    }
     player.disablePostReality = true;
     Endgame.resetNoReward();
     disChargeAllPerkUpgrades();
@@ -151,7 +178,6 @@ export const Alpha = {
       player.challenge.eternity.current = player.celestials.alpha.records.challenge.eternity.current;
       player.challenge.eternity.unlocked = player.celestials.alpha.records.challenge.eternity.unlocked;
       player.challenge.eternity.requirementBits = player.celestials.alpha.records.challenge.eternity.requirementBits;
-      player.infinity.upgradeBits = player.celestials.alpha.records.infinity.upgradeBits;
       player.auto.autobuyersOn = player.celestials.alpha.records.auto.autobuyersOn;
       player.auto.disableContinuum = player.celestials.alpha.records.auto.disableContinuum;
       player.auto.eternity.amount = player.celestials.alpha.records.auto.eternity.amount;
@@ -559,6 +585,8 @@ export const Alpha = {
     }
   },
   escapeTheMatrix() {
+    normalizePlayerValues(player.records, Player.defaultStart.records);
+    normalizePlayerValues(player.celestials.alpha.records, Player.defaultStart);
     player.celestials.alpha.records.antimatter = player.antimatter;
     player.celestials.alpha.records.dimensions.antimatter[0].bought = player.dimensions.antimatter[0].bought;
     player.celestials.alpha.records.dimensions.antimatter[0].costBumps = player.dimensions.antimatter[0].costBumps;
@@ -680,7 +708,6 @@ export const Alpha = {
     player.celestials.alpha.records.challenge.eternity.current = player.challenge.eternity.current;
     player.celestials.alpha.records.challenge.eternity.unlocked = player.challenge.eternity.unlocked;
     player.celestials.alpha.records.challenge.eternity.requirementBits = player.challenge.eternity.requirementBits;
-    player.celestials.alpha.records.infinity.upgradeBits = player.infinity.upgradeBits;
     player.celestials.alpha.records.auto.autobuyersOn = player.auto.autobuyersOn;
     player.celestials.alpha.records.auto.disableContinuum = player.auto.disableContinuum;
     player.celestials.alpha.records.auto.eternity.amount = player.auto.eternity.amount;
@@ -708,7 +735,7 @@ export const Alpha = {
     player.celestials.alpha.records.auto.dimBoost.cost = player.auto.dimBoost.cost;
     player.celestials.alpha.records.auto.dimBoost.interval = player.auto.dimBoost.interval;
     player.celestials.alpha.records.auto.dimBoost.limitDimBoosts = player.auto.dimBoost.limitDimBoosts;
-    player.celestials.alpha.records.auto.dimBoost.maxDimBoosts = Number(player.auto.dimBoost.maxDimBoosts);
+    player.celestials.alpha.records.auto.dimBoost.maxDimBoosts = player.auto.dimBoost.maxDimBoosts.toNumber();
     player.celestials.alpha.records.auto.dimBoost.limitUntilGalaxies = player.auto.dimBoost.limitUntilGalaxies;
     player.celestials.alpha.records.auto.dimBoost.galaxies = player.auto.dimBoost.galaxies;
     player.celestials.alpha.records.auto.dimBoost.buyMaxInterval = player.auto.dimBoost.buyMaxInterval;
@@ -1056,7 +1083,36 @@ export const Alpha = {
   },
   advanceLayer() {
     player.celestials.alpha.stage++;
-    this.escapeTheMatrix();
+    // Hell only raises the layer, so its nerfs apply without resetting anything
+    if (!Hell.isInside) this.escapeTheMatrix();
+  },
+  checkForStageCompletion() {
+    if (!this.isRunning) return;
+    if (this.currentStage === 0 && DimBoost.purchasedBoosts.gte(4)) {
+      this.advanceLayer();
+      this.quotes.fourthDB.show();
+    } else if (this.currentStage === 1 && DimBoost.purchasedBoosts.gte(5)) {
+      this.advanceLayer();
+      this.quotes.fifthDB.show();
+    } else if (this.currentStage === 2 && player.galaxies.gte(1)) {
+      this.advanceLayer();
+    } else if (this.currentStage === 6 && BreakInfinityUpgrade.galaxyBoost.isBought) {
+      this.advanceLayer();
+      this.quotes.powerGalaxies.show();
+    } else if (this.currentStage === 7 &&
+      BreakInfinityUpgrade.all.filter(upgrade => upgrade.isBought).length ===
+        (BreakInfinityUpgrade.all.length - player.infinityRebuyables.length) &&
+      BreakInfinityUpgrade.all.filter(upgrade => upgrade.isCapped).length === player.infinityRebuyables.length) {
+      if (!Hell.isInside) InfinityDimensions.fullReset();
+      this.advanceLayer();
+      this.quotes.allBreakUpgrades.show();
+    } else if (this.currentStage === 8 && player.challenge.infinity.completedBits === 510) {
+      this.advanceLayer();
+      this.quotes.allInfinityChalls.show();
+    } else if (this.currentStage === 25 && DilationUpgrade.ttGenerator.isBought) {
+      this.advanceLayer();
+      this.quotes.ttGen.show();
+    }
   },
   get isRunning() {
     return player.celestials.alpha.run;
@@ -1095,8 +1151,8 @@ export const Alpha = {
   },
   get totalSpeedBoost() {
     return Decimal.pow(Decimal.max(Decimal.log10(Currency.etherealPower.value).sub(7), 0).div(7).add(1), 2).timesEffectsOf(
-      Achievement(212),
-      Achievement(213)
+      Achievement(302),
+      Achievement(303)
     );
   },
   get cosmicSectorMinBoost() {

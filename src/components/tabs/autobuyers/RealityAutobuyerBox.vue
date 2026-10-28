@@ -22,7 +22,7 @@ export default {
   data() {
     return {
       mode: AUTO_REALITY_MODE.RM,
-      levelCap: new Decimal(),
+      levelCap: 0,
       isOverCap: false,
       hasAlternateInputs: false,
     };
@@ -45,8 +45,8 @@ export default {
   methods: {
     update() {
       this.mode = this.autobuyer.mode;
-      this.levelCap.copyFrom(Glyphs.levelCap);
-      this.isOverCap = new Decimal(this.autobuyer.glyph).gt(this.levelCap);
+      this.levelCap = Glyphs.levelCap;
+      this.isOverCap = this.levelCap.lt(this.autobuyer.glyph);
       // The container only has room for 2 textboxes, so we switch what they go to based on the current mode
       this.hasAlternateInputs = Autobuyer.reality.mode > AUTO_REALITY_MODE.BOTH;
     },
@@ -111,11 +111,11 @@ export default {
       </div>
       <AutobuyerInput
         :autobuyer="autobuyer"
-        :type="(hasAlternateInputs && hasRelicMode) ? 'decimal' : 'int'"
+        :type="(hasAlternateInputs && hasRelicMode) ? 'decimal' : 'decimal'"
         :property="(hasAlternateInputs && hasRelicMode) ? 'shard' : 'glyph'"
       />
       <div v-if="isOverCap">
-        Autobuyer will trigger at the Glyph level cap of {{ formatHybridLarge(levelCap, 3) }}.
+        Autobuyer will trigger at the Glyph level cap of {{ formatInt(levelCap) }}.
       </div>
     </template>
   </AutobuyerBox>

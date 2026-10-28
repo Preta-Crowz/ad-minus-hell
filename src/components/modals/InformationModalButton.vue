@@ -1,5 +1,4 @@
 <script>
-import { openExternalLink } from "@/utility/open-external-link";
 
 export default {
   name: "InformationModalButton",
@@ -28,7 +27,7 @@ export default {
       Modal[this.showModal].show();
     },
     openLink() {
-      openExternalLink(this.link);
+      window.open(this.link, "_blank").focus();
     }
   }
 };
@@ -70,7 +69,7 @@ export default {
   transform: scale(1.1);
 }
 
-[ach-tooltip]:before {
+[ach-tooltip]::before {
   width: 20rem;
   font-size: 1.5rem;
 }

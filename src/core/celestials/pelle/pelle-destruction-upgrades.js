@@ -215,7 +215,7 @@ export class PelleStrikeUpgradeState extends SetPurchasableMechanicState {
   }
 
   get isAvailableForPurchase() {
-    return Achievement(204).isUnlocked;
+    return Achievement(294).isUnlocked;
   }
 
   get canBeApplied() {

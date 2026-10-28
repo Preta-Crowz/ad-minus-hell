@@ -10,7 +10,7 @@ export class BigCrunchAutobuyerState extends UpgradeableAutobuyerState {
   }
 
   get isUnlocked() {
-    if (LHC.voidRunning && NullUpgrade.limerick5.isBought) return true;
+    if (LHC.voidRunning && LHCNullUpgrade.limerick5.isBought) return true;
     return Pelle.isDoomed
       ? PelleStrikes.infinity.hasStrike
       : this.canBeUpgraded;
@@ -77,7 +77,7 @@ export class BigCrunchAutobuyerState extends UpgradeableAutobuyerState {
     return (considerMilestoneReached || EternityMilestone.autoInfinities.isReached) &&
       !EternityChallenge(4).isRunning && !EternityChallenge(12).isRunning && !Player.isInAntimatterChallenge &&
       player.auto.autobuyersOn && this.data.isActive &&
-      !Autobuyer.eternity.isActive && this.mode === AUTO_CRUNCH_MODE.TIME && this.time <= 5 &&
+      !Autobuyer.eternity.isActive && this.mode === AUTO_CRUNCH_MODE.TIME && this.time < 60 &&
       !Autobuyer.eternity.autoEternitiesAvailable();
   }
 

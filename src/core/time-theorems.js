@@ -1,3 +1,13 @@
+import { DC } from "./constants";
+import { Currency } from "./currency";
+
+function checkForAlphaTimeTheoremCompletion() {
+  if (TimeTheorems.totalPurchased().gt(114) && Alpha.isRunning && Alpha.currentStage === 15) {
+    Alpha.advanceLayer();
+    Alpha.quotes.prepareEternityChalls.show();
+  }
+}
+
 /**
  * @abstract
  */
@@ -32,8 +42,8 @@ export class TimeTheoremPurchaseType {
   get costIncrement() { throw new NotImplementedError(); }
 
   get bulkPossible() {
-    if (Perk.ttFree.canBeApplied && !player.disablePostReality) {
-      return Decimal.floor(this.currency.value.divide(this.cost).log10().div(this.costIncrement.log10()).add(1));
+    if (Perk.ttFree.canBeApplied) {
+      return this.currency.value.divide(this.cost).max(1).log10().div(this.costIncrement.max(1).log10()).add(1).floor();
     }
     return Decimal.affordGeometricSeries(this.currency.value, this.cost, this.costIncrement, 0);
   }
@@ -44,30 +54,39 @@ export class TimeTheoremPurchaseType {
     return this.cost.times(this.costIncrement.pow(amount.sub(1)));
   }
 
-  purchase(bulk) {
+  purchase(bulk = false) {
+    if (Currency.timeTheorems.gte(115) && Pelle.isDoomed) PelleStrikes.ECs.trigger();
     if (!this.canAfford) return false;
-    let purchased = false;
-    const amount = (Alpha.isRunning && Alpha.currentStage < 15) ? Decimal.min(this.bulkPossible, new Decimal(38).sub(this.amount)) : this.bulkPossible;
-    const single = (Alpha.isRunning && Alpha.currentStage < 15) ? Decimal.min(1, new Decimal(38).sub(this.amount)) : DC.D1;
-    const buyFn = cost => ((Perk.ttFree.canBeApplied && !player.disablePostReality) ? this.currency.gte(cost) : this.currency.purchase(cost));
-    // This will sometimes buy one too few for EP, so we just have to buy 1 after.
-    if (bulk && buyFn(this.bulkCost(amount.sub(single)))) {
-      Currency.timeTheorems.add(amount.sub(single));
-      this.add(amount.sub(single));
-      purchased = true;
+
+    if (!bulk) {
+      if (!Perk.ttFree.canBeApplied && this.currency.layer <= 1) this.currency.subtract(this.cost);
+      Currency.timeTheorems.add(1);
+      this.add(1);
+      player.requirementChecks.reality.noPurchasedTT = false;
+      if (Currency.timeTheorems.gte(115) && Pelle.isDoomed) PelleStrikes.ECs.trigger();
+      checkForAlphaTimeTheoremCompletion();
+      return true;
     }
-    if (buyFn(this.cost)) {
-      Currency.timeTheorems.add(single);
-      this.add(single);
-      purchased = true;
+    const canBuy = this.currency.value.sub(this.costBase)
+      .clampMin(this.costIncrement.recip()).log(this.costIncrement);
+    let amntPur = canBuy.sub(this.amount).floor();
+    // We can definitely afford x - 1
+    amntPur = amntPur.sub(1).max(0);
+    Currency.timeTheorems.add(amntPur);
+    this.add(amntPur);
+    if (!Perk.ttFree.canBeApplied && this.currency.layer <= 1 && amntPur.neq(0)) this.currency.subtract(this.cost);
+    // Can we afford another? If not, just return that we definitely bought some already
+    if (this.currency.lt(this.cost) && amntPur.neq(0)) {
+      checkForAlphaTimeTheoremCompletion();
+      return true;
     }
-    if (purchased) player.requirementChecks.reality.noPurchasedTT = false;
-    if (TimeTheorems.totalPurchased().gt(114)) PelleStrikes.ECs.trigger();
-    if (TimeTheorems.totalPurchased().gt(114) && Alpha.isRunning && Alpha.currentStage === 15) {
-      Alpha.advanceLayer();
-      Alpha.quotes.prepareEternityChalls.show();
-    }
-    return purchased;
+    Currency.timeTheorems.add(1);
+    if (!Perk.ttFree.canBeApplied && this.currency.layer <= 1) this.currency.subtract(this.cost);
+    this.add(1);
+    player.requirementChecks.reality.noPurchasedTT = false;
+    if (Currency.timeTheorems.gte(115) && Pelle.isDoomed) PelleStrikes.ECs.trigger();
+    checkForAlphaTimeTheoremCompletion();
+    return true;
   }
 
   get canAfford() {
@@ -85,7 +104,7 @@ TimeTheoremPurchaseType.am = new class extends TimeTheoremPurchaseType {
 
   get currency() { return Currency.antimatter; }
   get costBase() { return DC.E20000; }
-  get costIncrement() { return DC.E20000.pow(Alpha.isRunning ? AlphaUnlocks.timestudy61.effects.nerf.effectOrDefault(1) : 1); }
+  get costIncrement() { return DC.E20000; }
 }();
 
 TimeTheoremPurchaseType.ip = new class extends TimeTheoremPurchaseType {
@@ -93,8 +112,8 @@ TimeTheoremPurchaseType.ip = new class extends TimeTheoremPurchaseType {
   set amount(value) { player.timestudy.ipBought = value; }
 
   get currency() { return Currency.infinityPoints; }
-  get costBase() { return DC.D1; }
-  get costIncrement() { return DC.E100.pow(Alpha.isRunning ? AlphaUnlocks.timestudy61.effects.nerf.effectOrDefault(1) : 1); }
+  get costBase() { return Hell.isInside ? new Decimal(1e-13) : DC.D1; }
+  get costIncrement() { return DC.E100; }
 }();
 
 TimeTheoremPurchaseType.ep = new class extends TimeTheoremPurchaseType {
@@ -103,17 +122,17 @@ TimeTheoremPurchaseType.ep = new class extends TimeTheoremPurchaseType {
 
   get currency() { return Currency.eternityPoints; }
   get costBase() { return DC.D1; }
-  get costIncrement() { return DC.D2.pow(Alpha.isRunning ? AlphaUnlocks.timestudy61.effects.nerf.effectOrDefault(1) : 1); }
+  get costIncrement() { return DC.D2; }
 
   bulkCost(amount) {
-    if (Perk.ttFree.canBeApplied && !player.disablePostReality) return this.cost.times(this.costIncrement.pow(amount.sub(1)));
-    return this.costIncrement.pow(amount.add(this.amount)).subtract(this.cost);
+    if (Perk.ttFree.canBeApplied || this.currency.layer > 1) return this.cost.times(this.costIncrement.pow(amount));
+    return this.cost.times(this.costIncrement.pow(amount.sub(1)));
   }
 }();
 
 export const TimeTheorems = {
   checkForBuying(auto) {
-    if (PlayerProgress.realityUnlocked() || TimeDimension(1).bought) return true;
+    if (PlayerProgress.realityUnlocked() || Currency.timeShards.gt(0)) return true;
     if (!auto) Modal.message.show(`You need to buy at least ${formatInt(1)} Time Dimension before you can purchase
       Time Theorems.`, { closeEvent: GAME_EVENT.REALITY_RESET_AFTER });
     return false;
@@ -127,36 +146,34 @@ export const TimeTheorems = {
 
   // This is only called via automation and there's no manual use-case, so we assume auto is true and simplify a bit
   buyOneOfEach() {
-    if (!this.checkForBuying(true)) return DC.D0;
-    const ttAM = this.buyOne(true, "am");
-    const ttIP = this.buyOne(true, "ip");
-    const ttEP = this.buyOne(true, "ep");
-    return ttAM.add(ttIP).add(ttEP);
+    if (!this.checkForBuying(true)) return;
+    this.buyOne(true, "am");
+    this.buyOne(true, "ip");
+    this.buyOne(true, "ep");
   },
 
   buyMax(auto = false) {
-    if (!this.checkForBuying(auto)) return DC.D0;
-    const ttAM = TimeTheoremPurchaseType.am.purchase(true);
-    const ttIP = TimeTheoremPurchaseType.ip.purchase(true);
-    const ttEP = TimeTheoremPurchaseType.ep.purchase(true);
-    return new Decimal(ttAM + ttIP + ttEP);
+    if (!this.checkForBuying(auto)) return;
+    TimeTheoremPurchaseType.am.purchase(true);
+    TimeTheoremPurchaseType.ip.purchase(true);
+    TimeTheoremPurchaseType.ep.purchase(true);
   },
 
   totalPurchased() {
-    return TimeTheoremPurchaseType.am.amount.add(
-          TimeTheoremPurchaseType.ip.amount).add(
-          TimeTheoremPurchaseType.ep.amount);
+    return TimeTheoremPurchaseType.am.amount
+      .add(TimeTheoremPurchaseType.ip.amount)
+      .add(TimeTheoremPurchaseType.ep.amount);
   },
 
   calculateTimeStudiesCost() {
     let totalCost = TimeStudy.boughtNormalTS()
       .map(ts => ts.cost)
-      .reduce(Number.sumReducer, 0);
+      .reduce(Decimal.sumReducer, new Decimal());
     const ecStudy = TimeStudy.eternityChallenge.current();
     if (ecStudy !== undefined) {
-      totalCost += ecStudy.cost;
+      totalCost = totalCost.add(ecStudy.cost);
     }
-    if (Enslaved.isRunning && player.celestials.enslaved.hasSecretStudy) totalCost -= 100;
+    if (Enslaved.isRunning && player.celestials.enslaved.hasSecretStudy) totalCost = totalCost.sub(100);
     return totalCost;
   }
 };

@@ -1,7 +1,6 @@
 <script>
 import ModalWrapper from "@/components/modals/ModalWrapper";
 import StdStoreRow from "@/components/modals/StdStoreRow";
-import { SteamRuntime } from "@/steam";
 
 export default {
   name: "StdStoreModal",
@@ -14,14 +13,6 @@ export default {
       macPurchaser: false,
     };
   },
-  methods: {
-    update() {
-      this.macPurchaser = SteamRuntime.hasPendingPurchaseConfirmations;
-    },
-    macConfirm() {
-      SteamRuntime.validatePurchases();
-    }
-  },
 };
 </script>
 
@@ -31,11 +22,11 @@ export default {
       Support The Developer - coins
     </template>
     <span v-if="macPurchaser">
-      <button class="o-shop-button-button" @click="macConfirm()">Confirm Purchase to Receive STDs</button>
+      <button class="o-shop-button-button" >Confirm Purchase to Receive STDs</button>
       <br><span>(Required on Mac)</span><br>
     </span>
     <div class="l-modal-store-content">
-      <img src="images/std_coin.png">
+      <img src="/images/std_coin.png">
       <div class="c-modal-store-buttons">
         <StdStoreRow
           :amount="30"

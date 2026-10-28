@@ -1,6 +1,10 @@
 import { AutobuyerState } from "./autobuyer";
 
 export class SingularityAutobuyerState extends AutobuyerState {
+  get realTime(){
+    return true;
+  }
+
   get data() {
     return player.auto.singularity;
   }
@@ -19,7 +23,7 @@ export class SingularityAutobuyerState extends AutobuyerState {
 
   tick() {
     if (DivinityMilestone.hadronEmpowerment.isReached ||
-        Currency.darkEnergy.value.gte(Singularity.cap.times(SingularityMilestone.autoCondense.effectValue))) {
+      Currency.darkEnergy.value.gte(Singularity.cap.mul(SingularityMilestone.autoCondense.effectValue))) {
       Singularity.perform();
     }
   }

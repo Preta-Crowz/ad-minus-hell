@@ -35,7 +35,7 @@ export default {
       Glyphs.changeProtectedRows(-1);
     },
     isProtectedRowsMax() {
-      return this.protectedRows === Glyphs.totalSlots / 10 - 1;
+      return this.protectedRows === Glyphs.totalSlots / 14 - 1;
     },
     addRowButtonClass() {
       return {

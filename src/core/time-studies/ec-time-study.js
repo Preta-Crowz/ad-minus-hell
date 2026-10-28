@@ -13,7 +13,6 @@ export class ECTimeStudyState extends TimeStudyState {
 
   purchase(auto) {
     if (GameEnd.creditsEverClosed) return false;
-    if (this.id === 11 && Alpha.isRunning && Alpha.currentStage < 21) return;
     EternityChallenge(this.id).hasUnlocked = true;
     const clickTime = Date.now();
 
@@ -31,6 +30,19 @@ export class ECTimeStudyState extends TimeStudyState {
       // If you haven't bought it and can buy it, reset the time of click, and
       // send you into the EC, deduct your resources, and move you to the EC tab if that isn't disabled
       ui.lastClickTime = 0;
+
+      if((!eternityUGs.all[4].config.hasFailed() && !eternityUGs.all[4].isBought) && (player.options.confirmations.glitchCL && 
+ !PlayerProgress.metaUnlocked()) && this.id == 1){
+        Modal.message.show(`you will fail glitch challenge ${eternityUGs.all[4].config.name} <br> which is to ${eternityUGs.all[4].config.requirement} <br> you can disable this for <i>all</i> challenges in confirmations`);
+        return;
+      }
+      if((!eternityUGs.all[5].config.hasFailed() && !eternityUGs.all[5].isBought) && (player.options.confirmations.glitchCL && 
+ !PlayerProgress.metaUnlocked()) && (this.id == 1 || this.id == 2 || this.id == 3)){
+        if(EternityChallenge(this.id).completions == 4){
+          Modal.message.show(`you will fail glitch challenge ${eternityUGs.all[5].config.name} <br> which is to ${eternityUGs.all[5].config.requirement} <br> you can disable this for <i>all</i> challenges in confirmations`);
+          return;
+        }
+      }
 
       player.challenge.eternity.unlocked = this.id;
       if (!auto) {
@@ -77,12 +89,18 @@ export class ECTimeStudyState extends TimeStudyState {
     if (player.challenge.eternity.unlocked !== 0) {
       return false;
     }
-    if (!this.config.requirement.some(s => TimeStudy(s).isBought)) {
+    if (!this.requirement.some(s => TimeStudy(s).isBought)) {
       return false;
     }
     return this.allSecondaryRequirementsMet;
   }
 
+  get requirement() {
+    return this.id === 6 && TeresaUnlocks.EC6RequireActive.canBeApplied
+      ? [111]
+      : this.config.requirement;
+  }
+  
   /**
    * @returns {EternityChallengeState}
    */

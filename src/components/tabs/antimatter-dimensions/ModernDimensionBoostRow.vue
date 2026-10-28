@@ -5,18 +5,17 @@ export default {
     return {
       requirement: {
         tier: 1,
-        amount: new Decimal(0)
+        amount: new Decimal()
       },
       isBuyable: false,
-      purchasedBoosts: new Decimal(0),
-      imaginaryBoosts: new Decimal(0),
+      purchasedBoosts: new Decimal(),
+      imaginaryBoosts: new Decimal(),
       lockText: null,
       unlockedByBoost: null,
       creditsClosed: false,
       requirementText: null,
       hasTutorial: false,
-      hasSurge: false,
-      isFlipped: false
+      isFlipped: false,
     };
   },
   computed: {
@@ -27,12 +26,12 @@ export default {
     boostCountText() {
       if (this.requirementText) return this.requirementText;
       const parts = [this.purchasedBoosts];
-      if (this.imaginaryBoosts.neq(0) && !Ascensions.dbA.isUnlocked) {
+      if (this.imaginaryBoosts.neq(0)) {
         parts.push(this.imaginaryBoosts);
       }
-      const sum = parts.map(formatDimboostParts).join(" + ");
+      const sum = parts.map(formatInt).join(" + ");
       if (parts.length >= 2) {
-        return `${sum} = ${formatHybridLarge(parts.decimalSum(), 3)}`;
+        return `${sum} = ${formatInt(parts.sum())}`;
       }
       return sum;
     },
@@ -43,17 +42,11 @@ export default {
         "o-primary-btn--disabled": !this.isBuyable,
         "o-pelle-disabled-pointer": this.creditsClosed
       };
-    },
-    dimBoostName() {
-      if (this.hasSurge) return "Dimension Surge";
-      return "Dimension Boost";
-    },
-    imaginaryText() {
-      return `(${formatHybridLarge(this.imaginaryBoosts, 3)} free Dimension Boosts, which do not provide a power effect)`;
     }
   },
   methods: {
     update() {
+      this.isFlipped = player.universes.current === 2;
       const requirement = DimBoost.requirement;
       this.requirement.tier = requirement.tier;
       this.requirement.amount.copyFrom(requirement.amount);
@@ -63,10 +56,8 @@ export default {
       this.lockText = DimBoost.lockText;
       this.unlockedByBoost = DimBoost.unlockedByBoost;
       this.creditsClosed = GameEnd.creditsEverClosed;
-      if (this.isDoomed) this.requirementText = formatHybridLarge(this.purchasedBoosts, 3);
+      if (this.isDoomed) this.requirementText = formatInt(this.purchasedBoosts);
       this.hasTutorial = Tutorial.isActive(TUTORIAL_STATE.DIMBOOST);
-      this.hasSurge = Ascensions.dbA.isUnlocked;
-      this.isFlipped = player.universes.current === 2;
     },
     dimensionBoost(bulk) {
       if (!DimBoost.requirement.isSatisfied || !DimBoost.canBeBought) return;
@@ -78,9 +69,8 @@ export default {
 
 <template>
   <div class="reset-container dimboost">
-    <h4>{{ dimBoostName }} ({{ boostCountText }})</h4>
-    <span>Requires: {{ formatHybridLarge(requirement.amount, 3) }} {{ dimName }} {{ isFlipped ? "Matter" : "Antimatter" }} D</span>
-    <span v-if="hasSurge">{{ imaginaryText }}</span>
+    <h4>Dimension Boost ({{ boostCountText }})</h4>
+    <span>Requires: {{ formatInt(requirement.amount) }} {{ dimName }} {{ isFlipped ? "Matter" : "Antimatter" }} D</span>
     <button
       :class="classObject"
       @click.exact="dimensionBoost(true)"

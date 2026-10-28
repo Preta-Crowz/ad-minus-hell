@@ -1,3 +1,4 @@
+import { DC } from "../constants";
 import { GameMechanicState, RebuyableMechanicState, SetPurchasableMechanicState } from "../game-mechanics";
 import { DimensionState } from "./dimension";
 
@@ -49,7 +50,7 @@ class CelestialDimensionState extends DimensionState {
   }
 
   get cost() {
-    return this.costScale.calculateCostDecimal(Decimal.floor(this.baseAmount));
+    return this.costScale.calculateCost(Decimal.floor(this.baseAmount));
   }
 
   get baseAmount() {
@@ -135,7 +136,9 @@ class CelestialDimensionState extends DimensionState {
 
   get powerMultiplier() {
     return new Decimal(CelestialInfinityUpgrade.celDimPurchaseBoost.effectOrDefault(this._powerMultiplier)).timesEffectOf(
-      CelestialBreakInfinityUpgrade.celDimPurchaseBuff).pow(SingularityMilestone.perPurchaseDimMult.effectOrDefault(1));
+      CelestialBreakInfinityUpgrade.celDimPurchaseBuff).pow(
+      SingularityMilestone.perPurchaseDimMult?.effectOrDefault(1) ?? 1
+    );
   }
 
   get purchases() {
@@ -191,7 +194,7 @@ class CelestialDimensionState extends DimensionState {
     if (!this.isUnlocked) return this.unlock();
     if (!this.isAvailableForPurchase) return false;
 
-    Currency.celestialPoints.purchase(this.cost);
+    if (!DivinityMilestone.divinityOverdrive.isReached) Currency.celestialPoints.purchase(this.cost);
     this.amount = this.amount.plus(1);
     this.baseAmount = this.baseAmount.plus(1);
 
@@ -205,7 +208,7 @@ class CelestialDimensionState extends DimensionState {
 
     let purchasesUntilHardcap = this.purchaseCap.sub(this.purchases);
 
-    const maxBought = dimension.costScale.getMaxBoughtDecimal(
+    const maxBought = dimension.costScale.getMaxBought(
       Decimal.floor(dimension.baseAmount), Currency.celestialPoints.value, 1
     );
     if (maxBought === null) {
@@ -217,7 +220,9 @@ class CelestialDimensionState extends DimensionState {
     if (Currency.celestialPoints.gte(Decimal.pow10(maxBought.logPrice))) {
       dimension.amount = dimension.amount.plus(buying).round();
       dimension.baseAmount = dimension.baseAmount.plus(buying).round();
-      if (dimension.cost.lt(DC.E9E15)) Currency.celestialPoints.purchase(Decimal.pow10(maxBought.logPrice));
+      if (dimension.cost.lt(DC.E9E15) && !DivinityMilestone.divinityOverdrive.isReached) {
+        Currency.celestialPoints.purchase(Decimal.pow10(maxBought.logPrice));
+      }
     }
   }
 }
@@ -264,7 +269,8 @@ export const CelestialDimensions = {
     const reduction = Effects.product(EndgameMastery(84), Achievement(225));
     const extraReduction = DivinityMilestone.firstDivine.isReached && !player.disablePostReality ? 0.9 : 1;
     const moreExtraReduction = DivinityMilestone.pelleQoL.isReached && !player.disablePostReality ? 0.8 : 1;
-    return Decimal.pow(10 * reduction * extraReduction * moreExtraReduction, Hepteracts.softcapReduction()).toNumber();
+    const base = new Decimal(10).times(reduction).times(extraReduction).times(moreExtraReduction);
+    return Decimal.pow(base, Hepteracts.softcapReduction()).toNumber();
   },
 
   unlockNext() {
@@ -306,7 +312,7 @@ export const CelestialDimensions = {
 
   tick(realDiff) {
     for (let tier = 8; tier > 1; tier--) {
-      CelestialDimension(tier).produceDimensions(CelestialDimension(tier - 1), realDiff / 10);
+      CelestialDimension(tier).produceDimensions(CelestialDimension(tier - 1), realDiff.div(10));
     }
     CelestialDimension(1).produceCurrency(Currency.unnerfedCelestialMatter, realDiff);
   },
@@ -327,7 +333,7 @@ export const CelestialDimensions = {
 
   get alphaDecaySpeed() {
     if (player.disablePostReality) return DC.D1;
-    return new Decimal(1 - DivineDimensions.conversionFormula3).times(DivinityMilestone.divineDimensions.isReached ? 0.8 : 1).timesEffectOf(
+    return DivineDimensions.conversionFormula3Remainder.times(DivinityMilestone.divineDimensions.isReached ? 0.8 : 1).timesEffectOf(
       DivinityUpgrade.divineL1U2).times(DivinityMilestone.pelleQoL.isReached ? 0.5 : 1).times(DivinityMilestone.finalRebirth.isReached ? 0.75 : 1).times(
       DivinityMilestone.ascendedSurge.isReached ? 0.5 : 1).dividedByEffectOf(Achievement(247));
   },
@@ -338,16 +344,18 @@ export const CelestialDimensions = {
   },
 
   get conversionExponent() {
-    if (SlabdrillUnlocks.dimboost.isUnlocked && !Slabdrill.coreActive) return (Slabdrill.currentStage / 100) * Effects.product(EndgameMastery(104));
-    if (Slabdrill.isCursed) return 0;
-    if (player.disablePostReality && !Alpha.isRunning) return 0;
-    let base = CelestialInfinityUpgrade.celestialMatterConversionBuff.effectOrDefault(2);
-    if (Pelle.isDoomed) base /= 10;
-    let exponent = 1;
-    if (base > 1) exponent *= Effects.product(EndgameMastery(104), Ra.unlocks.celestialDimensionConversionPower, EndgameMastery(261));
-    base *= Effects.product(Achievement(208), Achievement(224), CelestialEternityUpgrade.conversionFormulaImprovement);
-    base *= EtherealStars.yellow.reward.toNumber();
-    return Math.pow(base, exponent) * (Alpha.isRunning ? Alpha.celestialMatterConversionNerf : 1);
+    if (SlabdrillUnlocks.dimboost.isUnlocked && !Slabdrill.coreActive) {
+      return Effects.product(EndgameMastery(104)).times(Slabdrill.currentStage).div(100);
+    }
+    if (Slabdrill.isCursed || (player.disablePostReality && !Alpha.isRunning)) return DC.D0;
+    let base = new Decimal(CelestialInfinityUpgrade.celestialMatterConversionBuff.effectOrDefault(2));
+    if (Pelle.isDoomed) base = base.div(10);
+    const exponent = base.gt(1)
+      ? Effects.product(EndgameMastery(104), Ra.unlocks.celestialDimensionConversionPower, EndgameMastery(261))
+      : DC.D1;
+    base = base.times(Effects.product(Achievement(298), Achievement(224), CelestialEternityUpgrade.conversionFormulaImprovement));
+    base = base.times(EtherealStars.yellow.reward);
+    return Decimal.pow(base, exponent).times(Alpha.isRunning ? Alpha.celestialMatterConversionNerf : 1);
   }
 };
 
@@ -372,7 +380,7 @@ export function buyMaxCelestialTickSpeed() {
   if (!CelestialTickspeed.isAvailableForPurchase || !CelestialTickspeed.isAffordable) return;
   let boughtTickspeed = false;
 
-  const purchases = CelestialTickspeed.costScale.getMaxBoughtDecimal(
+  const purchases = CelestialTickspeed.costScale.getMaxBought(
     player.endgame.celDimExpansion.totalTickBought, Currency.celestialMatter.value, 1);
   if (purchases === null) {
     return;
@@ -409,7 +417,7 @@ export const CelestialTickspeed = {
   },
 
   get cost() {
-    return this.costScale.calculateCostDecimal(player.endgame.celDimExpansion.totalTickBought);
+    return this.costScale.calculateCost(player.endgame.celDimExpansion.totalTickBought);
   },
 
   get costScale() {
@@ -696,7 +704,7 @@ export class CelestialGalaxy {
   static get canBeBought() {
     if (player.disablePostReality) return false;
     if (EternityChallenge(6).isRunning && !Enslaved.isRunning) return false;
-    if (NormalChallenge(8).isRunning || InfinityChallenge(7).isRunning) return false;
+    if (NormalChallenge(8).isRunning || (InfinityChallenge(7).isRunning && !Hell.isInside)) return false;
     if (Currency.celestialMatter.value.gt(DC.NUMMAX) && !player.endgame.celDimExpansion.isBroken) return false;
     return true;
   }

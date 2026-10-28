@@ -86,7 +86,7 @@ class AcceleratorState extends GameMechanicState {
   }
 
   get percentage() {
-    return this.realPercentage;
+    return Hell.isInside ? 0 : this.realPercentage;
   }
 
   get milestones() {
@@ -197,11 +197,11 @@ export const LHC = {
   },
 
   get voidRunning() {
-    return player.endgame.largeHadronCollider.void.isRunning && player.endgame.largeHadronCollider.void.mode === 0;
+    return Hell.isInside || (player.endgame.largeHadronCollider.void.isRunning && player.endgame.largeHadronCollider.void.mode === 0);
   },
 
   get nullifiedVoidRunning() {
-    return player.endgame.largeHadronCollider.void.isRunning && player.endgame.largeHadronCollider.void.mode === 1;
+    return Hell.isInside || (player.endgame.largeHadronCollider.void.isRunning && player.endgame.largeHadronCollider.void.mode === 1);
   },
 
   gameLoop(diff) {
@@ -224,7 +224,11 @@ export const CMilestones = {
 
   tesseractEqualizer(bought, free) {
     const effectiveC = Math.clamp((this.c - 0.5) * 2, 0, 1);
-    return Math.pow((Math.max(bought, 1) * Math.max(free, 1)) / Math.max(bought + free, 1), effectiveC) * (bought + free);
+    const boughtDecimal = new Decimal(bought);
+    const freeDecimal = new Decimal(free);
+    const total = boughtDecimal.add(freeDecimal);
+    const ratio = boughtDecimal.max(1).times(freeDecimal.max(1)).div(total.max(1));
+    return Decimal.pow(ratio, effectiveC).times(total);
   },
 
   antimatterEqualizer(mults, tick) {
@@ -339,12 +343,12 @@ export function enterTheVoid() {
   player.endgame.largeHadronCollider.void.isRunning = true;
   recalculateAllGlyphs();
   Tab.dimensions.antimatter.show(false);
-  if (NullUpgrade.ncComp.isBought) NormalChallenges.completeAll();
-  if (NullUpgrade.alwaysBroken.isBought) player.break = true;
-  if (NullUpgrade.icComp.isBought) InfinityChallenges.completeAll();
-  if (NullUpgrade.repUnl.isBought) Replicanti.unlock(true);
-  if (NullUpgrade.eterMiles.isBought) Currency.eternities.bumpTo(100);
-  if (NullUpgrade.limerick3.isBought) {
+  if (LHCNullUpgrade.ncComp.isBought) NormalChallenges.completeAll();
+  if (LHCNullUpgrade.alwaysBroken.isBought) player.break = true;
+  if (LHCNullUpgrade.icComp.isBought) InfinityChallenges.completeAll();
+  if (LHCNullUpgrade.repUnl.isBought) Replicanti.unlock(true);
+  if (LHCNullUpgrade.eterMiles.isBought) Currency.eternities.bumpTo(100);
+  if (LHCNullUpgrade.limerick3.isBought) {
     player.eternityChalls = {
       eterc1: 5,
       eterc2: 5,
@@ -360,7 +364,7 @@ export function enterTheVoid() {
       eterc12: 5
     };
   }
-  if (NullUpgrade.limerick4.isBought) {
+  if (LHCNullUpgrade.limerick4.isBought) {
     if (!player.dilation.studies.includes(1)) player.dilation.studies.push(1);
   }
 };
@@ -427,12 +431,36 @@ class RebuyableNullUpgradeState extends RebuyableMechanicState {
     return this.boughtAmount === this.config.maxUpgrades;
   }
 
+  buyMax() {
+    if (!this.canBeBought || GameEnd.creditsEverClosed) return false;
+    const { costIncrease } = this.config;
+    const first = this.cost;
+    const ratio = new Decimal(costIncrease);
+    // Sum of k costs is first * (ratio^k - 1) / (ratio - 1)
+    const count = Decimal.log(this.currency.value.times(ratio.sub(1)).div(first).add(1), ratio).floor();
+    const k = Math.max(1, Math.min(count.toNumber(), Number.MAX_VALUE));
+    if (!Number.isFinite(k)) return false;
+    const total = first.times(ratio.pow(k).sub(1)).div(ratio.sub(1));
+    if (this.currency.lt("ee15")) this.currency.subtract(total.min(this.currency.value));
+    this.boughtAmount += k;
+    this.onPurchased();
+    GameUI.update();
+    return true;
+  }
+
   onPurchased() {
     this.config.onPurchased?.();
   }
 }
 
-export const NullUpgrade = mapGameDataToObject(
+export function buyMaxNullUpgrades() {
+  for (const upgrade of LHCNullUpgrade.all) {
+    if (upgrade.isRebuyable) upgrade.buyMax();
+    else upgrade.purchase();
+  }
+}
+
+export const LHCNullUpgrade = mapGameDataToObject(
   GameDatabase.endgame.nullUpgrades,
   config => (config.rebuyable
     ? new RebuyableNullUpgradeState(config)

@@ -1,8 +1,10 @@
 export const DeltaTimeState = {
   deltaTime: new TimeSpan(new Decimal(0)),
-  unscaledDeltaTime: new TimeSpan(new Decimal(0)),
-  update(deltaTime, gameDeltaTime) {
-    this.unscaledDeltaTime = TimeSpan.fromMilliseconds(new Decimal(deltaTime));
+  realDeltaTime: new TimeSpan(new Decimal(0)),
+  trueDeltaTime: new TimeSpan(new Decimal(0)),
+  update(trueDeltaTime, deltaTime, gameDeltaTime) {
+    this.trueDeltaTime = TimeSpan.fromMilliseconds(new Decimal(trueDeltaTime));
+    this.realDeltaTime = TimeSpan.fromMilliseconds(deltaTime);
     this.deltaTime = TimeSpan.fromMilliseconds(gameDeltaTime);
   }
 };
@@ -32,6 +34,7 @@ export const Time = {
   toDateTimeString(timestamp) {
     return new Date(timestamp).toString().replace(/^.{4}(.*:..:..).*$/u, "$1");
   },
+
   /**
    * Frame delta time
    * @returns {TimeSpan}
@@ -54,12 +57,21 @@ export const Time = {
     return this.deltaTimeFull.totalMilliseconds;
   },
   /**
-   * Frame delta time, but without game speed effects
+   * Frame delta time, but without any game speed effects
    * @returns {TimeSpan}
    */
-  get unscaledDeltaTime() {
-    return DeltaTimeState.unscaledDeltaTime;
+  get realDeltaTime() {
+    return DeltaTimeState.realDeltaTime;
   },
+
+  /**
+   * Frame delta time, but without any effects
+   * @returns {TimeSpan}
+   */
+  get trueDeltaTime() {
+    return DeltaTimeState.trueDeltaTime;
+  },
+
   /**
    * @returns {TimeSpan}
    */
@@ -77,36 +89,33 @@ export const Time = {
    * @returns {TimeSpan}
    */
   get timeSinceBlackHole() {
-    return this.fromMilliseconds(() => {
-      const diff = player.records.totalTimePlayed.sub(player.records.timePlayedAtBHUnlock);
-      return Decimal.max(0, diff);
-    });
+    return this.fromMilliseconds(() => player.records.timeSinceBHUnlock);
   },
 
   /**
    * @returns {TimeSpan}
    */
   get realTimeDoomed() {
-    return this.fromMilliseconds(() => new Decimal(player.records.realTimeDoomed));
+    return this.fromMilliseconds(() => player.records.realTimeDoomed);
   },
   /**
    * @param {TimeSpan} timespan
    */
   set realTimeDoomed(timespan) {
-    this.toMilliseconds(timespan, value => player.records.realTimeDoomed = value.toNumber());
+    this.toMilliseconds(timespan, value => player.records.realTimeDoomed = value);
   },
 
   /**
    * @returns {TimeSpan}
    */
   get realTimePlayed() {
-    return this.fromMilliseconds(() => new Decimal(player.records.realTimePlayed));
+    return this.fromMilliseconds(() => player.records.realTimePlayed);
   },
   /**
    * @param {TimeSpan} timespan
    */
   set realTimePlayed(timespan) {
-    this.toMilliseconds(timespan, value => player.records.realTimePlayed = value.toNumber());
+    this.toMilliseconds(timespan, value => player.records.realTimePlayed = value);
   },
 
   /**
@@ -126,14 +135,28 @@ export const Time = {
    * @returns {TimeSpan}
    */
   get thisInfinityRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.thisInfinity.realTime));
+    return this.fromMilliseconds(() => player.records.thisInfinity.realTime);
   },
   /**
    * @param {TimeSpan} timespan
    */
   set thisInfinityRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.thisInfinity.realTime = value.toNumber());
+    this.toMilliseconds(timespan, value => player.records.thisInfinity.realTime = value);
   },
+
+  /**
+   * @returns {TimeSpan}
+   */
+  get thisInfinityTrueTime() {
+    return this.fromMilliseconds(() => new Decimal(player.records.thisInfinity.trueTime));
+  },
+  /**
+     * @param {TimeSpan} timespan
+     */
+  set thisInfinityTrueTime(timespan) {
+    this.toMilliseconds(timespan, value => player.records.thisInfinity.trueTime = value.toNumber());
+  },
+
 
   /**
    * @returns {TimeSpan}
@@ -152,13 +175,13 @@ export const Time = {
    * @returns {TimeSpan}
    */
   get bestInfinityRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.bestInfinity.realTime));
+    return this.fromMilliseconds(() => player.records.bestInfinity.realTime);
   },
   /**
    * @param {TimeSpan} timespan
    */
   set bestInfinityRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestInfinity.realTime = value.toNumber());
+    this.toMilliseconds(timespan, value => player.records.bestInfinity.realTime = value);
   },
 
   /**
@@ -178,14 +201,28 @@ export const Time = {
    * @returns {TimeSpan}
    */
   get thisEternityRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.thisEternity.realTime));
+    return this.fromMilliseconds(() => player.records.thisEternity.realTime);
   },
   /**
    * @param {TimeSpan} timespan
    */
   set thisEternityRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.thisEternity.realTime = value.toNumber());
+    this.toMilliseconds(timespan, value => player.records.thisEternity.realTime = value);
   },
+
+  /**
+   * @returns {TimeSpan}
+   */
+  get thisEternityTrueTime() {
+    return this.fromMilliseconds(() => new Decimal(player.records.thisEternity.trueTime));
+  },
+  /**
+   * @param {TimeSpan} timespan
+   */
+  set thisEternityTrueTime(timespan) {
+    this.toMilliseconds(timespan, value => player.records.thisEternity.trueTime = value.toNumber());
+  },
+
 
   /**
    * @returns {TimeSpan}
@@ -204,13 +241,13 @@ export const Time = {
    * @returns {TimeSpan}
    */
   get bestEternityRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.bestEternity.realTime));
+    return this.fromMilliseconds(() => player.records.bestEternity.realTime);
   },
   /**
    * @param {TimeSpan} timespan
    */
   set bestEternityRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestEternity.realTime = value.toNumber());
+    this.toMilliseconds(timespan, value => player.records.bestEternity.realTime = value);
   },
 
 
@@ -231,13 +268,13 @@ export const Time = {
    * @returns {TimeSpan}
    */
   get thisRealityRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.thisReality.realTime));
+    return this.fromMilliseconds(() => player.records.thisReality.realTime);
   },
   /**
    * @param {TimeSpan} timespan
    */
   set thisRealityRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.thisReality.realTime = value.toNumber());
+    this.toMilliseconds(timespan, value => player.records.thisReality.realTime = value);
   },
 
   /**
@@ -257,13 +294,13 @@ export const Time = {
    * @returns {TimeSpan}
    */
   get bestRealityRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.bestReality.realTime));
+    return this.fromMilliseconds(() => player.records.bestReality.realTime);
   },
   /**
    * @param {TimeSpan} timespan
    */
   set bestRealityRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestReality.realTime = value.toNumber());
+    this.toMilliseconds(timespan, value => player.records.bestReality.realTime = value);
   },
 
   /**
@@ -295,32 +332,6 @@ export const Time = {
   /**
    * @returns {TimeSpan}
    */
-  get bestEndgame() {
-    return this.fromMilliseconds(() => player.records.bestEndgame.time);
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set bestEndgame(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestEndgame.time = value);
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
-  get bestEndgameRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.bestEndgame.realTime));
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set bestEndgameRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestEndgame.realTime = value.toNumber());
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
   get thisCelestialInfinity() {
     return this.fromMilliseconds(() => player.records.thisCelestialInfinity.time);
   },
@@ -342,32 +353,6 @@ export const Time = {
    */
   set thisCelestialInfinityRealTime(timespan) {
     this.toMilliseconds(timespan, value => player.records.thisCelestialInfinity.realTime = value.toNumber());
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
-  get bestCelestialInfinity() {
-    return this.fromMilliseconds(() => player.records.bestCelestialInfinity.time);
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set bestCelestialInfinity(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestCelestialInfinity.time = value);
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
-  get bestCelestialInfinityRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.bestCelestialInfinity.realTime));
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set bestCelestialInfinityRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestCelestialInfinity.realTime = value.toNumber());
   },
 
   /**
@@ -399,45 +384,6 @@ export const Time = {
   /**
    * @returns {TimeSpan}
    */
-  get bestCelestialEternity() {
-    return this.fromMilliseconds(() => player.records.bestCelestialEternity.time);
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set bestCelestialEternity(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestCelestialEternity.time = value);
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
-  get bestCelestialEternityRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.bestCelestialEternity.realTime));
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set bestCelestialEternityRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestCelestialEternity.realTime = value.toNumber());
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
-  get thisCondense() {
-    return this.fromMilliseconds(() => player.records.thisCondense.time);
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set thisCondense(timespan) {
-    this.toMilliseconds(timespan, value => player.records.thisCondense.time = value);
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
   get thisCondenseRealTime() {
     return this.fromMilliseconds(() => new Decimal(player.records.thisCondense.realTime));
   },
@@ -446,45 +392,6 @@ export const Time = {
    */
   set thisCondenseRealTime(timespan) {
     this.toMilliseconds(timespan, value => player.records.thisCondense.realTime = value.toNumber());
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
-  get bestCondense() {
-    return this.fromMilliseconds(() => player.records.bestCondense.time);
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set bestCondense(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestCondense.time = value);
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
-  get bestCondenseRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.bestCondense.realTime));
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set bestCondenseRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestCondense.realTime = value.toNumber());
-  },
-
-  /**
-   * @returns {TimeSpan}
-   */
-  get thisSupernova() {
-    return this.fromMilliseconds(() => player.records.thisSupernova.time);
-  },
-  /**
-   * @param {TimeSpan} timespan
-   */
-  set thisSupernova(timespan) {
-    this.toMilliseconds(timespan, value => player.records.thisSupernova.time = value);
   },
 
   /**
@@ -503,27 +410,27 @@ export const Time = {
   /**
    * @returns {TimeSpan}
    */
-  get bestSupernova() {
-    return this.fromMilliseconds(() => player.records.bestSupernova.time);
+  get bestEndgame() {
+    return this.fromMilliseconds(() => player.records.bestEndgame.time);
   },
   /**
    * @param {TimeSpan} timespan
    */
-  set bestSupernova(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestSupernova.time = value);
+  set bestEndgame(timespan) {
+    this.toMilliseconds(timespan, value => player.records.bestEndgame.time = value);
   },
 
   /**
    * @returns {TimeSpan}
    */
-  get bestSupernovaRealTime() {
-    return this.fromMilliseconds(() => new Decimal(player.records.bestSupernova.realTime));
+  get bestEndgameRealTime() {
+    return this.fromMilliseconds(() => new Decimal(player.records.bestEndgame.realTime));
   },
   /**
    * @param {TimeSpan} timespan
    */
-  set bestSupernovaRealTime(timespan) {
-    this.toMilliseconds(timespan, value => player.records.bestSupernova.realTime = value.toNumber());
+  set bestEndgameRealTime(timespan) {
+    this.toMilliseconds(timespan, value => player.records.bestEndgame.realTime = value.toNumber());
   },
 
   /**
@@ -545,5 +452,38 @@ export const Time = {
    */
   get infinityChallengeSum() {
     return this.fromMilliseconds(() => GameCache.infinityChallengeTimeSum.value);
-  }
+  },
+  
+  get bestMetaRealTime() {
+    return this.fromMilliseconds(() => player.records.bestMeta.realTime);
+  },
+
+  set bestMetaRealTime(timespan) {
+    this.toMilliseconds(timespan, value => player.records.bestMeta.realTime = value);
+  },
+
+  get bestMetaTime() {
+    return this.fromMilliseconds(() => player.records.bestMeta.time);
+  },
+
+  set bestMetaTime(timespan) {
+    this.toMilliseconds(timespan, value => player.records.bestMeta.time = value);
+  },
+
+  get thisMetaRealTime() {
+    return this.fromMilliseconds(() => player.records.thisMeta.realTime);
+  },
+
+  set thisMetaRealTime(timespan) {
+    this.toMilliseconds(timespan, value => player.records.thisMeta.realTime = value);
+  },
+
+  get thisMetaTime() {
+    return this.fromMilliseconds(() => player.records.thisMeta.time);
+  },
+
+  set thisMetaTime(timespan) {
+    this.toMilliseconds(timespan, value => player.records.thisMeta.time = value);
+  },
+
 };

@@ -19,20 +19,19 @@ export default {
       multiplier: new Decimal(0),
       amount: new Decimal(0),
       bought: new Decimal(0),
-      boughtBefore10: 0,
+      boughtBefore10: new Decimal(0),
       rateOfChange: new Decimal(0),
       singleCost: new Decimal(0),
       until10Cost: new Decimal(0),
       isAffordable: false,
       buyUntil10: true,
-      howManyCanBuy: 0,
+      howManyCanBuy: new Decimal(0),
       isContinuumActive: false,
       continuumValue: new Decimal(0),
       isShown: false,
       isCostsAD: false,
       amountDisplay: "",
       hasTutorial: false,
-      canSeeNine: false,
       isCursedCore: false,
       isFlipped: false
     };
@@ -46,19 +45,19 @@ export default {
       return this.buyUntil10 ? format(this.until10Cost) : format(this.singleCost);
     },
     continuumString() {
-      return formatHybridFloat(this.continuumValue, 2);
+      if (this.continuumValue.gte(1e6)) return format(this.continuumValue, 2);
+      return formatFloat(this.continuumValue, 2);
     },
     showRow() {
       return this.isShown || this.isUnlocked || this.amount.gt(0);
     },
     boughtTooltip() {
-      if (this.tier === 9 && this.isCapped) return `You cannot hold more than ${format(1)} 9th
-        ${this.isFlipped ? "Matter" : "Antimatter"} Dimension at this time`;
-      if (this.isCapped) return `Nameless prevents the purchase of more than ${format(1)} 8th
-        ${this.isFlipped ? "Matter" : "Antimatter"} Dimension`;
-      if (this.isContinuumActive && this.tier !== 9) return `Continuum produces all your
-        ${this.isFlipped ? "Matter" : "Antimatter"} Dimensions`;
-      return `Purchased ${quantifyHybridLarge("time", this.bought)}`;
+      if (this.tier === 9 && this.isCapped) {
+        return `You cannot hold more than ${format(1)} 9th ${this.isFlipped ? "Matter" : "Antimatter"} Dimension at this time`;
+      }
+      if (this.isCapped) return `Nameless prevents the purchase of more than ${format(1)} 8th ${this.isFlipped ? "Matter" : "Antimatter"} Dimension`;
+      if (this.isContinuumActive) return `Continuum produces all your ${this.isFlipped ? "Matter" : "Antimatter"} Dimensions`;
+      return `Purchased ${quantifyInt("time", this.bought)}`;
     },
     costUnit() {
       return `${AntimatterDimension(this.tier - 2).shortDisplayName} ${this.isFlipped ? "MD" : "AD"}`;
@@ -78,64 +77,71 @@ export default {
       return `${prefix}${this.costDisplay} ${suffix}`;
     },
     hasLongText() {
-      return this.buttonValue.length > 20;
+      return this.buttonValue.length > 15;
     },
   },
   methods: {
     update() {
       const tier = this.tier;
-      this.canSeeNine = player.celestials.slabdrill.goodbyeTick >= 40000 || Slabdrill.isDestroyed;
       this.isFlipped = player.universes.current === 2;
-      if (!this.canSeeNine && ((tier > DimBoost.maxDimensionsUnlockable && !this.isDoomed) || tier === 9)) return;
+      const canSeeNine = player.celestials.slabdrill.goodbyeTick >= 40000 || Slabdrill.isDestroyed;
+      if (!canSeeNine && ((tier > DimBoost.maxDimensionsUnlockable && !this.isDoomed) || tier === 9)) return;
       const dimension = AntimatterDimension(tier);
       this.isUnlocked = dimension.isAvailableForPurchase;
       const buyUntil10 = player.buyUntil10;
-      this.isCapped = (tier === 8 && Enslaved.isRunning && dimension.bought.gte(1)) ||
-        (tier === 9 && true && Slabdrill.isDestroyed && dimension.bought.gte(1));
+
+      const allow = (Enslaved.isRunning && !Glitch.isRunning) || Glitch.augmentEffectActive(3);
+
+      this.isCapped = (tier === 8 && allow && dimension.bought.gte(1)) ||
+        (tier === 9 && Slabdrill.isDestroyed && dimension.bought.gte(1));
       this.multiplier.copyFrom(AntimatterDimension(tier).multiplier);
       this.amount.copyFrom(dimension.totalAmount);
       this.bought.copyFrom(dimension.bought);
-      this.boughtBefore10 = dimension.boughtBefore10;
-      this.howManyCanBuy = (this.tier === 9 && true && Slabdrill.isDestroyed) ? Math.min(dimension.howManyCanBuy, 1) :
-        (buyUntil10 ? dimension.howManyCanBuy : Math.min(dimension.howManyCanBuy, 1));
-      this.singleCost.copyFrom(this.tier === 9 ? dimension.cost.pow(dimension.boughtBefore10 + 1) : dimension.cost);
-      this.until10Cost.copyFrom(
-        this.tier === 9
-          ? dimension.cost.pow(dimension.boughtBefore10 + Math.max(dimension.howManyCanBuy, 1))
-          : dimension.cost.times(Math.max(dimension.howManyCanBuy, 1))
-      );
-      if (tier < ((player.celestials.slabdrill.goodbyeTick >= 40000 || Slabdrill.isDestroyed) ? 9 : 8)) {
+      this.boughtBefore10.copyFrom(dimension.boughtBefore10);
+      this.howManyCanBuy.copyFrom((tier === 9 && Slabdrill.isDestroyed) || !buyUntil10
+        ? Decimal.min(dimension.howManyCanBuy, 1)
+        : dimension.howManyCanBuy);
+      if (tier === 9) {
+        this.singleCost.copyFrom(dimension.cost.pow(dimension.boughtBefore10.add(1)));
+        this.until10Cost.copyFrom(dimension.cost.pow(dimension.boughtBefore10.add(Decimal.max(dimension.howManyCanBuy, 1))));
+      } else {
+        this.singleCost.copyFrom(dimension.cost);
+        this.until10Cost.copyFrom(dimension.cost.times(Decimal.max(dimension.howManyCanBuy, 1)));
+      }
+      if (tier < (canSeeNine ? 9 : 8)) {
         this.rateOfChange.copyFrom(dimension.rateOfChange);
       }
       this.isAffordable = dimension.isAffordable;
       this.buyUntil10 = buyUntil10;
       this.isContinuumActive = Laitela.continuumActive;
       if (this.isContinuumActive) this.continuumValue.copyFrom(dimension.continuumValue);
-      this.isShown = (tier === 9 ? (player.celestials.slabdrill.goodbyeTick >= 40000 || Slabdrill.isDestroyed) :
-        ((DimBoost.totalBoosts.gt(0) && DimBoost.totalBoosts.plus(3).toNumber() >= tier) || PlayerProgress.infinityUnlocked()));
-      this.isCostsAD = NormalChallenge(6).isRunning && tier > 2 && (!this.isContinuumActive || this.tier === 9);
-      this.amountDisplay = (this.tier < ((player.celestials.slabdrill.goodbyeTick >= 40000 || Slabdrill.isDestroyed) ? 9 : 8)) &&
-        !Slabdrill.isCursed ? format(this.amount, 2) : formatHybridLarge(this.amount, 3);
+      this.isShown = tier === 9
+        ? canSeeNine
+        : (DimBoost.totalBoosts.gt(0) && DimBoost.totalBoosts.add(3).gte(tier)) || PlayerProgress.infinityUnlocked();
+      this.isCostsAD = NormalChallenge(6).isRunning && tier > 2 && (!this.isContinuumActive || tier === 9);
+      this.amountDisplay = this.tier < (canSeeNine ? 9 : 8) && !Slabdrill.isCursed
+        ? format(this.amount, 2)
+        : formatHybridLarge(this.amount, 3);
       this.hasTutorial = (tier === 1 && Tutorial.isActive(TUTORIAL_STATE.DIM1)) ||
         (tier === 2 && Tutorial.isActive(TUTORIAL_STATE.DIM2));
-      this.isCursedCore = player.celestials.slabdrill.core.isActive;
+      this.isCursedCore = Slabdrill.coreActive;
     },
     buy() {
       if (this.isContinuumActive && this.tier !== 9) return;
-      if (this.howManyCanBuy === 1) {
+      if (this.howManyCanBuy.eq(1)) {
         buyOneDimension(this.tier);
       } else {
         buyAsManyAsYouCanBuy(this.tier);
       }
     },
     showCostTitle(value) {
-      return value.log10().lt(1000000);
+      return value.lt("1e1000000");
     },
     buttonClass() {
       return {
         "o-primary-btn o-primary-btn--new": true,
-        "o-primary-btn--disabled": (!this.isAffordable && (!this.isContinuumActive || this.tier === 9))
-          || !this.isUnlocked || this.isCapped,
+        "o-primary-btn--disabled": (!this.isAffordable && (!this.isContinuumActive || this.tier === 9)) ||
+          !this.isUnlocked || this.isCapped,
         "o-non-clickable o-continuum": this.isContinuumActive && this.tier !== 9
       };
     },
@@ -191,11 +197,11 @@ export default {
         >
           <div
             class="fill-purchased"
-            :style="{ 'width': boughtBefore10*10 + '%' }"
+            :style="{ 'width': boughtBefore10.toNumber()*10 + '%' }"
           />
           <div
             class="fill-possible"
-            :style="{ 'width': howManyCanBuy*10 + '%' }"
+            :style="{ 'width': howManyCanBuy.toNumber()*10 + '%' }"
           />
         </div>
       </button>
@@ -223,10 +229,5 @@ export default {
   border-color: var(--color-laitela--accent);
   color: var(--color-laitela--base);
   background: var(--color-laitela--accent);
-}
-
-.l-cursed-style {
-  display: flex;
-  height: 5.5rem;
 }
 </style>

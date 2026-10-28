@@ -1,10 +1,10 @@
 <script>
 import BigCrunchButton from "../BigCrunchButton";
+import CursedHeader from "../CursedHeader";
 import DivinityButton from "../DivinityButton";
 import GameHeader from "../GameHeader";
 import NewsTicker from "../NewsTicker";
 import NullifyButton from "../NullifyButton";
-
 
 import ClassicSubtabBar from "./ClassicSubtabBar";
 import ClassicTabBar from "./ClassicTabBar";
@@ -21,16 +21,17 @@ export default {
     InfinityPointsHeader,
     EternityPointsHeader,
     BigCrunchButton,
+    CursedHeader,
     DivinityButton,
     NullifyButton
   },
   data() {
     return {
       bigCrunch: false,
+      cursedCore: false,
       divine: false,
-      nullified: false,
+      nullify: false,
       smallCrunch: false,
-      newGameKey: "",
     };
   },
   computed: {
@@ -42,15 +43,10 @@ export default {
   methods: {
     update() {
       const crunchButtonVisible = !player.break && Player.canCrunch;
-      const divinityVisible = Pelle.isDoomed && player.antimatter.gte(DC.ENUMMAX);
-      const nullifyVisible = player.endgame.largeHadronCollider.void.nullMatter.gte(DC.NUMMAX) &&
-        !player.endgame.largeHadronCollider.void.nullified;
+      this.divine = Pelle.isDoomed && player.antimatter.gte(DC.ENUMMAX);
+      this.nullify = Currency.nullMatter.value.gte(DC.NUMMAX) && !player.endgame.largeHadronCollider.void.nullified;
+      this.cursedCore = Slabdrill.coreActive;
       this.bigCrunch = crunchButtonVisible && Time.bestInfinityRealTime.totalMinutes.gt(1);
-      this.divine = divinityVisible;
-      this.nullified = nullifyVisible;
-      // This only exists to force a key-swap after pressing the button to start a new game; the news ticker can break
-      // if it isn't redrawn
-      this.newGameKey = Pelle.isDoomed;
     }
   },
 };
@@ -59,7 +55,6 @@ export default {
 <template>
   <div
     id="container"
-    :key="newGameKey"
     class="container c-old-ui l-old-ui"
   >
     <link
@@ -70,12 +65,16 @@ export default {
     <BigCrunchButton />
     <DivinityButton />
     <NullifyButton />
-    <template v-if="!bigCrunch && !divine && !nullified">
+    <template v-if="!bigCrunch && !divine && !nullify">
       <NewsTicker
         v-if="news"
         class="l-old-ui__news-bar"
       />
-      <GameHeader class="l-old-ui__header" />
+      <GameHeader
+        v-if="!cursedCore"
+        class="l-old-ui__header"
+      />
+      <CursedHeader v-else />
       <ClassicTabBar />
       <component
         :is="tab.config.before"

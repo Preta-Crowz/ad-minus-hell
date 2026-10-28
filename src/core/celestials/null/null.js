@@ -40,7 +40,7 @@ export const Null = {
   },
   
   get description() {
-    return GameDatabase.celestials.descriptions[8].effects()
+    return GameDatabase.celestials.descriptions[10].effects()
   },
 
   get isRunning() {

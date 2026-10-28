@@ -1,4 +1,4 @@
-import { GameMechanicState } from "../game-mechanics";
+import { BitUpgradeState } from "../game-mechanics";
 import wordShift from "../word-shift";
 
 export const Quote = {
@@ -34,7 +34,7 @@ export const Quote = {
 // Gives an array specifying proportions of celestials to blend together on the modal, as a function of time, to
 // provide a smoother transition between different celestials to reduce potential photosensitivity issues
 function blendCel(cels) {
-  const totalTime = cels.map(cel => cel[1]).sum();
+  const totalTime = cels.map(cel => cel[1]).nSum();
   const tick = (Date.now() / 1000) % totalTime;
 
   // Blend the first blendTime seconds with the previous celestial and the last blendTime seconds with the next;
@@ -76,89 +76,111 @@ class QuoteLine {
   constructor(line, parent) {
     this._parent = parent;
     this._showCelestialName = line.showCelestialName ?? true;
-    this._celestialName = line.celestialName
-      ? (typeof line.celestialName === "function" ? line.celestialName() : line.celestialName)
-      : false;
+    this._trembling = line.tremble ?? false;
+    this._glitched = line.glitched ?? false;
 
-    this._celestialArray = typeof line.background === "string" ? [[line.background, 1]] : (line.background
+    this.name = line.name ?? undefined;
+
+    this.displayed = line.displayed ?? true;
+
+
+    this._celestialArray = Array.isArray(line.background)
       ? () => blendCel(line.background)
-      : [[parent.celestial, 1]]);
+      : [[parent.celestial, 1]];
 
     const replacementMatch = /\$(\d+)/gu;
 
-    const usernameReplacementMatch = /%name+/gu;
-
     this._line = typeof line === "string"
-      ? () => line.replaceAll(usernameReplacementMatch, player.username)
+      ? line
       // This matches each digit after a $ and replaces it with the wordCycle of an array with the digit it matched.
-      : () => line.text.replaceAll(replacementMatch, (_, i) => wordShift.wordCycle(line[i])).replaceAll(
-        usernameReplacementMatch, player.username);
+      : () => line.text.replaceAll(replacementMatch, (_, i) => wordShift.wordCycle(line[i]));
   }
 
   get line() {
     return typeof this._line === "function" ? this._line() : this._line;
   }
 
-  get celestials() {
+  sName(){
+    if(player.options.themeModern == "S15") return "Teresa";
+    if(player.options.themeModern == "S16") return "Effarig";
+    if(player.options.themeModern == "S17") return "The Nameless Ones'";
+    if(player.options.themeModern == "S18") return "Lai'tela";
+    if(player.options.themeModern == "S19") return "Pelle";
+    if(player.options.themeModern == "S14") return "Ra";
+    if(player.options.themeModern == "S13") return "V";
+    if(this.name != undefined) return this.name;
+    return Celestials[this._parent.celestial]?.displayName ?? Elemental.displayName;
+  }
+
+  sIcon(){
+    if(player.options.themeModern == "S15") return [[Celestials.teresa.symbol, 1]];
+    if(player.options.themeModern == "S16") return [[Celestials.effarig.symbol, 1]];
+    if(player.options.themeModern == "S17") return [[Celestials.enslaved.symbol, 1]];
+    if(player.options.themeModern == "S18") return [[Celestials.laitela.symbol, 1]];
+    if(player.options.themeModern == "S19") return [[Celestials.pelle.symbol, 1]];
+    if(player.options.themeModern == "S14") return [[Celestials.ra.symbol, 1]];
+    if(player.options.themeModern == "S13") return [[Celestials.v.symbol, 1]];
     return typeof this._celestialArray === "function" ? this._celestialArray() : this._celestialArray;
   }
 
+  sSingleIcon(){
+    if(player.options.themeModern == "S15") return [Celestials.teresa.symbol];
+    if(player.options.themeModern == "S16") return [Celestials.effarig.symbol];
+    if(player.options.themeModern == "S17") return [Celestials.enslaved.symbol];
+    if(player.options.themeModern == "S18") return [Celestials.laitela.symbol];
+    if(player.options.themeModern == "S19") return [Celestials.pelle.symbol];
+    if(player.options.themeModern == "S14") return [Celestials.ra.symbol];
+    if(player.options.themeModern == "S13") return [Celestials.v.symbol];
+    return this.celestials.map(c => Celestials[c[0]]?.symbol ?? Elemental.symbol);
+  }
+
+  get celestials() {
+    return this.sIcon();
+  }
+
   get celestialSymbols() {
-    if (Celestials[this.celestials[0][0]] === undefined) {
-      if (this.celestials[0][0] === "destroyer") {
-        let y = [];
-        y.push(Destroyer.symbol);
-        return y;
-      }
-      let s = [];
-      s.push(Elemental.symbol);
-      return s;
-    }
-    return this.celestials.map(c => Celestials[c[0]].symbol);
+    return this.sSingleIcon();
   }
 
   get showCelestialName() {
     return this._showCelestialName;
   }
 
+  get tremble() {
+    return typeof this._trembling == 'function' ?  this._trembling() : this._trembling;
+  }
+
+  get glitched() {
+    return  typeof this._glitched == 'function' ? this._glitched() : this._glitched;
+  }
+
+  get isDisplayed(){
+    return typeof this.displayed == 'function' ? this.displayed() : this.displayed;
+  }
+
   get celestialName() {
-    if (this._celestialName) {
-      if (this._celestialName === "elemental") return Elemental.displayName;
-      if (this._celestialName === "destroyer") return Destroyer.displayName;
-      return Celestials[this._celestialName.toLowerCase()].displayName;
-    }
-    if (Celestials[this._parent.celestial] === undefined) return Elemental.displayName;
-    return Celestials[this._parent.celestial].displayName;
+    return this.sName();
   }
 }
 
-class CelQuotes extends GameMechanicState {
+class CelQuotes extends BitUpgradeState {
   constructor(config, celestial) {
     super(config);
     this._celestial = celestial;
     this._lines = config.lines.map(line => new QuoteLine(line, this));
   }
 
-  /*get bits() {
-    return player.celestials[this._celestial] ? player.celestials[this._celestial].quoteBits : player.expanse.elemental.quoteBits;
+  get bits() {
+    // SquareCubic's quote state is stored in player.hell, which is shared between both worlds
+    if (this._celestial === "squarecubic") return player.hell.quoteBits;
+    return player.celestials[this._celestial]
+      ? player.celestials[this._celestial].quoteBits
+      : player.expanse.elemental.quoteBits;
   }
   set bits(value) {
-    if (player.celestials[this._celestial]) {
-      player.celestials[this._celestial].quoteBits = value;
-    }
-    else {
-      player.expanse.elemental.quoteBits = value;
-    }
-  }*/
-
-  get isUnlocked() {
-    return player.celestials[this._celestial]
-      ? player.celestials[this._celestial].quotes.includes(this.id)
-      : player.expanse.elemental.quotes.includes(this.id);
-  }
-
-  get canBeUnlocked() {
-    return !this.isUnlocked;
+    if (this._celestial === "squarecubic") player.hell.quoteBits = value;
+    else if (player.celestials[this._celestial]) player.celestials[this._celestial].quoteBits = value;
+    else player.expanse.elemental.quoteBits = value;
   }
 
   get requirement() {
@@ -179,20 +201,9 @@ class CelQuotes extends GameMechanicState {
   }
 
   show() { this.unlock(); }
-
-  unlock() {
-    if (this.canBeUnlocked) {
-      player.celestials[this._celestial]
-        ? player.celestials[this._celestial].quotes.push(this.id)
-        : player.expanse.elemental.quotes.push(this.id);
-      this.onUnlock();
-    }
-  }
-
   onUnlock() {
-    player.celestials[this._celestial]
-      ? player.celestials[this._celestial].quotes.push(this.id)
-      : player.expanse.elemental.quotes.push(this.id);
+    // Quotes are skipped inside Hell, except for SquareCubic's
+    if (Hell.isInside && this._celestial !== "squarecubic") return;
     this.present();
   }
 
@@ -203,6 +214,18 @@ class CelQuotes extends GameMechanicState {
 
 
 export const Quotes = {
+  elemental: mapGameDataToObject(
+    GameDatabase.celestials.quotes.elemental,
+    config => new CelQuotes(config, "elemental")
+  ),
+  alpha: mapGameDataToObject(
+    GameDatabase.celestials.quotes.alpha,
+    config => new CelQuotes(config, "alpha")
+  ),
+  slabdrill: mapGameDataToObject(
+    GameDatabase.celestials.quotes.slabdrill,
+    config => new CelQuotes(config, "slabdrill")
+  ),
   teresa: mapGameDataToObject(
     GameDatabase.celestials.quotes.teresa,
     config => new CelQuotes(config, "teresa")
@@ -231,16 +254,20 @@ export const Quotes = {
     GameDatabase.celestials.quotes.pelle,
     config => new CelQuotes(config, "pelle")
   ),
-  alpha: mapGameDataToObject(
-    GameDatabase.celestials.quotes.alpha,
-    config => new CelQuotes(config, "alpha")
+  glitch: mapGameDataToObject(
+    GameDatabase.celestials.quotes.glitch,
+    config => new CelQuotes(config, "glitch")
   ),
-  slabdrill: mapGameDataToObject(
-    GameDatabase.celestials.quotes.slabdrill,
-    config => new CelQuotes(config, "slabdrill")
+  cante: mapGameDataToObject(
+    GameDatabase.celestials.quotes.cante,
+    config => new CelQuotes(config, "cante")
   ),
-  elemental: mapGameDataToObject(
-    GameDatabase.celestials.quotes.elemental,
-    config => new CelQuotes(config, "elemental")
-  )
+  null: mapGameDataToObject(
+    GameDatabase.celestials.quotes.null,
+    config => new CelQuotes(config, "null")
+  ),
+  squarecubic: mapGameDataToObject(
+    GameDatabase.celestials.quotes.squarecubic,
+    config => new CelQuotes(config, "squarecubic")
+  ),
 };

@@ -10,7 +10,8 @@ export class SacrificeAutobuyerState extends AutobuyerState {
   }
 
   get isUnlocked() {
-    return EternityMilestone.autoIC.isReached || InfinityChallenge(2).isCompleted || (LHC.voidRunning && NullUpgrade.limerick5.isBought);
+    return EternityMilestone.autoIC.isReached || InfinityChallenge(2).isCompleted ||
+      (LHC.voidRunning && LHCNullUpgrade.limerick5.isBought);
   }
 
   get multiplier() {
@@ -38,8 +39,6 @@ export class SacrificeAutobuyerState extends AutobuyerState {
   }
 
   tick() {
-    if ((Achievement(118).canBeApplied && (!player.disablePostReality || (Alpha.isRunning && Alpha.currentStage >= 12)) ||
-      (LHC.voidRunning && NullUpgrade.limerick1.isBought) || SlabdrillUnlocks.eternityChallengeTen.isUnlocked) ||
-      Sacrifice.nextBoost.gte(Decimal.max(this.multiplier, 1.01))) sacrificeReset();
+    if (Achievement(118).canBeApplied || Sacrifice.nextBoost.gte(Decimal.max(this.multiplier, 1.01))) sacrificeReset();
   }
 }

@@ -107,13 +107,10 @@ export const automator = {
       syntax: `
         <b>infinity</b> [nowait]<br>
         <b>eternity</b> [nowait] [respec]<br>
-        <b>reality</b> [nowait] [respec]<br>
-        <b>doom</b> [nowait]<br>
-        <b>armageddon</b> [nowait]<br>
-        <b>endgame</b> [nowait]`,
-      description: `Triggers an Infinity, Eternity, Reality, Doom, Armageddon or Endgame reset if possible, otherwise the
-        automator will wait at this command until it becomes possible. If you find that your script often gets stuck on this
-        command, an Autobuyer may be triggering a prestige before the Automator reaches this line - consider using <i>nowait</i> or
+        <b>reality</b> [nowait] [respec]`,
+      description: `Triggers an Infinity, Eternity, or Reality reset if possible, otherwise the automator will wait at
+        this command until it becomes possible. If you find that your script often gets stuck on this command, an
+        Autobuyer may be triggering a prestige before the Automator reaches this line - consider using <i>nowait</i> or
         adjusting your Autobuyer settings using AUTO.`,
       sections: [
         {
@@ -129,10 +126,9 @@ export const automator = {
             {
               header: "<i>respec</i>",
               description: `
-                For non-Infinity/Doom/Armageddon prestiges, also does the related respec action when triggering prestige.
+                For non-Infinity prestiges, also does the related respec action when triggering prestige.
                 Eternity: Respec Time Studies and Eternity.<br>
-                Reality: Unequip Glyphs and Reality.<br>
-                Endgame: Respec Endgame Masteries and Endgame.
+                Reality: Unequip Glyphs and Reality.
               `
             },
           ]
@@ -142,9 +138,6 @@ export const automator = {
         "infinity",
         "eternity respec",
         "reality nowait",
-        "doom",
-        "armageddon",
-        "endgame nowait respec"
       ]
     },
     {
@@ -520,7 +513,7 @@ export const automator = {
         const filterText = EffarigUnlock.glyphFilter.isUnlocked
           ? `<b>filter score</b> - Glyph filter score of the Glyph which your filter will select this Reality<br>`
           : "";
-        const stText = V.spaceTheorems > 0
+        const stText = V.spaceTheorems.gt(0)
           ? `<b>space theorems</b> - Current unspent Space Theorem amount<br>
             <b>total space theorems</b> - TOTAL Space Theorems, including ones spent on current Studies<br>`
           : "";
@@ -530,26 +523,21 @@ export const automator = {
           <b>ip</b> - Current Infinity Point amount  <br>
           <b>ep</b> - Current Eternity Point amount  <br>
           <b>rm</b> - Current Reality Machine amount  <br>
-          <b>rs</b> - Current Reality Shard amount  <br>
           <b>infinities</b> - Current Infinity amount <br>
           <b>banked infinities</b> - Current Banked Infinity amount <br>
           <b>eternities</b> - Current Eternity amount <br>
           <b>realities</b> - Current Reality amount <br>
-          <b>remnants</b> - Current Remnant amount  <br>
           <b>pending ip</b> - IP gained on Infinity (0 if not available)<br>
           <b>pending ep</b> - EP gained on Eternity (0 if not available)<br>
           <b>pending tp</b> - TP gained on exiting Dilation<br>
           <b>pending rm</b> - RM gained on Reality (0 if not available)<br>
-          <b>pending rs</b> - RS gained on Armageddon (0 if not available)<br>
           <b>pending glyph level</b> - Glyph Level gained on Reality (0 if not available)<br>
-          <b>pending remnants</b> - Remnants gained on Armageddon (0 if not available)<br>
           <b>dt</b> - Current Dilated Time amount <br>
           <b>tp</b> - Current Tachyon Particle amount<br>
           <b>rg</b> - Current Replicanti Galaxy amount (does not use scientific)<br>
           <b>rep</b> - Current Replicanti amount <br>
           <b>tt</b> - Current Time Theorem amount <br>
           <b>total tt</b> - TOTAL Time Theorems, includes all forms of generated TT and any spent on Studies <br>
-          <b>spent tt</b> - Time Theorems currently spent on all Time Studies <br>
           <b>total completions</b> - Total completions of all Eternity Challenges <br>
           <b>pending completions</b> - Total completions of current EC at Eternity <br>
           <b>ec<u>X</u> completions</b> - Amount of EC completions for a certain EC (eg. "ec6 completions")<br>
@@ -636,7 +624,8 @@ export const automator = {
   otherAutomatorPoints: [
     {
       name: "Reality Count",
-      automatorPoints: () => 2 * Math.clampMax(Currency.realities.value.toNumber(), 50),
+      automatorPoints: () => 2 * Decimal.clampMax(Currency.realities.value, 50).mantissa *
+        (10 ** Decimal.clampMax(Currency.realities.value, 50).exponent),
       shortDescription: () => `+${formatInt(2)} per Reality, up to ${formatInt(50)} Realities`,
       symbol: "Ϟ",
     },

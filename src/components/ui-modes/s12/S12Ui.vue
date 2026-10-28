@@ -1,5 +1,6 @@
 <script>
 import BigCrunchButton from "../BigCrunchButton";
+import CursedHeader from "../CursedHeader";
 import DivinityButton from "../DivinityButton";
 import HeaderBlackHole from "../HeaderBlackHole";
 import HeaderChallengeDisplay from "../HeaderChallengeDisplay";
@@ -20,6 +21,7 @@ export default {
   name: "S12Ui",
   components: {
     BigCrunchButton,
+    CursedHeader,
     DivinityButton,
     NullifyButton,
     HeaderChallengeDisplay,
@@ -35,10 +37,10 @@ export default {
   data() {
     return {
       bigCrunch: false,
+      cursedCore: false,
       divine: false,
-      nullified: false,
+      nullify: false,
       hasReality: false,
-      newGameKey: "",
       tabName: "",
       S12Windows,
     };
@@ -57,16 +59,11 @@ export default {
   methods: {
     update() {
       const crunchButtonVisible = !player.break && Player.canCrunch;
-      const divinityVisible = Pelle.isDoomed && player.antimatter.gte(DC.ENUMMAX);
-      const nullifyVisible = player.endgame.largeHadronCollider.void.nullMatter.gte(DC.NUMMAX) &&
-        !player.endgame.largeHadronCollider.void.nullified;
+      this.divine = Pelle.isDoomed && player.antimatter.gte(DC.ENUMMAX);
+      this.nullify = Currency.nullMatter.value.gte(DC.NUMMAX) && !player.endgame.largeHadronCollider.void.nullified;
+      this.cursedCore = Slabdrill.coreActive;
       this.bigCrunch = crunchButtonVisible && Time.bestInfinityRealTime.totalMinutes.gt(1);
-      this.divine = divinityVisible;
-      this.nullified = nullifyVisible;
       this.hasReality = PlayerProgress.realityUnlocked();
-      // This only exists to force a key-swap after pressing the button to start a new game; the news ticker can break
-      // if it isn't redrawn
-      this.newGameKey = Pelle.isDoomed;
       this.tabName = Tabs.current[this.$viewModel.subtab].name;
     },
   },
@@ -92,7 +89,6 @@ export default {
       {{ tabName }}
     </span>
     <div
-      :key="newGameKey"
       class="game-container c-s12-window__inner"
       :class="isOldUi ? 'c-old-ui l-old-ui' : ''"
       :style="topPadding"
@@ -107,17 +103,21 @@ export default {
         <DivinityButton />
         <NullifyButton />
         <div
-          v-if="!bigCrunch && !divine && !nullified"
+          v-if="!bigCrunch && !divine && !nullify"
           class="tab-container"
         >
-          <HeaderPrestigeGroup />
-          <div class="information-header">
+          <HeaderPrestigeGroup v-if="!cursedCore" />
+          <div
+            v-if="!cursedCore"
+            class="information-header"
+          >
             <HeaderChallengeDisplay />
             <HeaderChallengeEffects />
             <GameSpeedDisplay v-if="hasReality" />
             <br v-if="hasReality">
             <HeaderBlackHole />
           </div>
+          <CursedHeader v-else />
           <slot />
         </div>
       </div>

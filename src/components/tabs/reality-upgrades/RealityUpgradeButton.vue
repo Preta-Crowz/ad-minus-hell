@@ -73,14 +73,17 @@ export default {
       this.isRebuyable = upgrade.isRebuyable;
       this.isBought = !upgrade.isRebuyable && upgrade.isBought;
       this.isPossible = upgrade.isPossible;
-      this.isAutoUnlocked = (Ra.unlocks.instantECAndRealityUpgradeAutobuyers.canBeApplied || EndgameMilestone.startRa.isReached) && !player.disablePostReality;
+      this.isAutoUnlocked = Ra.unlocks.instantECAndRealityUpgradeAutobuyers.canBeApplied;
       this.canBeLocked = upgrade.config.canLock && !this.isAvailableForPurchase;
       this.hasRequirementLock = upgrade.hasPlayerLock;
       if (this.isRebuyable) this.isAutobuyerOn = Autobuyer.realityUpgrade(upgrade.id).isActive;
     },
     toggleLock(upgrade) {
-      if (this.isRebuyable) return;
-      upgrade.toggleMechanicLock();
+      if (this.isRebuyable) {
+        for(let a=0; a < 25; a++) this.upgrade.purchase();
+      }else{
+        upgrade.toggleMechanicLock();
+      }
     }
   }
 };

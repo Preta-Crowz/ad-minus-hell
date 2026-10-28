@@ -1,3 +1,5 @@
+import { DC } from "./constants";
+
 export class Sacrifice {
   // This is tied to the "buying an 8th dimension" achievement in order to hide it from new players before they reach
   // sacrifice for the first time.
@@ -7,18 +9,15 @@ export class Sacrifice {
 
   static get canSacrifice() {
     return DimBoost.purchasedBoosts.gt(4) && !EternityChallenge(3).isRunning && this.nextBoost.gt(1) &&
-      (AntimatterDimension(8).totalAmount.gt(0) || (Slabdrill.isCursed && InfinityChallenge(2).isCompleted)) &&
-      Currency.antimatter.lt(Player.infinityLimit) && !Enslaved.isRunning;
+      AntimatterDimension(8).totalAmount.gt(0) && Currency.antimatter.lt(Player.infinityLimit) &&
+      !Enslaved.isRunning;
   }
 
   static get disabledCondition() {
-    if (Slabdrill.isCursed && !InfinityChallenge(2).isCompleted) return "8th Dimensions do not exist";
     if (NormalChallenge(10).isRunning) return "8th Dimensions are disabled";
     if (EternityChallenge(3).isRunning) return "Eternity Challenge 3";
-    if (DimBoost.purchasedBoosts.lt(5) &&
-      !(Slabdrill.isCursed && InfinityChallenge(2).isCompleted)) return `Requires ${formatInt(5)} Dimension Boosts`;
-    if (AntimatterDimension(8).totalAmount.eq(0) &&
-      !(Slabdrill.isCursed && InfinityChallenge(2).isCompleted)) return `No 8th ${player.universes.current === 2 ? "Matter" : "Antimatter"} Dimensions`;
+    if (DimBoost.purchasedBoosts.lt(5)) return `Requires ${formatInt(5)} Dimension Boosts`;
+    if (AntimatterDimension(8).totalAmount.eq(0)) return "No 8th Antimatter Dimensions";
     if (this.nextBoost.lte(1)) return `${formatX(1)} multiplier`;
     if (Player.isInAntimatterChallenge) return "Challenge goal reached";
     return "Need to Crunch";
@@ -39,7 +38,7 @@ export class Sacrifice {
     }
 
     const exponent = (1 +
-      (f("Achievement32", Achievement(32).isEffectActive) ? Achievement(32).config.effect : 0) +
+      (f("Achievement32", Achievement(32).isEffectActive) ? Achievement(32).effectValue : 0) +
       (f("Achievement57", Achievement(57).isEffectActive) ? Achievement(57).config.effect : 0)
     ) * (1 +
       (f("Achievement88", Achievement(88).isEffectActive) ? Achievement(88).config.effect : 0) +
@@ -57,22 +56,21 @@ export class Sacrifice {
   static get sacrificeExponent() {
     let base;
     // C8 seems weaker, but it actually follows its own formula which ends up being stronger based on how it stacks
-    if (NormalChallenge(8).isRunning) base = 1;
+    if (NormalChallenge(8).isRunning) base = DC.D1;
     // Pre-Reality this was 100; having ach32/57 results in 1.2x, which is brought back in line by changing to 120
-    else if (InfinityChallenge(2).isCompleted) base = 1 / 120;
-    else base = 2;
+    else if (InfinityChallenge(2).isCompleted) base = DC.D1.div(120);
+    else base = DC.D2;
 
     // All the factors which go into the multiplier have to combine this way in order to replicate legacy behavior
-    const preIC2 = 1 + Effects.sum(Achievement(32), Achievement(57));
-    const postIC2 = 1 + Effects.sum(Achievement(88), TimeStudy(228));
+    const preIC2 = Effects.sum(Achievement(32), Achievement(57)).add(1);
+    const postIC2 = Effects.sum(Achievement(88), TimeStudy(228)).add(1);
     const triad = TimeStudy(304).effectOrDefault(1);
-    const slab = Slabdrill.isCursed ? 16 : 1;
 
-    return base * preIC2 * postIC2 * triad * slab;
+    return base.mul(preIC2).mul(postIC2).mul(triad);
   }
 
   static get nextBoost() {
-    const nd1Amount = (Slabdrill.isCursed ? player.antimatter.min(DC.NUMMAX.pow(1000)).times(player.antimatter.div(DC.NUMMAX.pow(1000)).max(1).pow(0.1)) : AntimatterDimension(1).amount).clampMax(Decimal.pow(10, 1e25)).pow(Decimal.max(Decimal.pow(2, Decimal.log10(Decimal.log10((Slabdrill.isCursed ? player.antimatter : AntimatterDimension(1).amount)).div(1e25))), 1));
+    const nd1Amount = AntimatterDimension(1).amount;
     if (nd1Amount.eq(0)) return DC.D1;
     const sacrificed = player.sacrificed.clampMin(1);
     let prePowerSacrificeMult;
@@ -86,10 +84,12 @@ export class Sacrifice {
     } else if (InfinityChallenge(2).isCompleted) {
       prePowerSacrificeMult = nd1Amount.dividedBy(sacrificed);
     } else {
-      prePowerSacrificeMult = new Decimal((nd1Amount.add(1).log10().div(10)).div(Decimal.max(sacrificed.add(1).log10().div(10), 1)));
+      prePowerSacrificeMult = new Decimal((nd1Amount.max(1).log10().div(10)).div(Decimal.max(sacrificed.max(1).log10().div(10), 1)));
     }
 
-    return prePowerSacrificeMult.clampMin(1).pow(this.sacrificeExponent);
+    let total = prePowerSacrificeMult.clampMin(1).pow(this.sacrificeExponent);
+
+    return total;
   }
 
   static get totalBoost() {
@@ -105,10 +105,13 @@ export class Sacrifice {
     if (InfinityChallenge(2).isCompleted) {
       prePowerBoost = player.sacrificed;
     } else {
-      prePowerBoost = new Decimal(player.sacrificed.add(1).log10().div(10));
+      prePowerBoost = player.sacrificed.max(1).log10().div(10);
     }
 
-    return prePowerBoost.clampMin(1).pow(this.sacrificeExponent);
+    let postPowerSacrifice = prePowerBoost.clampMin(1).pow(this.sacrificeExponent);
+
+    let softcap = postPowerSacrifice.div("1e1E16").pow(0.9);
+    return postPowerSacrifice;
   }
 
   static get totalPower() {
@@ -116,7 +119,8 @@ export class Sacrifice {
   }
 
   static get nextPower() {
-    return this.nextBoost.times(this.totalBoost).max(10).log10().log10().add(1).times(NormalChallenge(8).chargedEffect).sub(this.totalPower);
+    return this.nextBoost.times(this.totalBoost).max(10).log10().log10().add(1)
+      .times(NormalChallenge(8).chargedEffect).sub(this.totalPower);
   }
 }
 
@@ -133,11 +137,13 @@ export function sacrificeReset() {
   EventHub.dispatch(GAME_EVENT.SACRIFICE_RESET_BEFORE);
   const nextBoost = Sacrifice.nextBoost;
   player.chall8TotalSacrifice = player.chall8TotalSacrifice.times(nextBoost);
-  player.sacrificed = player.sacrificed.plus((Slabdrill.isCursed ? player.antimatter.min(DC.NUMMAX.pow(1000)).times(player.antimatter.div(DC.NUMMAX.pow(1000)).max(1).pow(0.1)) : AntimatterDimension(1).amount).clampMax(Decimal.pow(10, 1e25)).pow(Decimal.max(Decimal.pow(2, Decimal.log10(Decimal.log10((Slabdrill.isCursed ? player.antimatter : AntimatterDimension(1).amount)).div(1e25))), 1)));
-  const isAch118Unlocked = Achievement(118).canBeApplied && (!player.disablePostReality || (Alpha.isRunning && Alpha.currentStage >= 12) || (LHC.voidRunning && NullUpgrade.limerick1.isBought) || SlabdrillUnlocks.eternityChallengeTen.isUnlocked);
+  player.sacrificed = player.sacrificed.plus(AntimatterDimension(1).amount).min("1e1E27");
+  const isAch118Unlocked = Achievement(118).canBeApplied &&
+    (!player.disablePostReality || (Alpha.isRunning && Alpha.currentStage >= 12) ||
+      (LHC.voidRunning && LHCNullUpgrade.limerick1.isBought));
   if (NormalChallenge(8).isRunning) {
     if (!isAch118Unlocked) {
-      AntimatterDimensions.resetUpToNine();
+      AntimatterDimensions.reset();
     }
     Currency.antimatter.reset();
   } else if (!isAch118Unlocked) {

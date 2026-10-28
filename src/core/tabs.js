@@ -5,7 +5,7 @@ class SubtabState {
   }
 
   get name() {
-    return typeof this.config.name === "function" ? this.config.name() : this.config.name;
+    return this.config.name;
   }
 
   get symbol() {
@@ -13,7 +13,7 @@ class SubtabState {
   }
 
   get isPermanentlyHidden() {
-    return this.config.hideAt < GameEnd.endState && !GameEnd.creditsClosed && !PlayerProgress.endgameUnlocked();
+    return this.config.hideAt < GameEnd.endState && !GameEnd.creditsClosed;
   }
 
   get hidable() {
@@ -27,7 +27,8 @@ class SubtabState {
   }
 
   get isUnlocked() {
-    return this.config.condition === undefined || this.config.condition();
+    return (Hell.isInside && this._parent.key !== "fools") ||
+      this.config.condition === undefined || this.config.condition();
   }
 
   get isAvailable() {
@@ -35,7 +36,7 @@ class SubtabState {
   }
 
   get hasNotification() {
-    return this.isUnlocked && player.tabNotifications.has(this._parent.key + this.key);
+    return player.tabNotifications.has(this._parent.key + this.key);
   }
 
   get key() {
@@ -96,7 +97,7 @@ class TabState {
   }
 
   get name() {
-    return typeof this.config.name === "function" ? this.config.name() : this.config.name;
+    return this.config.name;
   }
 
   get key() {
@@ -108,7 +109,7 @@ class TabState {
   }
 
   get isPermanentlyHidden() {
-    return this.config.hideAt < GameEnd.endState && !GameEnd.creditsClosed && !PlayerProgress.endgameUnlocked();
+    return this.config.hideAt <= GameEnd.endState && !GameEnd.creditsClosed;
   }
 
   get hidable() {
@@ -122,7 +123,7 @@ class TabState {
   }
 
   get isUnlocked() {
-    return this.config.condition === undefined || this.config.condition();
+    return (Hell.isInside && this.key !== "fools") || this.config.condition === undefined || this.config.condition();
   }
 
   get isAvailable() {
@@ -151,8 +152,6 @@ class TabState {
     if (!this._currentSubtab.isUnlocked) this.resetToUnlocked();
     if (!this._currentSubtab.isAvailable) this.resetToAvailable();
 
-    if (!Tab[this.key].isUnlocked || !Tab[this.key].subtabs[this._currentSubtab.id].isUnlocked) return;
-
     ui.view.tab = this.key;
     ui.view.subtab = this._currentSubtab.key;
     const tabNotificationKey = this.key + this._currentSubtab.key;
@@ -160,6 +159,10 @@ class TabState {
 
     if (manual) Modal.hideAll();
     EventHub.dispatch(GAME_EVENT.TAB_CHANGED, this, this._currentSubtab);
+    if (this.key === "hell" && ui.view.initialized) {
+      Quotes.squarecubic.first.show();
+      if (this._currentSubtab.key === "information") Quotes.squarecubic.handbook.show();
+    }
   }
 
   unhideTab() {
@@ -208,11 +211,15 @@ export const Tabs = (function() {
       Tab.eternity,
       Tab.reality,
       Tab.celestials,
+      Tab.glitch,
+      Tab.meta,
       Tab.endgame,
       Tab.cdexpansion,
       Tab.divinity,
       Tab.universes,
-      Tab.shop
+      Tab.shop,
+      Tab.fools,
+      Tab.hell
     ],
     newUI: [
       Tab.dimensions,
@@ -222,6 +229,8 @@ export const Tabs = (function() {
       Tab.eternity,
       Tab.reality,
       Tab.celestials,
+      Tab.glitch,
+      Tab.meta,
       Tab.endgame,
       Tab.cdexpansion,
       Tab.divinity,
@@ -229,7 +238,9 @@ export const Tabs = (function() {
       Tab.achievements,
       Tab.statistics,
       Tab.options,
-      Tab.shop
+      Tab.shop,
+      Tab.fools,
+      Tab.hell
     ],
     get currentUIFormat() {
       return ui.view.newUI ? this.newUI : this.oldUI;

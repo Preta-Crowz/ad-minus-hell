@@ -42,7 +42,7 @@ export const Cante = {
   },
   
   get description() {
-    return GameDatabase.celestials.descriptions[7].effects()
+    return GameDatabase.celestials.descriptions[9].effects()
   },
   get isRunning() {
     return player.celestials.cante.run;

@@ -12,8 +12,6 @@ export default {
   },
   data() {
     return {
-      areSoftcapsApplicable: false,
-      hasSeenFinalSoftcap: false,
       chargeUnlocked: false,
       totalCharges: 0,
       chargesUsed: 0,
@@ -21,6 +19,12 @@ export default {
     };
   },
   computed: {
+    disChargeClassObject() {
+      return {
+        "o-primary-btn--subtab-option": true,
+        "o-primary-btn--charged-respec-active": this.disCharge
+      };
+    },
     grid() {
       return [
         [
@@ -35,12 +39,6 @@ export default {
         ]
       ];
     },
-    disChargeClassObject() {
-      return {
-        "o-primary-btn--subtab-option": true,
-        "o-primary-btn--charged-respec-active": this.disCharge
-      };
-    },
     costIncreases: () => EternityUpgrade.epMult.costIncreaseThresholds.map(x => new Decimal(x))
   },
   watch: {
@@ -50,12 +48,11 @@ export default {
   },
   methods: {
     update() {
-      this.areSoftcapsApplicable = !Ascensions.epA.isUnlocked;
-      this.hasSeenFinalSoftcap = player.eternityPoints.gte("e1e125") && !Ascensions.epA.isUnlocked;
+      const oc = player.endgame.overcharge;
       this.chargeUnlocked = Ascensions.oc2A.isUnlocked;
-      this.totalCharges = player.endgame.overcharge.completions.eter;
-      this.chargesUsed = player.endgame.overcharge.completions.eter - player.endgame.overcharge.chargesLeft.eternal;
-      this.disCharge = player.endgame.overcharge.discharge.eternal;
+      this.totalCharges = oc.completions.eter;
+      this.chargesUsed = oc.completions.eter - oc.chargesLeft.eternal;
+      this.disCharge = oc.discharge.eternal;
     },
     formatPostBreak
   }
@@ -95,15 +92,11 @@ export default {
       />
     </div>
     <EPMultiplierButton />
-    <div v-if="areSoftcapsApplicable">
+    <div>
       The cost for the {{ formatX(5) }} multiplier jumps at {{ format(costIncreases[0]) }},
       {{ formatPostBreak(costIncreases[1], 2) }}, and {{ formatPostBreak(costIncreases[2]) }} Eternity Points.
       <br>
       The cost increases super-exponentially after {{ formatPostBreak(costIncreases[3]) }} Eternity Points.
-    </div>
-    <div v-if="hasSeenFinalSoftcap">
-      <br>
-      The cost increases greatly beyond {{ formatPostBreak(costIncreases[4]) }} Eternity Points.
     </div>
   </div>
 </template>

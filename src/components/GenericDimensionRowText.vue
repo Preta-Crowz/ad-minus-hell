@@ -32,7 +32,7 @@ export default {
   computed: {
     rateText() {
       return this.rate.neq(0)
-        ? (this.rate.gte(900) ? ` (+${format(this.rate.div(100).add(1).log10(), 2, 2)} OoMs/s)` : ` (+${format(this.rate, 2, 2)}%/s)`)
+        ? ` (+${format(this.rate, 2, 2)}%/s)`
         : "";
     },
     showPercentage() {
@@ -45,7 +45,7 @@ export default {
       // Needs to be reactive or else rows that don't have changing values (eg. the highest dimension and any higher
       // locked ones) won't change layout when the window size changes
       this.isSmall = window.innerWidth < 1573;
-      this.isCursedCore = player.celestials.slabdrill.core.isActive;
+      this.isCursedCore = Slabdrill.coreActive;
     },
     adjustableTextClass() {
       return {

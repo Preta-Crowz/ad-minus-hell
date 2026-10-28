@@ -28,7 +28,7 @@ export const resurgenceUpgrades = {
     id: "imSurge",
     cost: new Decimal(1e12),
     description: "The Imaginary Machine cap is raised based on Endgames",
-    effect: () => 1 + Math.log10(Math.log10(player.endgames + 1) + 1),
+    effect: () => Decimal.log10(Decimal.log10(player.endgames.add(1)).add(1)).add(1),
     formatEffect: value => formatPow(value, 2, 3)
   },
   repSurge: {
@@ -94,7 +94,7 @@ export const resurgenceUpgrades = {
     id: "entropySurge",
     cost: new Decimal("1e1100"),
     description: "Gain more Entropy based on Endgames",
-    effect: () => Math.pow(player.endgames, 0.5),
+    effect: () => player.endgames.sqrt(),
     formatEffect: value => formatX(value, 2, 2)
   },
   synergy1: {
@@ -118,7 +118,7 @@ export const resurgenceUpgrades = {
     id: "synergy3",
     cost: new Decimal("1e2550"),
     description: "Space Theorems are multiplied based on the product of your Stars",
-    effect: () => Decimal.log10(Ethereal.stellarProduct).max(1).toNumber(),
+    effect: () => Decimal.log10(Ethereal.stellarProduct).max(1),
     formatEffect: value => formatX(value, 2, 2)
   },
   synergy4: {

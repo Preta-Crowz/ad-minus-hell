@@ -18,8 +18,8 @@ export default {
     };
   },
   computed: {
-    rowCount: () => Glyphs.totalSlots / 10,
-    colCount: () => 10,
+    rowCount: () => Glyphs.totalSlots / 14,
+    colCount: () => 14,
   },
   created() {
     this.on$(GAME_EVENT.GLYPHS_CHANGED, this.glyphsChanged);
@@ -67,7 +67,7 @@ export default {
         clearTimeout(this.doubleClickTimeOut);
         this.doubleClickTimeOut = null;
         const idx = Glyphs.active.indexOf(null);
-        if (idx !== -1) Glyphs.equip(glyph, idx);
+        if (idx !== -1 || Glyphs.canExtendSlotsFor(glyph)) Glyphs.equip(glyph, idx);
       }
     },
     glyphsChanged() {

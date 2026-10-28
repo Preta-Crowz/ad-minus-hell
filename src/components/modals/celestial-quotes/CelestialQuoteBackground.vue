@@ -16,6 +16,10 @@ export default {
       type: Boolean,
       required: true
     },
+    glitched: {
+      type: Boolean,
+      required: true
+    },
   },
   computed: {
     modalClass() {
@@ -25,18 +29,32 @@ export default {
     },
   },
   methods: {
+    symbolStyle(celEntry, symbol) {
+      // Multi-character symbols would overflow the 30rem box at the default 25rem size
+      const length = String(symbol).replace(/<[^>]*>/gu, "").length;
+      const fontSize = length > 2 ? { fontSize: `${Math.min(25, 52 / length)}rem` } : {};
+      return { ...this.styleObject(celEntry, 0.2, true), ...fontSize };
+    },
     styleObject(celEntry, opac, isText) {
       const baseCol = `var(--color-${celEntry[0]}--base)`;
+      const missing = this.glitched ?
+        {
+          backgroundImage: 'var(--color-missing)',
+          backgroundSize: '20px 20px',
+        } : {}
+      
       if (celEntry[0] === "laitela") {
         return {
           color: `var(--color-${celEntry[0]}--accent)`,
           background: isText ? undefined : baseCol,
-          opacity: opac * celEntry[1]
+          opacity: opac * celEntry[1],
+          ...missing
         };
       }
       return {
         color: baseCol,
-        opacity: opac * celEntry[1]
+        opacity: opac * celEntry[1],
+        ...missing
       };
     },
   },
@@ -49,7 +67,7 @@ export default {
       v-for="(celestial, index) in celestials"
       :key="index"
       class="c-modal-celestial-quote c-modal-celestial-quote__symbol"
-      :style="styleObject(celestial, 0.2, true)"
+      :style="symbolStyle(celestial, celestialSymbols[index])"
       v-html="celestialSymbols[index]"
     />
     <span

@@ -15,14 +15,6 @@ export default {
       type: Boolean,
       required: true,
     },
-    isDual: {
-      type: Boolean,
-      required: true,
-    },
-    isEndgame: {
-      type: Boolean,
-      required: true,
-    },
     specialLockText: {
       type: String,
       required: false,
@@ -31,8 +23,6 @@ export default {
   },
   computed: {
     upgradeStr() {
-      if (this.isEndgame) return "Endgame Upgrade";
-      if (this.isDual) return "Duality Upgrade";
       return this.isImaginary ? "Imaginary Upgrade" : "Reality Upgrade";
     },
     lockEvent() {

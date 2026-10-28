@@ -21,18 +21,18 @@ export default {
   background: radial-gradient(#ffff00, #ffc000, #ff8000, #ff4000, #ff0000, #c00000, #800000, #400000,
     black, black, black, black, black, black, black, black, black, black, black, black, black, black, black, black);
   background-size: 1200% 400%;
-  animation: a-cursed-background-shift 240s linear infinite;
+  animation: a-cursed-background-shift 60s linear infinite;
 }
 
 @keyframes a-cursed-background-shift {
   0% {
-    background-position: 50% 0%;
+    background-position: 50% 25%;
   }
   50% {
-    background-position: 50% 30%;
+    background-position: 50% 60%;
   }
   100% {
-    background-position: 50% 0%;
+    background-position: 50% 25%;
   }
 }
 </style>

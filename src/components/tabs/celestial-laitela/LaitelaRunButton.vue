@@ -8,20 +8,36 @@ export default {
   },
   data() {
     return {
-      realityTime: 0,
+      realityTime: new Decimal(0),
       maxDimTier: 0,
       isRunning: false,
       realityReward: new Decimal(1),
       singularitiesUnlocked: false,
+      hadronizeUnlocked: false,
+      hadronizes: 0,
       bestSet: [],
       tierNotCompleted: true,
-      hadronizeUnlocked: false,
-      darkEnergyBoost: new Decimal(0),
-      hasHadronizes: false,
-      hadronizes: 0,
     };
   },
   computed: {
+    sName(){
+      if(player.options.themeModern == "S15") return "Teresa-Lai'tela's";
+      if(player.options.themeModern == "S16") return "Effarig-Lai'tela's";
+      if(player.options.themeModern == "S17") return `The Nameless Lai'tela's`;
+      if(player.options.themeModern == "S14") return "Ra-Lai'tela's";
+      if(player.options.themeModern == "S19") return `Pelle-Lai'tela's`;
+      if(player.options.themeModern == "S13") return "V-Lai'tela's";
+      return "Lai'tela's";
+    },
+    sCel(){
+      if(player.options.themeModern == "S15") return "Teresa-Lai'tela";
+      if(player.options.themeModern == "S16") return "Effarig-Lai'tela";
+      if(player.options.themeModern == "S17") return `The Nameless Lai'tela`;
+      if(player.options.themeModern == "S14") return "Ra-Lai'tela";
+      if(player.options.themeModern == "S19") return `Pelle-Lai'tela`;
+      if(player.options.themeModern == "S13") return "V-Lai'tela";
+      return "Lai'tela";
+    },
     completionTime() {
       if (this.tierNotCompleted) return "Not completed at this tier";
       return `Fastest Completion: ${TimeSpan.fromSeconds(new Decimal(this.realityTime)).toStringShort()}`;
@@ -32,31 +48,43 @@ export default {
     runDescription() {
       return GameDatabase.celestials.descriptions[5].description();
     },
-    isDoomed: () => Pelle.isDoomed || Slabdrill.isCursed,
+    isDoomed: () => Pelle.isDoomed,
   },
   methods: {
     update() {
-      this.realityTime = player.celestials.laitela.fastestCompletion;
+      this.realityTime.copyFrom(player.celestials.laitela.fastestCompletion);
       this.maxDimTier = Laitela.maxAllowedDimension;
       this.realityReward.copyFrom(Laitela.realityReward);
       this.isRunning = Laitela.isRunning;
       this.singularitiesUnlocked = Currency.singularities.gt(0);
-      this.bestSet = cloneDeep(Glyphs.copyForRecords(player.records.bestReality.laitelaSet));
-      this.tierNotCompleted = this.realityTime === 3600 || (this.realityTime === 300 && this.maxDimTier < 8);
       this.hadronizeUnlocked = ExpansionPack.laitelaPack.isBought && !player.disablePostReality;
-      this.darkEnergyBoost.copyFrom(Laitela.realityRewardDE);
-      this.hasHadronizes = this.hadronizes > 0;
       this.hadronizes = Laitela.hadronizes;
+      this.bestSet = cloneDeep(Glyphs.copyForRecords(player.records.bestReality.laitelaSet));
+      this.tierNotCompleted = this.realityTime.eq(3600) || (this.realityTime.eq(300) && this.maxDimTier < 8);
     },
     startRun() {
       if (this.isDoomed) return;
+
+      if ((!realityUGs.all[11].config.hasFailed() && !realityUGs.all[11].isBought) && (player.options.confirmations.glitchCL && 
+ !PlayerProgress.metaUnlocked())){
+        Modal.message.show(`you will fail glitch challenge ${realityUGs.all[11].config.name} <br> which is to ${realityUGs.all[11].config.requirement()} <br> you can disable this for <i>all</i> challenges in confirmations`);
+        return;
+      }
+      else if((!realityUGs.all[12].config.hasFailed() && !realityUGs.all[12].isBought) && (player.options.confirmations.glitchCL && 
+ !PlayerProgress.metaUnlocked()) && Laitela.difficultyTier == 2){
+        Modal.message.show(`you will fail glitch challenge ${realityUGs.all[12].config.name} <br> which is to ${realityUGs.all[12].config.requirement()} <br> you can disable this for <i>all</i> challenges in confirmations`);
+        return;
+      }
+
       Modal.celestials.show({ name: "Lai'tela's", number: 5 });
+    },
+    hadronize() {
+      if (Laitela.hadronize()) GameUI.update();
     },
     classObject() {
       return {
         "o-laitela-run-button": true,
-        "o-laitela-run-button--large": !this.singularitiesUnlocked,
-        "o-laitela-run-button--larger": this.hadronizeUnlocked
+        "o-laitela-run-button--large": !this.singularitiesUnlocked
       };
     },
     runButtonClassObject() {
@@ -67,9 +95,6 @@ export default {
         "o-pelle-disabled-pointer": this.isDoomed
       };
     },
-    hadronize() {
-      Laitela.hadronize();
-    }
   }
 };
 </script>
@@ -77,7 +102,7 @@ export default {
 <template>
   <button :class="classObject()">
     <span :class="{ 'o-pelle-disabled': isDoomed }">
-      <b>Start Lai'tela's Reality</b>
+      <b>Start {{sName}} Reality</b>
     </span>
     <div
       :class="runButtonClassObject()"
@@ -87,17 +112,6 @@ export default {
       <b>
         All Dark Matter multipliers are {{ formatX(realityReward, 2, 2) }} higher.
       </b>
-      <br>
-      <span v-if="maxDimTier === 0 || hasHadronizes">
-        <b>
-          You also gain an additional {{ formatX(darkEnergyBoost) }} Dark Energy.
-        </b>
-      </span>
-      <span v-if="hasHadronizes">
-        <b>
-          You have Hadronized Lai'tela's Reality {{ formatHybridSmall(hadronizes, 3) }} times.
-        </b>
-      </span>
       <span v-if="maxDimTier > 0">
         <br><br>
         {{ completionTime }}
@@ -115,8 +129,12 @@ export default {
         />
       </span>
       <span v-else>
+        <br>
+        <b>
+          You also gain an additional {{ formatX(8) }} Dark Energy.
+        </b>
         <br><br>
-        Lai'tela's Reality has been fully destabilized and cannot have its reward further improved.
+        {{ sName }} Reality has been fully destabilized and cannot have its reward further improved.
       </span>
       <br>
     </div>
@@ -128,20 +146,15 @@ export default {
     </div>
     <br>
     <div>{{ runDescription }}</div>
-    <br>
-    <div v-if="hadronizeUnlocked">
-      <button
-        class="l-laitela-hadronize-button c-laitela-hadronize-button"
-        @click="hadronize"
-      >
-        <b>Hadronize Laitela's Reality</b>
-      </button>
-      <br>
-      <br>
-      Hadronizing Lai'tela's Reality will restabilize all {{ formatInt(8) }} Dimensions, so you can use them again.
-      Rewards for completing Lai'tela's Reality from previous Hadronizes will persist, and you will be able to gain
-      more rewards for destabilizing Lai'tela's Reality again. Each Hadronization, the reward for destabilizing
-      Lai'tela's Reality will be multiplied by {{ formatInt(8) }}.
+    <div
+      v-if="hadronizeUnlocked"
+      class="l-laitela-hadronize-button c-laitela-hadronize-button"
+      :class="{ 'o-primary-btn--disabled': maxDimTier > 0 }"
+      @click.stop="hadronize"
+    >
+      <b>Hadronize Lai'tela's Reality</b>
+      <div v-if="hadronizes > 0">Hadronized {{ formatInt(hadronizes) }} times</div>
+      <div v-if="maxDimTier > 0">Fully destabilize the Reality to Hadronize</div>
     </div>
   </button>
 </template>

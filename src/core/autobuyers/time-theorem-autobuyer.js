@@ -10,12 +10,12 @@ export class TimeTheoremAutobuyerState extends AutobuyerState {
   }
 
   get isUnlocked() {
-    if (LHC.voidRunning && NullUpgrade.limerick5.isBought) return true;
-    return (Perk.ttBuySingle.isBought && !player.disablePostReality) && (!Pelle.isDisabled("timeTheoremAutobuyer") || PellePerkUpgrade.perkTTS.canBeApplied);
+    return Perk.ttBuySingle.isBought && !Pelle.isDisabled("timeTheoremAutobuyer") ||
+      (LHC.voidRunning && LHCNullUpgrade.limerick5.isBought);
   }
 
   get hasUnlimitedBulk() {
-    return Perk.ttBuyMax.canBeApplied && !player.disablePostReality;
+    return Perk.ttBuyMax.canBeApplied;
   }
 
   tick() {

@@ -1,0 +1,344 @@
+{
+  "notation": {
+    "eX": "10^X",
+    "eeX": "10^(10^X)",
+    "sourceValues": ["vanilla", "endgame", "vis"]
+  },
+  "antimatter": [
+    {
+      "starts": "ee150",
+      "from": "vanilla",
+      "condition": "Tier 1 Antimatter Dimension production; Doom active, fewer than 1 Divinity, Compression inactive.",
+      "penalty": "Above the start, replace log10(production) with 1e150 * (log10(production) / 1e150)^0.5.",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    },
+    {
+      "starts": "ee225",
+      "from": "vanilla",
+      "condition": "Tier 1 Antimatter Dimension production; Doom active, fewer than 1 Divinity, Compression inactive. Applied after the ee150 stage.",
+      "penalty": "Above the start, replace log10(production) with 1e225 * (log10(production) / 1e225)^0.1.",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    },
+    {
+      "starts": "10^(9e15) (approximately ee15.95)",
+      "from": "vanilla",
+      "condition": "Tier 1 Antimatter Dimension production; Doom active, at least 1 Divinity, Compression inactive.",
+      "penalty": "Above the start, replace log10(production) with 9e15 * (log10(production) / 9e15)^(0.16 / 2^Divinities).",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    },
+    {
+      "starts": "1e10",
+      "from": "endgame",
+      "condition": "Tier 1 Antimatter Dimension production; Doom active and Compression inactive.",
+      "penalty": "Production is transformed using (log10(log10(production)))^(DivinityUpgrade divineL1U4 effect * Cosmic Accelerator effectValue3); both effects determine the effective strength.",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    },
+    {
+      "starts": "ee200",
+      "from": "endgame",
+      "condition": "Tier 1 Antimatter Dimension production; Doom inactive, Overcharge inactive, Slabdrill not cursed, Compression inactive.",
+      "penalty": "Above the start, replace log10(production) with 1e200 * (log10(production) / 1e200)^(1 / Emptiness Accelerator effectValue3).",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    },
+    {
+      "starts": "ee260",
+      "from": "endgame",
+      "condition": "Same conditions as the ee200 stage. Applied after the ee200 stage.",
+      "penalty": "Above the start, replace log10(production) with 1e260 * (log10(production) / 1e260)^0.01.",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    },
+    {
+      "starts": "10^(2e99)",
+      "from": "endgame",
+      "condition": "Tier 1 Antimatter Dimension production; Slabdrill is cursed and Compression inactive.",
+      "penalty": "Above the start, replace log10(production) with 2e99 * (log10(production) / 2e99)^0.1.",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    },
+    {
+      "starts": "10",
+      "from": "endgame",
+      "condition": "Tier 1 Antimatter Dimension production while the Large Hadron Collider's Nullified Void is running; Compression inactive.",
+      "penalty": "Above the start, replace log10(production) with log10(production)^0.01.",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    },
+    {
+      "starts": "1",
+      "from": "endgame",
+      "condition": "Tier 1 Antimatter Dimension production while Overcharge is running; Compression inactive.",
+      "penalty": "Production is tetrated with base 10 at 0.75 * slog(production).",
+      "sourceFile": "src/core/dimensions/antimatter-dimension.js"
+    }
+  ],
+  "infinityDimensionMultiplier": [
+    {
+      "starts": "ee15",
+      "from": "vanilla",
+      "condition": "Infinity Dimension multiplier reaches the overflow threshold.",
+      "penalty": "Log-space compression: multiplier = 10^(log10(threshold) * (log10(multiplier) / log10(threshold))^(1 / compressionMagnitude)); base magnitude is 10 and Endgame effects can reduce it.",
+      "sourceFile": "src/core/dimensions/infinity-dimension.js"
+    },
+    {
+      "starts": "ENUMMAX (10^Number.MAX_VALUE)",
+      "from": "endgame",
+      "condition": "Infinity Dimension multiplier reaches the second overflow threshold.",
+      "penalty": "A second log-space compression with magnitude 10.",
+      "sourceFile": "src/core/dimensions/infinity-dimension.js"
+    }
+  ],
+  "timeDimensionMultiplier": [
+    {
+      "starts": "ee15",
+      "from": "vanilla",
+      "condition": "Time Dimension multiplier reaches the overflow threshold.",
+      "penalty": "Log-space compression with base magnitude 10; Endgame effects can reduce the magnitude.",
+      "sourceFile": "src/core/dimensions/time-dimension.js"
+    },
+    {
+      "starts": "ENUMMAX (10^Number.MAX_VALUE; Doomed threshold varies with Divinities)",
+      "from": "endgame",
+      "condition": "Time Dimension multiplier reaches the second overflow threshold.",
+      "penalty": "A second log-space compression with magnitude 10.",
+      "sourceFile": "src/core/dimensions/time-dimension.js"
+    }
+  ],
+  "infinityPointMultiplierPurchases": [
+    {
+      "starts": "e3e6 (1e3,000,000 IP); delayed to ee125 by Endgame Upgrade 21 when Post-Reality is enabled",
+      "from": "endgame",
+      "condition": "Repeatable 2x IP Mult purchases reach the cost-increase threshold.",
+      "penalty": "Cost growth per purchase changes from x10 to x1e10; cost is hardcapped at e6e6 IP.",
+      "sourceFile": "src/core/infinity-upgrades.js",
+      "configFile": "src/core/secret-formula/infinity/infinity-upgrades.js"
+    }
+  ],
+  "eternitiesToInfinityDimensionMultiplier": [
+    {
+      "starts": "100,000 Eternities",
+      "from": "vanilla",
+      "condition": "Eternity Upgrade 2 multiplier calculation.",
+      "penalty": "The pre-cap Eternity count is limited to 100,000; excess Eternities use a slower multiplicative formula.",
+      "sourceFile": "src/core/secret-formula/eternity/eternity-upgrades.js"
+    }
+  ],
+  "freeTickspeedUpgrades": [
+    {
+      "starts": "300,000 upgrades; +100,000 from the Enslaved unlock, then multiplied by the V TScap reward",
+      "from": "vanilla",
+      "condition": "Free Tickspeed upgrades exceed FreeTickspeed.softcap.",
+      "penalty": "The multiplier to the next upgrade grows by (1.000006)^(amount - softcap); costs use exponential scaling after the threshold.",
+      "sourceFile": "src/core/tickspeed.js"
+    }
+  ],
+  "replicanti": [
+    {
+      "starts": "Replicanti cap (dynamic; normally 1e308)",
+      "from": "vanilla",
+      "condition": "Replicanti amount exceeds its current cap.",
+      "penalty": "Replication interval is multiplied by 10 and gains additional over-cap scaling based on amount above cap.",
+      "sourceFile": "src/core/replicanti.js"
+    },
+    {
+      "starts": "e2000 Replicanti",
+      "from": "vanilla",
+      "condition": "Pelle Eternity Strike is active and not destroyed; Replicanti are over cap.",
+      "penalty": "Adjusts the over-cap interval scaling to account for the strike's stronger slowdown.",
+      "sourceFile": "src/core/replicanti.js"
+    }
+  ],
+  "glyphLevel": [
+    {
+      "starts": "1500 + Effarig Glyph effect + Imaginary Upgrade 7 effect + Ra instability-delay effect",
+      "from": "vanilla",
+      "condition": "Scaled Glyph Level exceeds the regular instability threshold.",
+      "penalty": "For start S and rate R, level becomes S + R/2 * (sqrt(1 + 4*(level-S)/R) - 1); R=500.",
+      "sourceFile": "src/core/glyphs/glyph-core.js",
+      "formulaFile": "src/core/glyphs/auto-glyph-processor.js"
+    },
+    {
+      "starts": "Regular instability threshold + 4000",
+      "from": "vanilla",
+      "condition": "Scaled Glyph Level exceeds the hyper-instability threshold after regular instability scaling.",
+      "penalty": "Same instability curve with rate R=400.",
+      "sourceFile": "src/core/glyphs/glyph-core.js",
+      "formulaFile": "src/core/glyphs/auto-glyph-processor.js"
+    },
+    {
+      "starts": "1e5 Glyph Level; 1e6 when Glitch Reality Upgrade 14 is available for purchase",
+      "from": "vis",
+      "condition": "Scaled Glyph Level exceeds the Glitch instability threshold after regular and hyper instability.",
+      "penalty": "Same instability curve with rate 1e4; rate is x5 if Endgame Upgrade 13 is bought and Post-Reality is enabled.",
+      "sourceFile": "src/core/glyphs/glyph-core.js",
+      "formulaFile": "src/core/glyphs/auto-glyph-processor.js"
+    },
+    {
+      "starts": "5e7 Glyph Level",
+      "from": "vis",
+      "condition": "Scaled Glyph Level exceeds the Chaos instability threshold after earlier instability stages.",
+      "penalty": "Same instability curve with rate R=250.",
+      "sourceFile": "src/core/glyphs/glyph-core.js",
+      "formulaFile": "src/core/glyphs/auto-glyph-processor.js"
+    }
+  ],
+  "replicationGlyphEffect": [
+    {
+      "starts": "1e15000 effect value",
+      "from": "vanilla",
+      "condition": "Combined Replication Speed Glyph effect exceeds the threshold.",
+      "penalty": "Combined effect is divided by (effect / 1e15000)^0.97.",
+      "sourceFile": "src/core/secret-formula/reality/glyph-effects.js"
+    }
+  ],
+  "singularityMilestoneCompletions": [
+    {
+      "starts": "20 completions",
+      "from": "vanilla",
+      "condition": "Continuum Mult milestone raw completions exceed 20.",
+      "penalty": "Excess completions count at one third rate.",
+      "sourceFile": "src/core/secret-formula/celestials/singularity-milestones.js"
+    },
+    {
+      "starts": "30 completions",
+      "from": "vanilla",
+      "condition": "Dark Matter Mult milestone raw completions exceed 30.",
+      "penalty": "Excess completions count at one third rate.",
+      "sourceFile": "src/core/secret-formula/celestials/singularity-milestones.js"
+    },
+    {
+      "starts": "10 completions",
+      "from": "vanilla",
+      "condition": "Dark Energy Mult milestone raw completions exceed 10.",
+      "penalty": "Excess completions count at one third rate.",
+      "sourceFile": "src/core/secret-formula/celestials/singularity-milestones.js"
+    },
+    {
+      "starts": "25 completions",
+      "from": "vanilla",
+      "condition": "Dark Dimension Cost Reduction milestone raw completions exceed 25.",
+      "penalty": "Excess completions count at one third rate.",
+      "sourceFile": "src/core/secret-formula/celestials/singularity-milestones.js"
+    },
+    {
+      "starts": "5 completions",
+      "from": "vanilla",
+      "condition": "Singularity Mult milestone raw completions exceed 5.",
+      "penalty": "Excess completions count at one third rate.",
+      "sourceFile": "src/core/secret-formula/celestials/singularity-milestones.js"
+    },
+    {
+      "starts": "20 completions",
+      "from": "vanilla",
+      "condition": "Dark Dimension Interval Reduction milestone raw completions exceed 20.",
+      "penalty": "Excess completions count at one third rate.",
+      "sourceFile": "src/core/secret-formula/celestials/singularity-milestones.js"
+    },
+    {
+      "starts": "15 completions",
+      "from": "vanilla",
+      "condition": "Improved Ascension DM milestone raw completions exceed 15.",
+      "penalty": "Excess completions count at one third rate.",
+      "sourceFile": "src/core/secret-formula/celestials/singularity-milestones.js"
+    }
+  ],
+  "tesseractExtras": [
+    {
+      "starts": "50 * Endgame Upgrade 23 effect * Ra free-Tesseract increase effect",
+      "from": "endgame",
+      "condition": "Owned Tesseracts plus other extra-Tesseract sources exceed the dynamic softcap start.",
+      "penalty": "Extra above the start is divided by (1 + excess/start); after Alpha is destroyed, an additional logarithmic term applies.",
+      "sourceFile": "src/core/celestials/enslaved.js"
+    }
+  ],
+  "darkMatterDimensionMultiplier": [
+    {
+      "starts": "10^(1.25e11)",
+      "from": "endgame",
+      "condition": "Dark Matter Dimension power multiplier exceeds the threshold.",
+      "penalty": "For multiplier M and start S, use min(M,S) * 10^(log10(max(M/S,1))^0.9).",
+      "sourceFile": "src/core/celestials/laitela/dmd.js"
+    },
+    {
+      "starts": "10^(1.25e9)",
+      "from": "endgame",
+      "condition": "Dark Energy Dimension power multiplier exceeds the threshold.",
+      "penalty": "For multiplier M and start S, use min(M,S) * 10^(log10(max(M/S,1))^0.9).",
+      "sourceFile": "src/core/celestials/laitela/dmd.js"
+    }
+  ],
+  "celestialMatter": [
+    {
+      "starts": "CelestialDimensions.SOFTCAP (dynamic; maximum ee15)",
+      "from": "endgame",
+      "condition": "Celestial Matter is generated; softcap applies above the calculated start.",
+      "penalty": "Above the start, excess is raised to 1/softcapPow; start and magnitude are affected by Endgame, Divinity, Ethereal, and Hepteract effects.",
+      "sourceFile": "src/core/dimensions/celestial-dimension.js",
+      "formulaFile": "src/game.js"
+    },
+    {
+      "starts": "Number.MAX_VALUE * Divine Upgrade divineL1U1 effect",
+      "from": "endgame",
+      "condition": "Celestial Matter exceeds the overflow threshold.",
+      "penalty": "Overflow excess is raised to 1/OVERFLOW_MAG.",
+      "sourceFile": "src/core/dimensions/celestial-dimension.js",
+      "formulaFile": "src/game.js"
+    },
+    {
+      "starts": "e20,000,000",
+      "from": "endgame",
+      "condition": "Celestial Matter exceeds MASS_OVERFLOW.",
+      "penalty": "Mass-overflow excess is raised to 1/MASS_OVERFLOW_MAG; Celestial Surge and Hepteracts modify the magnitude.",
+      "sourceFile": "src/core/dimensions/celestial-dimension.js",
+      "formulaFile": "src/game.js"
+    }
+  ],
+  "canteReplicatorMultiplier": [
+    {
+      "starts": "1.79e308 replicators",
+      "from": "vis",
+      "condition": "Replicator amount reaches the threshold.",
+      "penalty": "Multiplier is divided by (amount/start)^(0.003 / Cante Upgrade 9 effect).",
+      "sourceFile": "src/core/celestials/cante/canteReplicator.js"
+    },
+    {
+      "starts": "1e1000 replicators",
+      "from": "vis",
+      "condition": "Replicator amount reaches the threshold.",
+      "penalty": "Multiplier is divided by (amount/start)^(0.05 / Cante Upgrade 9 effect).",
+      "sourceFile": "src/core/celestials/cante/canteReplicator.js"
+    },
+    {
+      "starts": "1e1000000 replicators",
+      "from": "vis",
+      "condition": "Replicator amount reaches the threshold.",
+      "penalty": "Multiplier is divided by (amount/start)^(0.1 / Cante Upgrade 9 effect).",
+      "sourceFile": "src/core/celestials/cante/canteReplicator.js"
+    },
+    {
+      "starts": "ee20 replicators",
+      "from": "vis",
+      "condition": "Replicator amount reaches the threshold.",
+      "penalty": "Multiplier is divided by (amount/start)^0.3.",
+      "sourceFile": "src/core/celestials/cante/canteReplicator.js"
+    },
+    {
+      "starts": "ee80 replicators",
+      "from": "vis",
+      "condition": "Replicator amount reaches the threshold.",
+      "penalty": "Multiplier is divided by (amount/start)^0.5.",
+      "sourceFile": "src/core/celestials/cante/canteReplicator.js"
+    },
+    {
+      "starts": "ee150 replicators",
+      "from": "vis",
+      "condition": "Replicator amount reaches the threshold.",
+      "penalty": "Multiplier is divided by (amount/start)^0.8.",
+      "sourceFile": "src/core/celestials/cante/canteReplicator.js"
+    },
+    {
+      "starts": "ee250 replicators",
+      "from": "vis",
+      "condition": "Replicator amount reaches the threshold.",
+      "penalty": "Multiplier is divided by (amount/start)^0.99.",
+      "sourceFile": "src/core/celestials/cante/canteReplicator.js"
+    }
+  ]
+}

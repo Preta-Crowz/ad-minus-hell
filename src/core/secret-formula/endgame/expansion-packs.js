@@ -36,7 +36,7 @@ export const expansionPacks = {
       return ` Charging your Black Hole always only takes ${formatPercents(0.99)} of your total Game Speed.
         Unlock optimizers for adjusting the amount of your stored time you desire to discharge as well as the interval at which you want to discharge your Stored Time.
         Double the strength of all Effective Tesseracts.
-        Tesseracts multiply Endgames as well as reducing the Infinity Dimension Compression Magnitude slightly (Currently ${formatX(Math.floor(1 + Math.pow(Math.log10(Math.min(Tesseracts.effectiveCount, 1000) * Math.max(Math.log10(Tesseracts.effectiveCount) - 2, 1) + 1), Math.log10(player.endgames + 1))), 2, 2)}, ${formatX(Math.pow(1 / Math.log10(Tesseracts.effectiveCount + 1), 0.2), 2, 3)}).
+        Tesseracts multiply Endgames as well as reducing the Infinity Dimension Compression Magnitude slightly (Currently ${formatX(getTesseractEndgameMultiplier(), 2, 2)}, ${formatX(Decimal.log10(Tesseracts.effectiveCount.add(1)).reciprocal().pow(0.2), 2, 3)}).
         Start Endgames with the Nameless Ones completed.
         Unlock an autobuyer for Tesseracts.`
     },
@@ -61,7 +61,7 @@ export const expansionPacks = {
     symbol: "\uf185",
     get description() {
       return ` Ra is kept on Endgame.
-        Raise the level cap of all Celestials to the double-logarithm of your record ${player.universes.current === 2 ? "Matter" : "Antimatter"} amount (Currently ${formatHybridLarge(Decimal.max(Decimal.floor(player.records.bestAntimatterExponentOutsideDoom.max(1).log10()), 25), 3)}).
+        Raise the level cap of all Celestials to the double-logarithm of your record ${player.universes.current === 2 ? "Matter" : "Antimatter"} amount (Currently ${formatHybridLarge(Ra.expansionPackLevelCap, 3)}).
         Unlock ${formatInt(7)} new effects for each Celestial which can be obtained by increasing the level of each Celestial.
         Multiply Memory and Memory Chunk gain by ${formatX(10)}.`
     },
@@ -95,7 +95,7 @@ export const expansionPacks = {
     symbol: "♅",
     get description() {
       return ` Reduce the Galaxy Generator Instability Magnitude by ${formatInt(1)}.
-        Raise the first three types of Dimensions to a power based on your all-time record Galaxy amount (Currently ${formatPow(Decimal.pow(Decimal.log10(player.records.bestEndgame.galaxies).div(100), 1.5).add(1), 2, 3)}).
+        Raise the first three types of Dimensions to a power based on your all-time record Galaxy amount (Currently ${formatPow(Decimal.pow(Decimal.log10(player.records.bestEndgame.galaxies.max(1)).div(100), 1.5).add(1), 2, 3)}).
         Unlock autobuyers for the repeatable Galaxy Generator upgrades.`
     },
     cost: Decimal.pow(10, 1e150),

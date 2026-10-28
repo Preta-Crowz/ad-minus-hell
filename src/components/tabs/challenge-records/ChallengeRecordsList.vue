@@ -17,16 +17,16 @@ export default {
   },
   computed: {
     timeSum() {
-      return this.times.decimalSum();
+      return this.times.sum();
     },
     completedAllChallenges() {
-      return this.timeSum.lt(DC.BEMAX);
+      return this.timeSum.lt(new Decimal("10^^8900000000000000"));
     }
   },
   methods: {
     timeDisplayShort,
     completionString(time) {
-      return time.lt(DC.BEMAX)
+      return time.lt(new Decimal("10^^8900000000000000"))
         ? `record time: ${timeDisplayShort(time)}`
         : "has not yet been completed";
     }

@@ -10,7 +10,7 @@ export class EternityAutobuyerState extends AutobuyerState {
   }
 
   get isUnlocked() {
-    return EternityMilestone.autobuyerEternity.isReached || (LHC.voidRunning && NullUpgrade.limerick5.isBought);
+    return EternityMilestone.autobuyerEternity.isReached || (LHC.voidRunning && LHCNullUpgrade.limerick5.isBought);
   }
 
   get mode() {
@@ -25,7 +25,7 @@ export class EternityAutobuyerState extends AutobuyerState {
     return this.data.amount;
   }
 
-get increaseWithMult() {
+  get increaseWithMult() {
     return this.data.increaseWithMult;
   }
 
@@ -54,7 +54,7 @@ get increaseWithMult() {
   }
 
   get hasAdditionalModes() {
-    return !player.disablePostReality && RealityUpgrade(13).isBought;
+    return RealityUpgrade(13).isBought;
   }
 
   autoEternitiesAvailable(considerMilestoneReached) {
@@ -91,7 +91,7 @@ get increaseWithMult() {
       case AUTO_ETERNITY_MODE.AMOUNT:
         return gainedEternityPoints().gte(this.amount);
       case AUTO_ETERNITY_MODE.TIME:
-        return Time.thisEternityRealTime.totalSeconds.toNumber() > this.time;
+        return Time.thisEternityTrueTime.totalSeconds.toNumber() > this.time;
       case AUTO_ETERNITY_MODE.X_HIGHEST:
       default:
         return gainedEternityPoints().gte(this.highestPrevPrestige.times(this.xHighest));

@@ -1,5 +1,66 @@
-import { endgameMigration } from "./endgame-migrations";
 import { deepmergeAll } from "@/utility/deepmerge";
+import { beMigration } from "./be-migrations";
+import { DC } from "../constants";
+
+function setAchievementBit(player, id, unlocked) {
+  const row = Math.floor(id / 10) - 1;
+  const bit = 1 << ((id % 10) - 1);
+  if (player.achievementBits[row] === undefined) player.achievementBits[row] = 0;
+  player.achievementBits[row] = unlocked
+    ? player.achievementBits[row] | bit
+    : player.achievementBits[row] & ~bit;
+}
+
+function migrateEndgameUpdateAchievements(player) {
+  const remapped = [
+    [201, 211], [202, 212], [203, 213], [204, 221], [205, 215], [206, 216], [207, 224],
+    [195, 204], [196, 206], [197, 207], [198, 208], [194, 196]
+  ];
+  for (const [oldId, newId] of remapped) {
+    const row = Math.floor(oldId / 10) - 1;
+    const bit = 1 << ((oldId % 10) - 1);
+    if ((player.achievementBits[row] & bit) === 0) continue;
+    setAchievementBit(player, oldId, false);
+    setAchievementBit(player, newId, true);
+  }
+  setAchievementBit(player, 208, false);
+}
+
+function migrateEndgameUpdateRecords(player) {
+  const bestRecordKeys = [
+    "bestInfinity", "bestEternity", "bestReality", "bestEndgame", "bestCelestialInfinity",
+    "bestCelestialEternity", "bestCondense", "bestSupernova"
+  ];
+  for (const key of bestRecordKeys) {
+    const record = player.records[key];
+    if (!record) continue;
+    if (new Decimal(record.time ?? 0).eq(0)) record.time = new Decimal(999999999999);
+    if (record.realTime === 0) record.realTime = 999999999999;
+  }
+  if (!(player.celestials.v.runRecords?.[0] instanceof Decimal)) {
+    player.celestials.v.runRecords = [DC.E1.neg(), DC.D0, DC.D0, DC.D0, DC.D0, DC.D0, DC.D0, DC.D0, DC.D0];
+  }
+  player.celestials.teresa.perkShop = Array.range(0, 9).map(index =>
+    new Decimal(player.celestials.teresa.perkShop[index] ?? 0));
+  player.celestials.ra.unlocks = [...new Set(player.celestials.ra.unlocks.map(id =>
+    id >= 28 && id <= 55 ? id + 23 : id))];
+  migrateEndgameUpdateAchievements(player);
+}
+
+function migrateEndgameCounters(player) {
+  player.endgames = new Decimal(player.endgames ?? 0);
+  player.endgame.partEndgamed = new Decimal(player.endgame.partEndgamed ?? 0);
+  player.records.recentEndgames = player.records.recentEndgames.map(record => [
+    ...record.slice(0, 4),
+    new Decimal(record[4] ?? 0)
+  ]);
+}
+
+function migrateEtherealSector(player) {
+  player.endgame.ethereal.sector = new Decimal(player.endgame.ethereal.sector ?? 1);
+}
+
+const legacyRedundantChallengerUpgradeIds = [0, 4, 12, 14, 16, 17, 18];
 
 // WARNING: Don't use state accessors and functions from global scope here, that's not safe in long-term
 export const migrations = {
@@ -413,47 +474,34 @@ export const migrations = {
       }
     },
     25: player => {
-      // If the player has r146 "Perks of living" achievement we give them the DAB perk automatically
-      if ((player.achievementBits[13] & 32) !== 0 && !player.reality.perks.has(107)) {
-        player.reality.perks.add(107);
-      }
+      player.celestials.glitch.riftForce = player.celestials.glitch.riftforce;
+      delete player.celestials.glitch.riftforce;
 
-      // This update has a rebalance that assumes the 3rd dilation repeatable is unpurchasable in cel7
-      if (player.celestials.pelle.doomed) player.dilation.rebuyables[3] = 0;
+      player.celestials.v.runUnlocks.push([0,0,0,0,0,0]);
+      player.celestials.v.runUnlocks = player.celestials.v.runUnlocks.flat();
+
+      player.celestials.v.runRecords.push([0,0,0,0,0,0]);
+      player.celestials.v.runRecords = player.celestials.v.runRecords.flat();
+
+      player.celestials.v.goalReductionSteps.push([0,0,0,0,0,0]);
+      player.celestials.v.goalReductionSteps = player.celestials.v.goalReductionSteps.flat();
+
     },
-    //Start with 100 since Endgame is a "new era"
-    100: player => {
-      endgameMigration(player);
+    26: player => {
+      player.celestials.cante.replicators =
+      Array.range(0, 10).map(() => ({
+        bought: new Decimal(1),
+        amount: new Decimal(1)
+      }))
     },
-    101: player => {
-      endgameMigration(player);
+    27: player => {
+      beMigration(player);
     },
-    102: player => {
-      endgameMigration(player);
+    28: player => {
+      migrateEndgameCounters(player);
     },
-    103: player => {
-      endgameMigration(player);
-    },
-    104: player => {
-      endgameMigration(player);
-    },
-    105: player => {
-      endgameMigration(player);
-    },
-    106: player => {
-      endgameMigration(player);
-    },
-    107: player => {
-      endgameMigration(player);
-    },
-    108: player => {
-      endgameMigration(player);
-    },
-    109: player => {
-      endgameMigration(player);
-    },
-    110: player => {
-      endgameMigration(player);
+    29: player => {
+      migrateEtherealSector(player);
     }
   },
 
@@ -1015,7 +1063,7 @@ export const migrations = {
         newAchievements[row - 1] |= (1 << (column - 1));
       }
       // Handle the changed achievement "No DLC Required" correctly (otherwise saves could miss it).
-      if (!isSecret && (player.infinityUpgrades.size >= 16 || player.eternities.gt(0) || player.realities > 0)) {
+      if (!isSecret && (player.infinityUpgrades.size >= 16 || player.eternities.gt(0) || player.realities.gt(0))) {
         newAchievements[3] |= 1;
       } else {
         newAchievements[3] &= ~1;
@@ -1042,7 +1090,7 @@ export const migrations = {
   },
 
   setTutorialState(player) {
-    if (player.infinities.gt(0) || player.eternities.gt(0) || player.realities > 0 || player.galaxies > 0) {
+    if (player.infinities.gt(0) || player.eternities.gt(0) || player.realities.gt(0) || player.galaxies.gt(0)) {
       player.tutorialState = 4;
     } else if (player.dimensionBoosts.gt(0)) player.tutorialState = TUTORIAL_STATE.GALAXY;
   },
@@ -1133,7 +1181,7 @@ export const migrations = {
 
   migratePlayerVars(player) {
     player.replicanti.boughtGalaxyCap = player.replicanti.gal;
-    player.dilation.totalTachyonGalaxies = player.dilation.freeGalaxies;
+    player.dilation.totalTachyonGalaxies = new Decimal(player.dilation.freeGalaxies);
 
     delete player.replicanti.gal;
     delete player.dilation.freeGalaxies;
@@ -1160,7 +1208,7 @@ export const migrations = {
   convertTimeTheoremPurchases(player) {
     player.timestudy.amBought = new Decimal(player.timestudy.amcost).exponent / 20000 - 1;
     player.timestudy.ipBought = new Decimal(player.timestudy.ipcost).exponent / 100;
-    player.timestudy.epBought = Math.round(new Decimal(player.timestudy.epcost).log2());
+    player.timestudy.epBought = new Decimal(player.timestudy.epcost).log2().round().toNumber();
 
     delete player.timestudy.amcost;
     delete player.timestudy.ipcost;
@@ -1255,14 +1303,60 @@ export const migrations = {
   // much older versions and saves from in-development versions
   patch(saveData, maxVersion) {
     this.prePatch(saveData);
+    const isEndgameUpdateSave = Number(saveData.version) >= 100;
+    const needsChallengerUpgradeLocks = (saveData.glitch?.challengerUpgradeLockbits ?? 0) === 0 &&
+      saveData.pelleResets > 0;
+    const savedLaitelaDimensions = saveData.celestials?.laitela?.dimensions ?? [];
     // This adds all the undefined properties to the save which are in player.js
     const player = deepmergeAll([Player.defaultStart, saveData]);
+    if (needsChallengerUpgradeLocks) {
+      for (const id of legacyRedundantChallengerUpgradeIds) {
+        if ((player.glitch.challengerUpgradebits & (1 << id)) === 0) {
+          player.glitch.challengerUpgradeLockbits |= (1 << id);
+        }
+      }
+    }
+    player.celestials.teresa.perkShop = Array.range(0, 9).map(index =>
+      new Decimal(player.celestials.teresa.perkShop[index] ?? 0));
+    if (!(player.celestials.teresa.charged instanceof Set)) {
+      player.celestials.teresa.charged = new Set(player.celestials.teresa.charged ?? []);
+    }
+    player.celestials.teresa.disCharge ??= false;
+    player.celestials.teresa.chargeMode ??= false;
     const versions = Object.keys(this.patches).map(parseFloat).sort();
     let version;
     while ((version = versions.find(v => player.version < v && v < maxVersion)) !== undefined) {
       const patch = this.patches[version];
       patch(player);
       player.version = version;
+    }
+    const existingDimensions = player.celestials.laitela.dimensions ?? [];
+    const defaultDimensions = Player.defaultStart.celestials.laitela.dimensions;
+    player.celestials.laitela.dimensions = Array.from({ length: 8 }, (_, index) => {
+      const savedDimension = savedLaitelaDimensions[index];
+      const dimension = existingDimensions[index] === undefined || existingDimensions[index] === null
+        ? deepmergeAll([{}, defaultDimensions[index]])
+        : deepmergeAll([defaultDimensions[index], existingDimensions[index]]);
+      if (savedDimension?.realDiff !== undefined) dimension.realDiff = new Decimal(savedDimension.realDiff);
+      else if (savedDimension?.timeSinceLastUpdate !== undefined) {
+        dimension.realDiff = new Decimal(savedDimension.timeSinceLastUpdate);
+      } else if (dimension.realDiff === undefined) dimension.realDiff = DC.D0;
+      else dimension.realDiff = new Decimal(dimension.realDiff);
+      if (dimension.timeSinceLastUpdate === undefined) dimension.timeSinceLastUpdate = dimension.realDiff.toNumber();
+      return dimension;
+    });
+    const defaultADs = Player.defaultStart.dimensions.antimatter;
+    const existingADs = player.dimensions.antimatter ?? [];
+    player.dimensions.antimatter = Array.from({ length: 9 }, (_, index) => (
+      existingADs[index] === undefined || existingADs[index] === null
+        ? deepmergeAll([{}, defaultADs[index]])
+        : deepmergeAll([defaultADs[index], existingADs[index]])
+    ));
+    if (isEndgameUpdateSave) {
+      migrateEndgameUpdateRecords(player);
+      migrateEndgameCounters(player);
+      migrateEtherealSector(player);
+      player.version = Object.keys(this.patches).map(Number).nMax();
     }
     return player;
   },
@@ -1273,6 +1367,6 @@ export const migrations = {
 
   patchPostReality(saveData) {
     // Plus 1 because this the threshold is exclusive (it migrates up to but not including the maxVersion)
-    return this.patch(saveData, Object.keys(migrations.patches).map(k => Number(k)).max() + 1);
+    return this.patch(saveData, Object.keys(migrations.patches).map(k => Number(k)).nMax() + 1);
   }
 };

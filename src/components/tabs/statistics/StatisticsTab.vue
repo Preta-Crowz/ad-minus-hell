@@ -1,5 +1,8 @@
 <script>
+import { DC } from "../../../core/constants";
+
 import { MatterScale } from "./matter-scale";
+
 import PrimaryButton from "@/components/PrimaryButton";
 
 export default {
@@ -11,113 +14,120 @@ export default {
     return {
       isDoomed: false,
       realTimeDoomed: TimeSpan.zero,
-      totalAntimatter: new Decimal(0),
-      totalAntimatterOutsideDoom: new Decimal(0),
-      bestDoomedAntimatterThisDivinity: new Decimal(0),
-      totalCelMatter: new Decimal(0),
-      totalDivineMatter: new Decimal(0),
+      totalAntimatter: new Decimal(),
+      totalAntimatterOutsideDoom: new Decimal(),
+      bestDoomedAntimatterThisDivinity: new Decimal(),
+      totalCelMatter: new Decimal(),
+      totalDivineMatter: new Decimal(),
       hasSeenDivineDims: false,
+      isFlipped: false,
       realTimePlayed: TimeSpan.zero,
       timeSinceCreation: 0,
       uniqueNews: 0,
       totalNews: 0,
       secretAchievementCount: 0,
-      isFlipped: false,
       infinity: {
         isUnlocked: false,
-        count: new Decimal(0),
-        banked: new Decimal(0),
-        projectedBanked: new Decimal(0),
-        bankRate: new Decimal(0),
-        totalInfinityAntimatter: new Decimal(0),
+        count: new Decimal(),
+        banked: new Decimal(),
+        projectedBanked: new Decimal(),
+        bankRate: new Decimal(),
         hasBest: false,
         best: TimeSpan.zero,
         this: TimeSpan.zero,
         thisReal: TimeSpan.zero,
-        bestRate: new Decimal(0),
+        bestRate: new Decimal(),
+        totalInfinityAntimatter: new Decimal(),
       },
       eternity: {
         isUnlocked: false,
-        count: new Decimal(0),
-        totalEternityAntimatter: new Decimal(0),
+        count: new Decimal(),
         hasBest: false,
         best: TimeSpan.zero,
         this: TimeSpan.zero,
         thisReal: TimeSpan.zero,
-        bestRate: new Decimal(0),
+        bestRate: new Decimal(),
+        totalEternityAntimatter: new Decimal(),
       },
       reality: {
         isUnlocked: false,
-        count: new Decimal(0),
-        totalRealityAntimatter: new Decimal(0),
+        count: new Decimal(),
         hasBest: false,
         best: TimeSpan.zero,
         bestReal: TimeSpan.zero,
         this: TimeSpan.zero,
         thisReal: TimeSpan.zero,
         totalTimePlayed: TimeSpan.zero,
-        bestRate: new Decimal(0),
+        bestRate: new Decimal(),
         bestRarity: 0,
+        totalRealityAntimatter: new Decimal(),
       },
       endgame: {
         isUnlocked: false,
-        count: 0,
-        totalEndgameAntimatter: new Decimal(0),
+        count: DC.D0,
+        totalEndgameAntimatter: new Decimal(),
         hasBest: false,
         best: TimeSpan.zero,
         bestReal: TimeSpan.zero,
         this: TimeSpan.zero,
         thisReal: TimeSpan.zero,
-        bestRateCP: new Decimal(0),
-        bestRateDP: new Decimal(0),
+        bestRateCP: new Decimal(),
+        bestRateDP: new Decimal(),
       },
       celestialInfinity: {
         isUnlocked: false,
-        count: new Decimal(0),
-        totalCelestialInfinityCelMatter: new Decimal(0),
+        count: new Decimal(),
+        totalCelestialInfinityCelMatter: new Decimal(),
         hasBest: false,
         best: TimeSpan.zero,
         bestReal: TimeSpan.zero,
         this: TimeSpan.zero,
         thisReal: TimeSpan.zero,
-        bestRate: new Decimal(0),
+        bestRate: new Decimal(),
       },
       celestialEternity: {
         isUnlocked: false,
-        count: new Decimal(0),
-        totalCelestialEternityCelMatter: new Decimal(0),
+        count: new Decimal(),
+        totalCelestialEternityCelMatter: new Decimal(),
         hasBest: false,
         best: TimeSpan.zero,
         bestReal: TimeSpan.zero,
         this: TimeSpan.zero,
         thisReal: TimeSpan.zero,
-        bestRate: new Decimal(0),
+        bestRate: new Decimal(),
       },
-      divinity: {
-        isUnlocked: false,
-        count: 0
-      },
+      divinity: { isUnlocked: false, count: 0 },
       condense: {
         isUnlocked: false,
-        count: new Decimal(0),
-        totalCondenseDivineMatter: new Decimal(0),
+        count: new Decimal(),
+        totalCondenseDivineMatter: new Decimal(),
         hasBest: false,
         best: TimeSpan.zero,
         bestReal: TimeSpan.zero,
         this: TimeSpan.zero,
         thisReal: TimeSpan.zero,
-        bestRate: new Decimal(0),
+        bestRate: new Decimal(),
       },
       supernova: {
         isUnlocked: false,
-        count: new Decimal(0),
-        totalSupernovaDivineMatter: new Decimal(0),
+        count: new Decimal(),
+        totalSupernovaDivineMatter: new Decimal(),
         hasBest: false,
         best: TimeSpan.zero,
         bestReal: TimeSpan.zero,
         this: TimeSpan.zero,
         thisReal: TimeSpan.zero,
-        bestRate: new Decimal(0),
+        bestRate: new Decimal(),
+      },
+      meta: {
+        isUnlocked: false,
+        count: new Decimal(),
+        best: TimeSpan.zero,
+        bestReal: TimeSpan.zero,
+        this: TimeSpan.zero,
+        thisReal: TimeSpan.zero,
+        totalTimePlayed: "",
+        bestRate: new Decimal(),
       },
       matterScale: [],
       lastMatterTime: 0,
@@ -142,15 +152,11 @@ export default {
     },
     realityCountString() {
       const num = new Decimal(this.reality.count);
-      return num.gt(0)
-        ? `${this.formatDecimalAmount(num)} ${pluralize("Reality", num.floor())}`
-        : "no Realities";
+      return num.gt(0) ? `${this.formatDecimalAmount(num)} ${pluralize("Reality", num.floor())}` : "no Realities";
     },
     endgameCountString() {
       const num = new Decimal(this.endgame.count);
-      return num.gt(0)
-        ? `${this.formatDecimalAmount(num)} ${pluralize("Endgame", num.floor())}`
-        : "no Endgames";
+      return num.gt(0) ? `${this.formatDecimalAmount(num)} ${pluralize("Endgame", num.floor())}` : "no Endgames";
     },
     celestialInfinityCountString() {
       const num = this.celestialInfinity.count;
@@ -166,21 +172,15 @@ export default {
     },
     divinityCountString() {
       const num = new Decimal(this.divinity.count);
-      return num.gt(0)
-        ? `${this.formatDecimalAmount(num)} ${pluralize("Divinity", num.floor())}`
-        : "no Divinities";
+      return num.gt(0) ? `${this.formatDecimalAmount(num)} ${pluralize("Divinity", num.floor())}` : "no Divinities";
     },
     condenseCountString() {
       const num = this.condense.count;
-      return num.gt(0)
-        ? `${this.formatDecimalAmount(num)} ${pluralize("Condense", num.floor())}`
-        : "no Condenses";
+      return num.gt(0) ? `${this.formatDecimalAmount(num)} ${pluralize("Condense", num.floor())}` : "no Condenses";
     },
     supernovaCountString() {
       const num = this.supernova.count;
-      return num.gt(0)
-        ? `${this.formatDecimalAmount(num)} ${pluralize("Supernova", num.floor())}`
-        : "no Supernovae";
+      return num.gt(0) ? `${this.formatDecimalAmount(num)} ${pluralize("Supernova", num.floor())}` : "no Supernovae";
     },
     fullGameCompletions() {
       return player.records.fullGameCompletions;
@@ -196,19 +196,19 @@ export default {
     update() {
       const records = player.records;
       this.totalAntimatter.copyFrom(records.totalAntimatter);
-      this.totalAntimatterOutsideDoom.copyFrom(player.records.totalAntimatterOutsideDoom);
-      this.bestDoomedAntimatterThisDivinity.copyFrom(player.records.bestDoomedAntimatterThisDivinity);
+      this.totalAntimatterOutsideDoom.copyFrom(records.totalAntimatterOutsideDoom);
+      this.bestDoomedAntimatterThisDivinity.copyFrom(records.bestDoomedAntimatterThisDivinity);
       this.totalCelMatter.copyFrom(records.totalCelMatter);
       this.totalDivineMatter.copyFrom(records.totalDivineMatter);
       this.hasSeenDivineDims = DivinityMilestone.divineDimensions.isReached;
-      this.realTimePlayed.setFrom(new Decimal(records.realTimePlayed));
+      this.isFlipped = player.universes.current === 2;
+      this.realTimePlayed.setFrom(records.realTimePlayed);
       this.fullTimePlayed = TimeSpan.fromMilliseconds(
-        new Decimal(records.previousRunRealTime + records.realTimePlayed));
+        new Decimal(records.previousRunRealTime.add(records.realTimePlayed)));
       this.uniqueNews = NewsHandler.uniqueTickersSeen;
       this.totalNews = player.news.totalSeen;
       this.secretAchievementCount = SecretAchievements.all.filter(a => a.isUnlocked).length;
       this.timeSinceCreation = Date.now() - player.records.gameCreatedTime;
-      this.isFlipped = player.universes.current === 2;
 
       const progress = PlayerProgress.current;
       const isInfinityUnlocked = progress.isInfinityUnlocked;
@@ -217,14 +217,14 @@ export default {
       infinity.isUnlocked = isInfinityUnlocked;
       if (isInfinityUnlocked) {
         infinity.count.copyFrom(Currency.infinities);
+        infinity.totalInfinityAntimatter.copyFrom(records.totalInfinityAntimatter);
         infinity.banked.copyFrom(Currency.infinitiesBanked);
         infinity.projectedBanked = new Decimal(0).plusEffectsOf(
           Achievement(131).effects.bankedInfinitiesGain,
-          TimeStudy(191).effects.bankedInfinitiesGain,
+          TimeStudy(191)
         );
         infinity.bankRate = infinity.projectedBanked.div(Decimal.clampMin(33, records.thisEternity.time)).times(60000);
-        infinity.totalInfinityAntimatter.copyFrom(records.totalInfinityAntimatter);
-        infinity.hasBest = bestInfinity.time.lt(999999999999);
+        infinity.hasBest = !bestInfinity.time.eq(DC.BEMAX);
         infinity.best.setFrom(bestInfinity.time);
         infinity.this.setFrom(records.thisInfinity.time);
         infinity.bestRate.copyFrom(bestInfinity.bestIPminEternity);
@@ -234,10 +234,11 @@ export default {
       const eternity = this.eternity;
       const bestEternity = records.bestEternity;
       eternity.isUnlocked = isEternityUnlocked;
+      
       if (isEternityUnlocked) {
         eternity.count.copyFrom(Currency.eternities);
         eternity.totalEternityAntimatter.copyFrom(records.totalEternityAntimatter);
-        eternity.hasBest = bestEternity.time.lt(999999999999);
+        eternity.hasBest = !bestEternity.time.eq(DC.BEMAX);
         eternity.best.setFrom(bestEternity.time);
         eternity.this.setFrom(records.thisEternity.time);
         eternity.bestRate.copyFrom(bestEternity.bestEPminReality);
@@ -249,29 +250,29 @@ export default {
       reality.isUnlocked = isRealityUnlocked;
 
       if (isRealityUnlocked) {
-        reality.count.copyFrom(Decimal.floor(Currency.realities.value));
+        reality.count.copyFrom(Currency.realities);
         reality.totalRealityAntimatter.copyFrom(records.totalRealityAntimatter);
         reality.hasBest = bestReality.time.lt(999999999999);
         reality.best.setFrom(bestReality.time);
-        reality.bestReal.setFrom(new Decimal(bestReality.realTime));
+        reality.bestReal.setFrom(bestReality.realTime);
         reality.this.setFrom(records.thisReality.time);
         reality.totalTimePlayed.setFrom(records.totalTimePlayed);
-        // Real time tracking is only a thing once reality is unlocked:
-        infinity.thisReal.setFrom(new Decimal(records.thisInfinity.realTime));
-        infinity.bankRate = infinity.projectedBanked.div(Math.clampMin(33, records.thisEternity.realTime)).times(60000);
-        eternity.thisReal.setFrom(new Decimal(records.thisEternity.realTime));
-        reality.thisReal.setFrom(new Decimal(records.thisReality.realTime));
+      // Real time tracking is only a thing once reality is unlocked:
+        infinity.thisReal.setFrom(records.thisInfinity.realTime);
+        infinity.bankRate = infinity.projectedBanked.div(Decimal.clampMin(33, records.thisEternity.realTime))
+          .times(60000);
+        eternity.thisReal.setFrom(records.thisEternity.realTime);
+        reality.thisReal.setFrom(records.thisReality.realTime);
         reality.bestRate.copyFrom(bestReality.RMmin);
-        reality.bestRarity = Math.max(strengthToRarity(bestReality.glyphStrength), 0);
+        reality.bestRarity = strengthToRarity(bestReality.glyphStrength).clampMin(0);
       }
 
       const isEndgameUnlocked = progress.isEndgameUnlocked;
       const endgame = this.endgame;
       const bestEndgame = records.bestEndgame;
       endgame.isUnlocked = isEndgameUnlocked;
-      
       if (isEndgameUnlocked) {
-        endgame.count = Math.floor(player.endgames);
+        endgame.count = player.endgames.floor();
         endgame.totalEndgameAntimatter.copyFrom(records.totalEndgameAntimatter);
         endgame.hasBest = bestEndgame.realTime < 999999999999;
         endgame.best.setFrom(bestEndgame.time);
@@ -313,11 +314,8 @@ export default {
       }
 
       const isDivinityUnlocked = progress.isDivinityUnlocked;
-      const divinity = this.divinity;
-      divinity.isUnlocked = isDivinityUnlocked;
-      if (isDivinityUnlocked) {
-        divinity.count = Math.floor(player.celestials.pelle.divinities);
-      }
+      this.divinity.isUnlocked = isDivinityUnlocked;
+      if (isDivinityUnlocked) this.divinity.count = Math.floor(player.celestials.pelle.divinities);
 
       const isCondenseUnlocked = progress.isCondenseUnlocked;
       const condense = this.condense;
@@ -348,10 +346,28 @@ export default {
         supernova.thisReal.setFrom(new Decimal(records.thisSupernova.realTime));
         supernova.bestRate.copyFrom(bestSupernova.bestNebminTotal);
       }
+
+      const isMetaUnlocked = progress.isMetaUnlocked;
+      const meta = this.meta;
+      const thisMeta = records.thisMeta;
+      const bestMeta = records.bestMeta;
+      meta.isUnlocked = isMetaUnlocked;
+
+      if (isMetaUnlocked) {
+        meta.count.copyFrom(Currency.metas);
+        meta.best.setFrom(bestMeta.time);
+        meta.bestReal.setFrom(bestMeta.realTime);
+        meta.hasBest = bestMeta.realTime.lt(1e300);
+        meta.this.setFrom(thisMeta.time);
+        meta.totalTimePlayed = Time.totalTimePlayed.toStringShort();
+        meta.thisReal.setFrom(thisMeta.realTime);
+        meta.bestRate.copyFrom(bestMeta.MRmin);
+      }
+      
       this.updateMatterScale();
 
       this.isDoomed = Pelle.isDoomed;
-      this.realTimeDoomed.setFrom(new Decimal(player.records.realTimeDoomed));
+      this.realTimeDoomed.setFrom(player.records.realTimeDoomed);
       this.paperclips = player.news.specialTickerData.paperclips;
     },
     formatDecimalAmount(value) {
@@ -387,49 +403,33 @@ export default {
       <div class="c-stats-tab-general">
         <div>You have made a total of {{ format(totalAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }}.</div>
         <div v-if="divinity.isUnlocked">
-          You have made a total of {{ format(bestDoomedAntimatterThisDivinity, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }}
-          in Doom this Divinity.
+          You have made {{ format(bestDoomedAntimatterThisDivinity, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }} in Doom this Divinity.
         </div>
         <div v-if="endgame.isUnlocked">
-          You have made a total of {{ format(totalAntimatterOutsideDoom, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }}
-          outside Doom.
+          You have made {{ format(totalAntimatterOutsideDoom, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }} outside Doom.
         </div>
         <div v-if="endgame.isUnlocked">
-          You have made a total of {{ format(endgame.totalEndgameAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }}
-          this Endgame.
+          You have made {{ format(endgame.totalEndgameAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }} this Endgame.
         </div>
-        <div v-if="reality.isUnlocked" :class="{ 'c-stats-tab-doomed' : isDoomed }">
-          You have made a total of {{ format(reality.totalRealityAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }}
-          this {{ isDoomed ? "Armageddon" : "Reality" }}.
+        <div v-if="reality.isUnlocked">
+          You have made {{ format(reality.totalRealityAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }} this Reality.
         </div>
         <div v-if="eternity.isUnlocked">
-          You have made a total of {{ format(eternity.totalEternityAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }}
-          this Eternity.
+          You have made {{ format(eternity.totalEternityAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }} this Eternity.
         </div>
         <div v-if="infinity.isUnlocked">
-          You have made a total of {{ format(infinity.totalInfinityAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }}
-          this Infinity.
+          You have made {{ format(infinity.totalInfinityAntimatter, 2, 1) }} {{ isFlipped ? "matter" : "antimatter" }} this Infinity.
         </div>
-        <div v-if="endgame.isUnlocked" class="c-stats-tab-celestials">
-          You have made a total of {{ format(totalCelMatter, 2, 1) }} Celestial Matter.
+        <div v-if="endgame.isUnlocked">Total Celestial Matter produced: {{ format(totalCelMatter, 2, 1) }}.</div>
+        <div v-if="celestialEternity.isUnlocked">
+          Celestial Matter this Celestial Eternity: {{ format(celestialEternity.totalCelestialEternityCelMatter, 2, 1) }}.
         </div>
-        <div v-if="celestialEternity.isUnlocked" class="c-stats-tab-celestials">
-          You have made a total of {{ format(celestialEternity.totalCelestialEternityCelMatter, 2, 1) }} Celestial Matter
-          this Celestial Eternity.
+        <div v-if="celestialInfinity.isUnlocked">
+          Celestial Matter this Celestial Infinity: {{ format(celestialInfinity.totalCelestialInfinityCelMatter, 2, 1) }}.
         </div>
-        <div v-if="celestialInfinity.isUnlocked" class="c-stats-tab-celestials">
-          You have made a total of {{ format(celestialInfinity.totalCelestialInfinityCelMatter, 2, 1) }} Celestial Matter
-          this Celestial Infinity.
-        </div>
-        <div v-if="hasSeenDivineDims" class="c-stats-tab-divinity">
-          You have made a total of {{ format(totalDivineMatter, 2, 1) }} Divine Matter.
-        </div>
-        <div v-if="supernova.isUnlocked" class="c-stats-tab-divinity">
-          You have made a total of {{ format(supernova.totalSupernovaDivineMatter, 2, 1) }} Divine Matter this Supernova.
-        </div>
-        <div v-if="condense.isUnlocked" class="c-stats-tab-divinity">
-          You have made a total of {{ format(condense.totalCondenseDivineMatter, 2, 1) }} Divine Matter this Condense.
-        </div>
+        <div v-if="hasSeenDivineDims">Total Divine Matter produced: {{ format(totalDivineMatter, 2, 1) }}.</div>
+        <div v-if="condense.isUnlocked">Divine Matter this Condense: {{ format(condense.totalCondenseDivineMatter, 2, 1) }}.</div>
+        <div v-if="supernova.isUnlocked">Divine Matter this Supernova: {{ format(supernova.totalSupernovaDivineMatter, 2, 1) }}.</div>
         <div>You have played for {{ realTimePlayed }}. (real time)</div>
         <div v-if="reality.isUnlocked">
           Your existence has spanned {{ reality.totalTimePlayed }} of time. (game time)
@@ -439,7 +439,7 @@ export default {
         </div>
         <br>
         <div>
-          You have seen {{ quantifyHybridSmall("news message", totalNews) }} in total.
+          You have seen {{ quantifyInt("news message", totalNews) }} in total.
         </div>
         <div>
           You have seen {{ quantifyInt("unique news message", uniqueNews) }}.
@@ -505,6 +505,7 @@ export default {
         <span v-if="eternity.count.gt(0)">this Eternity </span>
         is {{ format(infinity.bestRate, 2, 2) }}.
       </div>
+      <div>Total antimatter this Infinity: {{ format(infinity.totalInfinityAntimatter, 2, 1) }}.</div>
       <br>
     </div>
     <div
@@ -515,8 +516,7 @@ export default {
         Eternity
       </div>
       <div>
-        You have {{ eternityCountString }}<span v-if="reality.isUnlocked"> this
-        <span :class="{ 'c-stats-tab-doomed' : isDoomed }">{{ isDoomed ? "Armageddon" : "Reality" }}</span></span>.
+        You have {{ eternityCountString }}<span v-if="reality.isUnlocked"> this Reality</span>.
       </div>
       <div v-if="infinity.projectedBanked.gt(0)">
         You will gain {{ formatDecimalAmount(infinity.projectedBanked.floor()) }}
@@ -530,8 +530,7 @@ export default {
         Your fastest Eternity was {{ eternity.best.toStringShort() }}.
       </div>
       <div v-else>
-        You have no fastest Eternity<span v-if="reality.isUnlocked"> this
-        <span :class="{ 'c-stats-tab-doomed' : isDoomed }">{{ isDoomed ? "Armageddon" : "Reality" }}</span></span>.
+        You have no fastest Eternity<span v-if="reality.isUnlocked"> this Reality</span>.
       </div>
       <div>
         You have spent {{ eternity.this.toStringShort() }} in this Eternity.
@@ -541,11 +540,10 @@ export default {
       </div>
       <div>
         Your best Eternity Points per minute
-        <span v-if="reality.isUnlocked">this
-        <span :class="{ 'c-stats-tab-doomed' : isDoomed }">{{ isDoomed ? "Armageddon" : "Reality" }}</span>
-        </span>
+        <span v-if="reality.isUnlocked">this Reality </span>
         is {{ format(eternity.bestRate, 2, 2) }}.
       </div>
+      <div>Total antimatter this Eternity: {{ format(eternity.totalEternityAntimatter, 2, 1) }}.</div>
       <br>
     </div>
     <div
@@ -555,16 +553,10 @@ export default {
       <div :class="realityClassObject()">
         {{ isDoomed ? "Doomed Reality" : "Reality" }}
       </div>
-      <div>
-        You have {{ realityCountString }}<span v-if="endgame.isUnlocked"> this Endgame</span>.
-      </div>
-      <div v-if="reality.hasBest">
-        Your fastest game-time Reality was {{ reality.best.toStringShort() }}.
-        Your fastest real-time Reality was {{ reality.bestReal.toStringShort() }}.
-      </div>
-      <div v-else>
-        You have no fastest Reality<span v-if="endgame.isUnlocked"> this Endgame</span>.
-      </div>
+      <div>You have {{ quantifyInt("Reality", reality.count) }}.</div>
+      <div v-if="reality.hasBest">Your fastest game-time Reality was {{ reality.best.toStringShort() }}.</div>
+      <div v-else>You have no fastest Reality yet.</div>
+      <div v-if="reality.hasBest">Your fastest real-time Reality was {{ reality.bestReal.toStringShort() }}.</div>
       <div :class="{ 'c-stats-tab-doomed' : isDoomed }">
         You have spent {{ reality.this.toStringShort() }}
         in this {{ isDoomed ? "Armageddon" : "Reality" }}.
@@ -577,165 +569,100 @@ export default {
         You have been Doomed for {{ realTimeDoomed.toStringShort() }}, real time.
       </div>
       <div>
-        Your best Reality Machines per minute 
-        <span v-if="endgame.isUnlocked">this Endgame </span>
-        is {{ format(reality.bestRate, 2, 2) }}.
+        Your best Reality Machines per minute is {{ format(reality.bestRate, 2, 2) }}.
       </div>
-      <div>
-        Your best Glyph rarity
-        <span v-if="endgame.isUnlocked">this Endgame </span>
-        is {{ formatRarity(reality.bestRarity) }}.</div>
+      <div>Total antimatter this Reality: {{ format(reality.totalRealityAntimatter, 2, 1) }}.</div>
+      <div>Your best Glyph rarity is {{ formatRarity(reality.bestRarity) }}.</div>
       <br>
     </div>
-    <div
-      v-if="endgame.isUnlocked"
-      class="c-stats-tab-subheader c-stats-tab-general"
-    >
-      <div class="c-stats-tab-title c-stats-tab-endgame">
-        Endgame
-      </div>
-      <div>
-        You have {{ endgameCountString }}.
-      </div>
+
+    <div v-if="endgame.isUnlocked" class="c-stats-tab-subheader c-stats-tab-general">
+      <div class="c-stats-tab-title c-stats-tab-endgame">Endgame</div>
+      <div>You have {{ endgameCountString }}.</div>
       <div v-if="endgame.hasBest">
-        Your fastest game-time Endgame was {{ endgame.best.toStringShort() }}.
-        Your fastest real-time Endgame was {{ endgame.bestReal.toStringShort() }}.
+        Fastest Endgame: {{ endgame.best.toStringShort() }} game time, {{ endgame.bestReal.toStringShort() }} real time.
       </div>
-      <div v-else>
-        You have no fastest Endgame.
-      </div>
-      <div>
-        You have spent {{ endgame.this.toStringShort() }}
-        in this Endgame.
-        ({{ endgame.thisReal.toStringShort() }} real time)
-      </div>
-      <div>
-        Your best Celestial Points per minute 
-        is {{ format(endgame.bestRateCP, 2, 2) }}.
-      </div>
-      <div>
-        Your best Doomed Particles per minute 
-        is {{ format(endgame.bestRateDP, 2, 2) }}.
-      </div>
-      <br>
+      <div v-else>You have no fastest Endgame.</div>
+      <div>Time in this Endgame: {{ endgame.this.toStringShort() }} game time, {{ endgame.thisReal.toStringShort() }} real time.</div>
+      <div>Best Celestial Points per minute: {{ format(endgame.bestRateCP, 2, 2) }}.</div>
+      <div>Best Doomed Particles per minute: {{ format(endgame.bestRateDP, 2, 2) }}.</div>
     </div>
-    <div
-      v-if="celestialInfinity.isUnlocked"
-      class="c-stats-tab-subheader c-stats-tab-general"
-    >
-      <div class="c-stats-tab-title c-stats-tab-celestial-infinity">
-        Celestial Infinity
-      </div>
-      <div>
-        You have {{ celestialInfinityCountString }}<span v-if="celestialEternity.isUnlocked"> this Celestial Eternity</span>.
-      </div>
+
+    <div v-if="celestialInfinity.isUnlocked" class="c-stats-tab-subheader c-stats-tab-general">
+      <div class="c-stats-tab-title c-stats-tab-celestial-infinity">Celestial Infinity</div>
+      <div>You have {{ celestialInfinityCountString }}<span v-if="celestialEternity.isUnlocked"> this Celestial Eternity</span>.</div>
       <div v-if="celestialInfinity.hasBest">
-        Your fastest game-time Celestial Infinity was {{ celestialInfinity.best.toStringShort() }}.
-        Your fastest real-time Celestial Infinity was {{ celestialInfinity.bestReal.toStringShort() }}.
+        Fastest Celestial Infinity: {{ celestialInfinity.best.toStringShort() }} game time,
+        {{ celestialInfinity.bestReal.toStringShort() }} real time.
       </div>
-      <div v-else>
-        You have no fastest Celestial Infinity<span v-if="celestialEternity.isUnlocked"> this Celestial Eternity</span>.
-      </div>
-      <div>
-        You have spent {{ celestialInfinity.this.toStringShort() }} in this Celestial Infinity.
-        ({{ celestialInfinity.thisReal.toStringShort() }} real time)
-      </div>
-      <div>
-        Your best Celestial Infinity Points per minute<span v-if="celestialEternity.isUnlocked"> this Celestial Eternity</span>
-        is {{ format(celestialInfinity.bestRate, 2, 2) }}.
-      </div>
-      <br>
+      <div v-else>You have no fastest Celestial Infinity<span v-if="celestialEternity.isUnlocked"> this Celestial Eternity</span>.</div>
+      <div>Time in this Celestial Infinity: {{ celestialInfinity.this.toStringShort() }} game time, {{ celestialInfinity.thisReal.toStringShort() }} real time.</div>
+      <div>Best Celestial Infinity Points per minute: {{ format(celestialInfinity.bestRate, 2, 2) }}.</div>
     </div>
-    <div
-      v-if="celestialEternity.isUnlocked"
-      class="c-stats-tab-subheader c-stats-tab-general"
-    >
-      <div class="c-stats-tab-title c-stats-tab-celestial-eternity">
-        Celestial Eternity
-      </div>
-      <div>
-        You have {{ celestialEternityCountString }}.
-      </div>
+
+    <div v-if="celestialEternity.isUnlocked" class="c-stats-tab-subheader c-stats-tab-general">
+      <div class="c-stats-tab-title c-stats-tab-celestial-eternity">Celestial Eternity</div>
+      <div>You have {{ celestialEternityCountString }}.</div>
       <div v-if="celestialEternity.hasBest">
-        Your fastest game-time Celestial Eternity was {{ celestialEternity.best.toStringShort() }}.
-        Your fastest real-time Celestial Eternity was {{ celestialEternity.bestReal.toStringShort() }}.
+        Fastest Celestial Eternity: {{ celestialEternity.best.toStringShort() }} game time,
+        {{ celestialEternity.bestReal.toStringShort() }} real time.
       </div>
-      <div v-else>
-        You have no fastest Celestial Eternity.
-      </div>
-      <div>
-        You have spent {{ celestialEternity.this.toStringShort() }} in this Celestial Eternity.
-        ({{ celestialEternity.thisReal.toStringShort() }} real time)
-      </div>
-      <div>
-        Your best Celestial Eternity Points per minute
-        is {{ format(celestialEternity.bestRate, 2, 2) }}.
-      </div>
-      <br>
+      <div v-else>You have no fastest Celestial Eternity.</div>
+      <div>Time in this Celestial Eternity: {{ celestialEternity.this.toStringShort() }} game time, {{ celestialEternity.thisReal.toStringShort() }} real time.</div>
+      <div>Best Celestial Eternity Points per minute: {{ format(celestialEternity.bestRate, 2, 2) }}.</div>
     </div>
-    <div
-      v-if="divinity.isUnlocked"
-      class="c-stats-tab-subheader c-stats-tab-general"
-    >
-      <div class="c-stats-tab-title c-stats-tab-divinity">
-        Divinity
-      </div>
-      <div>
-        You have {{ divinityCountString }}.
-      </div>
-      <br>
+
+    <div v-if="divinity.isUnlocked" class="c-stats-tab-subheader c-stats-tab-general">
+      <div class="c-stats-tab-title c-stats-tab-divinity">Divinity</div>
+      <div>You have {{ divinityCountString }}.</div>
     </div>
-    <div
-      v-if="condense.isUnlocked"
-      class="c-stats-tab-subheader c-stats-tab-general"
-    >
-      <div class="c-stats-tab-title c-stats-tab-condense">
-        Condense
-      </div>
-      <div>
-        You have {{ condenseCountString }}<span v-if="supernova.isUnlocked"> this Supernova</span>.
-      </div>
+
+    <div v-if="condense.isUnlocked" class="c-stats-tab-subheader c-stats-tab-general">
+      <div class="c-stats-tab-title c-stats-tab-condense">Condense</div>
+      <div>You have {{ condenseCountString }}<span v-if="supernova.isUnlocked"> this Supernova</span>.</div>
       <div v-if="condense.hasBest">
-        Your fastest game-time Condense was {{ condense.best.toStringShort() }}.
-        Your fastest real-time Condense was {{ condense.bestReal.toStringShort() }}.
+        Fastest Condense: {{ condense.best.toStringShort() }} game time, {{ condense.bestReal.toStringShort() }} real time.
       </div>
-      <div v-else>
-        You have no fastest Condense<span v-if="supernova.isUnlocked"> this Supernova</span>.
-      </div>
-      <div>
-        You have spent {{ condense.this.toStringShort() }} in this Condense.
-        ({{ condense.thisReal.toStringShort() }} real time)
-      </div>
-      <div>
-        Your best Divine Stars per minute<span v-if="supernova.isUnlocked"> this Supernova</span>
-        is {{ format(condense.bestRate, 2, 2) }}.
-      </div>
-      <br>
+      <div v-else>You have no fastest Condense<span v-if="supernova.isUnlocked"> this Supernova</span>.</div>
+      <div>Time in this Condense: {{ condense.this.toStringShort() }} game time, {{ condense.thisReal.toStringShort() }} real time.</div>
+      <div>Best Divine Stars per minute: {{ format(condense.bestRate, 2, 2) }}.</div>
     </div>
+
+    <div v-if="supernova.isUnlocked" class="c-stats-tab-subheader c-stats-tab-general">
+      <div class="c-stats-tab-title c-stats-tab-supernova">Supernova</div>
+      <div>You have {{ supernovaCountString }}.</div>
+      <div v-if="supernova.hasBest">
+        Fastest Supernova: {{ supernova.best.toStringShort() }} game time, {{ supernova.bestReal.toStringShort() }} real time.
+      </div>
+      <div v-else>You have no fastest Supernova.</div>
+      <div>Time in this Supernova: {{ supernova.this.toStringShort() }} game time, {{ supernova.thisReal.toStringShort() }} real time.</div>
+      <div>Best Nebulae per minute: {{ format(supernova.bestRate, 2, 2) }}.</div>
+    </div>
+
+    <br>
     <div
-      v-if="supernova.isUnlocked"
+      v-if="meta.isUnlocked"
       class="c-stats-tab-subheader c-stats-tab-general"
     >
-      <div class="c-stats-tab-title c-stats-tab-supernova">
-        Supernova
+      <div class="c-stats-tab-title c-stats-tab-meta">
+        Meta
       </div>
       <div>
-        You have {{ supernovaCountString }}.
+        You have {{ quantifyInt("Meta", meta.count) }}.
       </div>
-      <div v-if="supernova.hasBest">
-        Your fastest game-time Supernova was {{ supernova.best.toStringShort() }}.
-        Your fastest real-time Supernova was {{ supernova.bestReal.toStringShort() }}.
-      </div>
-      <div v-else>
-        You have no fastest Supernova.
-      </div>
+      <div v-if="meta.hasBest">
+        Your fastest Meta was {{ meta.best.toStringShort() }}.
+          ({{ meta.bestReal.toStringShort() }} real time)
+    </div>
       <div>
-        You have spent {{ supernova.this.toStringShort() }} in this Supernova.
-        ({{ supernova.thisReal.toStringShort() }} real time)
+        You have spent {{ meta.this.toStringShort() }} in this Meta.
+          ({{ meta.thisReal.toStringShort() }} real time)
       </div>
+      <div>Your fastest game-time Meta was {{ meta.best.toStringShort() }}.</div>
+      <div>Your fastest real-time Meta was {{ meta.bestReal.toStringShort() }}.</div>
       <div>
-        Your best Nebulae per minute
-        is {{ format(supernova.bestRate, 2, 2) }}.
+        Your best Meta Relays per minute
+        is {{ format(meta.bestRate, 2, 2) }}.
       </div>
       <br>
     </div>
@@ -776,43 +703,22 @@ export default {
   color: var(--color-pelle--base);
 }
 
+.c-stats-tab-meta {
+  color: var(--color-meta);
+}
+
 .c-stats-tab-endgame {
   color: var(--color-endgame);
 }
 
-.c-stats-tab-celestials {
+.c-stats-tab-celestial-infinity,
+.c-stats-tab-celestial-eternity {
   color: var(--color-celestials);
 }
 
-.c-stats-tab-celestial-infinity {
-  background: linear-gradient(var(--color-infinity), var(--color-celestials));
-  background-clip: text;
-
-  -webkit-text-fill-color: transparent;
-}
-
-.c-stats-tab-celestial-eternity {
-  background: linear-gradient(var(--color-eternity), var(--color-celestials));
-  background-clip: text;
-
-  -webkit-text-fill-color: transparent;
-}
-
-.c-stats-tab-divinity {
-  color: var(--color-pelle--base);
-}
-
-.c-stats-tab-condense {
-  background: linear-gradient(red, yellow, cyan);
-  background-clip: text;
-
-  -webkit-text-fill-color: transparent;
-}
-
+.c-stats-tab-divinity,
+.c-stats-tab-condense,
 .c-stats-tab-supernova {
-  background: linear-gradient(cyan, blue, indigo, purple);
-  background-clip: text;
-
-  -webkit-text-fill-color: transparent;
+  color: var(--color-pelle--base);
 }
 </style>

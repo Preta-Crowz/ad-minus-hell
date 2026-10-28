@@ -98,7 +98,7 @@ export default {
         ? CEP_BUTTON_DISPLAY_TYPE.NORMAL_EXPLORE_NEW_CONTENT
         : CEP_BUTTON_DISPLAY_TYPE.NORMAL;
       this.currentCEPRate.copyFrom(gainedCEP.dividedBy(
-        TimeSpan.fromMilliseconds(new Decimal(player.records.thisCelestialEternity.realTime)).totalMinutes));
+        Decimal.clampMin(0.0005, Time.thisCelestialEternityRealTime.totalMinutes)));
       this.peakCEPRateVal.copyFrom(player.records.thisCelestialEternity.bestCEPminVal);
       this.peakCEPRate.copyFrom(player.records.thisCelestialEternity.bestCEPmin);
       this.showCEPRate = this.peakCEPRate.lte(this.rateThreshold);

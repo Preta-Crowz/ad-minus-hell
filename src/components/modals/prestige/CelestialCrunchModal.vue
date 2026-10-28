@@ -11,13 +11,13 @@ export default {
       gainedCelestialInfinities: new Decimal(),
       gainedCelestialInfinityPoints: new Decimal(),
       startingBoosts: new Decimal(0),
-      startingCM: 0,
+      startingCM: new Decimal(0),
       willStartWithGalaxy: false
     };
   },
   computed: {
     isFirstCelInfinity() {
-      return !player.endgame.celDimExpansion.celestialInfinities;
+      return player.endgame.celDimExpansion.celestialInfinities.lt(1);
     },
     message() {
       const info = this.isFirstCelInfinity ? this.firstCelInfinityInfo : ``;
@@ -46,7 +46,6 @@ export default {
       this.gainedCelestialInfinityPoints = gainedCelestialInfinityPoints().round();
       this.startingBoosts.copyFrom(CelestialDimBoost.startingDimensionBoosts);
       this.startingCM = Currency.celestialMatter.startingValue;
-      this.willStartWithGalaxy = false;
     },
     handleYesClick() {
       celestialCrunchResetRequest();

@@ -22,16 +22,12 @@ export class TimeDimensionAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get isUnlocked() {
-    if (LHC.voidRunning && NullUpgrade.limerick5.isBought) return true;
-    return !player.disablePostReality && RealityUpgrade(13).isBought && (!Pelle.isDoomed || PelleUpgrade.TDAutobuyers.canBeApplied || PelleRealityUpgrade.telemechanicalProcess.canBeApplied);
+    return RealityUpgrade(13).isBought && (!Pelle.isDoomed || PelleUpgrade.TDAutobuyers.canBeApplied) ||
+      (LHC.voidRunning && LHCNullUpgrade.limerick5.isBought);
   }
 
   get resetTickOn() {
     return PRESTIGE_EVENT.REALITY;
-  }
-
-  get disabledByContinuum() {
-    return Laitela.continuumActive && Alpha.currentStage >= 17 && !Alpha.isRunning;
   }
 
   get hasUnlimitedBulk() {

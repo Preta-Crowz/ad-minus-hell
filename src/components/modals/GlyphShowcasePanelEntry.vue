@@ -20,8 +20,8 @@ export default {
       required: true
     },
     realityGlyphBoost: {
-      type: Number,
-      default: 0
+      type: Decimal,
+      default: new Decimal()
     },
     maxGlyphEffects: {
       type: Number,
@@ -51,10 +51,10 @@ export default {
       return getAdjustedGlyphLevel(this.glyph, this.realityGlyphBoost, true);
     },
     isLevelCapped() {
-      return this.effectiveLevel ? this.effectiveLevel.lt(this.level) : false;
+      return this.effectiveLevel && this.effectiveLevel.lt(this.level);
     },
     isLevelBoosted() {
-      return this.effectiveLevel ? this.effectiveLevel.gt(this.level) : false;
+      return this.effectiveLevel && this.effectiveLevel.gt(this.level);
     },
     levelText() {
       if (this.type === "companion") return "";
@@ -67,7 +67,7 @@ export default {
         ? "#ff4444"
         : (this.isLevelBoosted ? "#44FF44" : "var(--color-text);");
       return `<span style="color: ${color}">
-                  ${arrow}${formatHybridLarge(this.effectiveLevel, 3)}${arrow}
+                  ${arrow}${formatInt(this.effectiveLevel)}${arrow}
                   </span>`;
     },
     typeStyle() {
@@ -76,7 +76,7 @@ export default {
         color: GlyphAppearanceHandler.getBorderColor(this.type),
         "font-weight": "bold",
         "text-shadow": this.type === "cursed" ? "0.05rem 0.05rem var(--color-text)" : undefined,
-        animation: this.type === "reality" ? "a-reality-glyph-description-cycle 10s infinite" : undefined,
+        animation: this.type === "reality" ? "a-reality-glyph-description-cycle 2s infinite" : undefined,
       };
     },
     rarityStyle() {
@@ -98,8 +98,7 @@ export default {
     glyphEffectList() {
       const db = GlyphEffects;
       const effects =
-      getGlyphEffectValuesFromBitmask(this.glyph.effects, this.effectiveLevel, this.glyph.strength, this.type)
-        .filter(e => db[e.id].isGenerated === generatedTypes.includes(this.type));
+      getGlyphEffectValuesFromArray(this.glyph.effects, this.effectiveLevel, this.glyph.strength, this.type);
       const effectStrings = effects
         .map(e => this.formatEffectString(db[e.id], e.value));
       // Filter out undefined results since shortDesc only exists for generated effects
@@ -140,7 +139,7 @@ export default {
     },
     clickGlyph(glyph) {
       if (Glyphs.isMusicGlyph(glyph)) {
-        new Audio(`audio/note${GLYPH_TYPES.indexOf(glyph.type) + 1}.mp3`).play();
+        new Audio(`audio/note${GlyphInfo.glyphTypes.indexOf(glyph.type) + 1}.mp3`).play();
       }
     },
   },

@@ -25,7 +25,6 @@ export default {
       creditsClosed: false,
       showEPRate: false,
       isDilation: false,
-      penteractAffordable: false,
     };
   },
   computed: {
@@ -61,16 +60,16 @@ export default {
         ],
         [0, 255, 0]
       ];
-      const ratio = this.gainedEP.log10().div(this.currentEP.log10());
+      const ratio = this.gainedEP.max(1).log10().div(this.currentEP.max(1).log10());
       const interFn = index => {
         if (ratio.lt(0.9)) return stepRGB[0][index];
         if (ratio.lt(1)) {
-          const r = (ratio.sub(0.9)).times(10).toNumber();
-          return Math.round(stepRGB[0][index] * (1 - r) + stepRGB[1][index] * r);
+          const r = ratio.sub(0.9).mul(10);
+          return Decimal.round(new Decimal(1).sub(r).mul(stepRGB[0][index]).add(r.mul(stepRGB[1][index])));
         }
         if (ratio.lt(1.1)) {
-          const r = (ratio.sub(1)).times(10).toNumber();
-          return Math.round(stepRGB[1][index] * (1 - r) + stepRGB[2][index] * r);
+          const r = ratio.sub(1).mul(10);
+          return Decimal.round(new Decimal(1).sub(r).mul(stepRGB[1][index]).add(r.mul(stepRGB[2][index])));
         }
         return stepRGB[2][index];
       };
@@ -125,7 +124,7 @@ export default {
         return;
       }
 
-      if (EternityChallenge.isRunning) {
+      if (EternityChallenge.isRunning && Player.hasEternityChallengeGoal) {
         if (!Perk.studyECBulk.isBought) {
           this.type = EP_BUTTON_DISPLAY_TYPE.CHALLENGE;
           return;
@@ -139,7 +138,7 @@ export default {
       this.currentEP.copyFrom(Currency.eternityPoints);
       this.gainedEP.copyFrom(gainedEP);
       const hasNewContent = !PlayerProgress.realityUnlocked() &&
-        Currency.eternityPoints.value.add(1).log10().gte(4000) &&
+        Currency.eternityPoints.value.max(1).log10().gte(4000) &&
         !TimeStudy.reality.isBought;
       if (this.isDilation) {
         this.type = hasNewContent
@@ -154,12 +153,11 @@ export default {
         ? EP_BUTTON_DISPLAY_TYPE.NORMAL_EXPLORE_NEW_CONTENT
         : EP_BUTTON_DISPLAY_TYPE.NORMAL;
       this.currentEPRate.copyFrom(gainedEP.dividedBy(
-        TimeSpan.fromMilliseconds(new Decimal(player.records.thisEternity.realTime)).totalMinutes));
+        TimeSpan.fromMilliseconds(player.records.thisEternity.realTime).totalMinutes));
       this.peakEPRateVal.copyFrom(player.records.thisEternity.bestEPminVal);
       this.peakEPRate.copyFrom(player.records.thisEternity.bestEPmin);
       this.showEPRate = this.peakEPRate.lte(this.rateThreshold);
       this.creditsClosed = GameEnd.creditsEverClosed;
-      this.penteractAffordable = Penteracts.canBuyPenteract;
     },
     updateChallengeWithRUPG() {
       const ec = EternityChallenge.current;
@@ -170,9 +168,6 @@ export default {
       this.failedRestriction = status.failedRestriction;
       this.hasMoreCompletions = status.hasMoreCompletions;
       this.nextGoalAt.copyFrom(status.nextGoalAt);
-    },
-    switchToHypercubes() {
-      Tab.endgame.hypercubes.show(true);
     }
   },
 };
@@ -191,7 +186,7 @@ const EP_BUTTON_DISPLAY_TYPE = {
 
 <template>
   <button
-    v-if="isVisible && !penteractAffordable"
+    v-if="isVisible"
     :class="buttonClassObject"
     class="o-prestige-button"
     onclick="eternityResetRequest()"
@@ -269,17 +264,6 @@ const EP_BUTTON_DISPLAY_TYPE = {
         </template>
       </template>
     </template>
-  </button>
-
-  <button
-    v-else-if="penteractAffordable"
-    class="o-prestige-button c-game-header__penteract-available"
-    :class="{ 'o-pelle-disabled-pointer': creditsClosed }"
-    @click="switchToHypercubes"
-  >
-    <b>
-      You have enough Eternity Points to buy a Penteract
-    </b>
   </button>
 </template>
 

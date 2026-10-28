@@ -22,8 +22,6 @@ export default {
   },
   data() {
     return {
-      nameplate: "",
-      name: "",
       isDisabled: false,
       isUnlocked: false,
       isMouseOver: false,
@@ -33,10 +31,6 @@ export default {
       garbleTimer: 0,
       garbleKey: 0,
       achievementTime: 0,
-      achievementProgress: new Decimal(),
-      processedName: "",
-      processedID: "",
-      processedDescription: ""
     };
   },
   computed: {
@@ -96,7 +90,7 @@ export default {
     },
     // The garble templates themselves can be static, and shouldn't be recreated every render tick
     garbledNameTemplate() {
-      return this.makeGarbledTemplate(this.name);
+      return this.makeGarbledTemplate(this.config.name);
     },
     garbledIDTemplate() {
       return this.makeGarbledTemplate(this.displayId);
@@ -110,10 +104,6 @@ export default {
       return this.achievementTime === 0
         ? "Given at Speedrun start"
         : `Achieved after ${TimeSpan.fromMilliseconds(new Decimal(this.achievementTime)).toStringShort()}`;
-    },
-    achieveProgress() {
-      if (this.achievementProgress.lt(0)) return "Progress: Failed";
-      return `Progress: ${formatDecimalPercents(this.achievementProgress, 2, 2)}`;
     }
   },
   beforeDestroy() {
@@ -121,18 +111,16 @@ export default {
   },
   methods: {
     update() {
-      this.nameplate = this.config.name;
-      this.name = Array.isArray(this.nameplate) ? wordShift.wordCycle(this.nameplate) : this.nameplate;
+      if(!this.achievement) return;
       this.isDisabled = Pelle.disabledAchievements.includes(this.id) && Pelle.isDoomed;
       this.isUnlocked = this.achievement.isUnlocked && !this.isDisabled;
       this.isCancer = Theme.current().name === "S4" || player.secretUnlocks.cancerAchievements;
       this.showUnlockState = player.options.showHintText.achievementUnlockStates;
       this.realityUnlocked = PlayerProgress.realityUnlocked();
 
-      this.processedName = this.isObscured ? this.processText(this.name, this.garbledNameTemplate) : this.name;
-      this.processedId = this.isObscured ? this.processText(this.displayId, this.garbledIDTemplate) : this.displayId;
-      this.processedDescription = this.isObscured ? this.processText(this.config.description, this.garbledDescriptionTemplate) :
-        this.config.description;
+      this.processedName = this.processText(this.config.name, this.garbledNameTemplate);
+      this.processedId = this.processText(this.displayId, this.garbledIDTemplate);
+      this.processedDescription = this.processText(this.config.description, this.garbledDescriptionTemplate);
 
       // This uses key-swapping to force the garbled achievements to re-render their text, because otherwise they
       // would remain static. Keys for non-garbled achievements won't change, and all keys remain unique.
@@ -143,7 +131,6 @@ export default {
         this.garbleKey = this.id;
       }
       if (player.speedrun.isActive) this.achievementTime = player.speedrun.achievementTimes[this.id];
-      this.achievementProgress.copyFrom(this.config.progress());
     },
     onMouseEnter() {
       clearTimeout(this.mouseOverInterval);
@@ -193,6 +180,7 @@ export default {
     :style="styleObject"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
+    v-if="this.achievement"
   >
     <HintText
       :key="garbleKey"
@@ -217,7 +205,7 @@ export default {
             v-if="!isObscured"
             :class="{ 'o-pelle-disabled': isDisabled }"
           >
-            Reward: {{ config.reward }}
+            Reward: {{ typeof config.reward == "function" ?  config.reward() : config.reward}}
             <EffectDisplay
               v-if="config.formatEffect"
               br
@@ -230,11 +218,6 @@ export default {
           class="o-achievement-time"
         >
           {{ achievedTime }}
-        </div>
-        <div
-          class="o-achievement-prog"
-        >
-          {{ achieveProgress }}
         </div>
       </template>
     </div>
@@ -257,11 +240,6 @@ export default {
 .o-achievement-time {
   font-weight: bold;
   color: var(--color-accent);
-}
-
-.o-achievement-prog {
-  font-weight: bold;
-  color: var(--color-good);
 }
 
 .o-achievement--disabled {

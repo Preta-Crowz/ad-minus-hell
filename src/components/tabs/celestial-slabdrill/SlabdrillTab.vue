@@ -19,7 +19,8 @@ export default {
       isDestroyed: false,
       isCoreActive: false,
       cores: 0,
-      powers: []
+      powers: [],
+      unlocks: []
     };
   },
   computed: {
@@ -34,9 +35,6 @@ export default {
         "o-cursed-core-button": true,
         "o-cursed-core-button__running": this.isCoreActive
       };
-    },
-    unlocks() {
-      return Slabdrill.isCursed ? SlabdrillUnlocks.all.filter(u => u.isUnlocked) : SlabdrillUnlocks.all;
     },
     rows() {
       return Math.ceil(this.unlocks.length / 3);
@@ -67,6 +65,8 @@ export default {
   methods: {
     update() {
       this.stage = Slabdrill.currentStage;
+      const unlocks = Slabdrill.isCursed ? SlabdrillUnlocks.all.filter(u => u.isUnlocked) : SlabdrillUnlocks.all;
+      if (unlocks.length !== this.unlocks.length) this.unlocks = unlocks;
       this.quote = Slabdrill.quote;
       this.isCursed = Slabdrill.isCursed;
       this.power.copyFrom(Slabdrill.power);

@@ -54,7 +54,8 @@ export default {
       const challengeClickable = !this.isRunning && ((!this.isCompleted && this.canBeUnlocked) || this.isUnlocked);
       return {
         "o-challenge-btn": true,
-        "o-challenge-btn--running": this.isRunning,
+        "o-challenge-btn--running": this.isRunning && this.overrideLabel !== "Trapped",
+        "o-challenge-btn--trapped": this.overrideLabel === "Trapped",
         "o-challenge-btn--completed": challengeDone,
         "o-challenge-btn--redo": challengeRedo,
         "o-challenge-btn--unlocked": !challengeDone && challengeUnlock,
@@ -114,5 +115,13 @@ export default {
 </template>
 
 <style scoped>
+.o-challenge-btn--trapped {
+  color: #ffffff;
+  background: linear-gradient(0deg, #ff4500, #8b0000 60%, #200000);
+  border: var(--var-border-width, 0.2rem) solid #ff7a00;
+  cursor: not-allowed;
+  text-shadow: 0 0 0.4rem #000;
+  box-shadow: 0 0 1rem #ff4500;
+}
 
 </style>

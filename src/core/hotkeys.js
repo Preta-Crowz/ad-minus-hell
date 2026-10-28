@@ -1,7 +1,6 @@
 import Mousetrap from "mousetrap";
 
 import { ElectronRuntime } from "@/steam";
-
 import { GameKeyboard } from "./keyboard";
 
 // Add your hotkeys and combinations here
@@ -22,7 +21,7 @@ import { GameKeyboard } from "./keyboard";
 // for the other modifier keys (#3093).
 
 // Free keys:
-// i, j, k, l, p, q, w, x
+// i, j, k, n, o, p, q, w, x
 
 
 export const shortcuts = [
@@ -36,19 +35,28 @@ export const shortcuts = [
     name: "Buy one Tickspeed",
     keys: ["shift", "t"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? buyCelestialTickSpeed() : buyTickSpeed(),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return buyCelestialTickSpeed();
+      return buyTickSpeed();
+    },
     visible: true
   }, {
     name: "Buy max Tickspeed",
     keys: ["t"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? buyMaxCelestialTickSpeed() : buyMaxTickSpeed(),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return buyMaxCelestialTickSpeed();
+      return buyMaxTickSpeed();
+    },
     visible: true
   }, {
     name: "Max all",
     keys: ["m"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? CelestialDimensions.buyMax() : maxAll(),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return CelestialDimensions.buyMax();
+      return maxAll();
+    },
     visible: true
   }, {
     name: "Dimensional Sacrifice",
@@ -60,32 +68,57 @@ export const shortcuts = [
     name: "Dimension Boost",
     keys: ["d"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? manualRequestCelestialDimensionBoost(true) : manualRequestDimensionBoost(true),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return manualRequestCelestialDimensionBoost(true);
+      return manualRequestDimensionBoost(true);
+    },
     visible: true
   }, {
     name: "Single Dimension Boost",
     keys: ["shift", "d"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? manualRequestCelestialDimensionBoost(false) : manualRequestDimensionBoost(false),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return manualRequestCelestialDimensionBoost(false);
+      return manualRequestDimensionBoost(false);
+    },
     visible: false
   }, {
     name: `${player.universes.current === 2 ? "Matter" : "Antimatter"} Galaxy`,
     keys: ["g"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? manualRequestCelestialGalaxyReset(true) : manualRequestGalaxyReset(true),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return manualRequestCelestialGalaxyReset(true);
+      return manualRequestGalaxyReset(true);
+    },
     visible: true
   }, {
     name: `Single ${player.universes.current === 2 ? "Matter" : "Antimatter"} Galaxy`,
     keys: ["shift", "g"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? manualRequestCelestialGalaxyReset(false) : manualRequestGalaxyReset(false),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return manualRequestCelestialGalaxyReset(false);
+      return manualRequestGalaxyReset(false);
+    },
     visible: false
   }, {
     name: "Big Crunch",
     keys: ["c"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? manualCelestialCrunchResetRequest() : manualBigCrunchResetRequest(),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return manualCelestialCrunchResetRequest();
+      return manualBigCrunchResetRequest();
+    },
     visible: true
+  }, {
+    name: "Toggle Celestial Hotkeys",
+    keys: ["shift", "c"],
+    type: "bindHotkey",
+    function: () => {
+      if (!Alpha.isDestroyedForDisplay) return;
+      player.options.simpleHotkeysCelestialMode = !player.options.simpleHotkeysCelestialMode;
+      GameUI.notify.info(`Simple Hotkey Celestial commands are now ${player.options.simpleHotkeysCelestialMode ? "active" : "inactive"}`);
+    },
+    visible: () => Alpha.isDestroyedForDisplay
   }, {
     name: "Replicanti Galaxy",
     keys: ["r"],
@@ -99,7 +132,10 @@ export const shortcuts = [
     name: "Eternity",
     keys: ["e"],
     type: "bindRepeatableHotkey",
-    function: () => player.options.simpleHotkeysCelestialMode ? celestialEternityResetRequest() : eternityResetRequest(),
+    function: () => {
+      if (player.options.simpleHotkeysCelestialMode) return celestialEternityResetRequest();
+      return eternityResetRequest();
+    },
     visible: () => PlayerProgress.eternityUnlocked() || Player.canEternity || PlayerProgress.endgameUnlocked()
   }, {
     name: "Toggle Time Study respec",
@@ -171,12 +207,6 @@ export const shortcuts = [
     function: () => keyboardToggleContinuum(),
     visible: () => Laitela.continuumUnlocked || PlayerProgress.endgameUnlocked()
   }, {
-    name: "Armageddon",
-    keys: ["z"],
-    type: "bindRepeatableHotkey",
-    function: () => armageddonRequest(),
-    visible: () => Pelle.isDoomed || PlayerProgress.endgameUnlocked()
-  }, {
     name: "Toggle Glyph unequip (Pelle)",
     keys: ["shift", "z"],
     type: "bindHotkey",
@@ -200,8 +230,7 @@ export const shortcuts = [
     keys: ["n"],
     type: "bindRepeatableHotkey",
     function: () => {
-      if (!PlayerProgress.endgameUnlocked()) return;
-      Endgame.hotkeyReset();
+      if (PlayerProgress.endgameUnlocked()) Endgame.hotkeyReset();
     },
     visible: () => PlayerProgress.endgameUnlocked()
   }, {
@@ -209,8 +238,7 @@ export const shortcuts = [
     keys: ["alt", "n"],
     type: "bindHotkey",
     function: () => {
-      if (!PlayerProgress.endgameUnlocked()) return;
-      Endgame.resetNoReward();
+      if (PlayerProgress.endgameUnlocked()) Endgame.resetNoReward();
     },
     visible: () => PlayerProgress.endgameUnlocked()
   }, {
@@ -223,16 +251,6 @@ export const shortcuts = [
     },
     visible: () => PlayerProgress.endgameUnlocked()
   }, {
-    name: "Toggle Celestial Hotkeys",
-    keys: ["shift", "c"],
-    type: "bindHotkey",
-    function: () => {
-      if (!Alpha.isDestroyedForDisplay) return;
-      player.options.simpleHotkeysCelestialMode = !player.options.simpleHotkeysCelestialMode;
-      GameUI.notify.info(`Simple Hotkey Celestial commands are now ${player.options.simpleHotkeysCelestialMode ? "active" : "inactive"}`);
-    },
-    visible: () => Alpha.isDestroyedForDisplay
-  }, {
     name: "Condense",
     keys: ["o"],
     type: "bindRepeatableHotkey",
@@ -241,15 +259,6 @@ export const shortcuts = [
       resetForDivineStars();
     },
     visible: () => PlayerProgress.condenseUnlocked()
-  }, {
-    name: "Supernova",
-    keys: ["v"],
-    type: "bindRepeatableHotkey",
-    function: () => {
-      if (!PlayerProgress.supernovaUnlocked()) return;
-      supernovaResetRequest();
-    },
-    visible: () => PlayerProgress.supernovaUnlocked()
   }, {
     name: "Toggle Glyph unequip (Slabdrill)",
     keys: ["shift", "r"],
@@ -260,6 +269,20 @@ export const shortcuts = [
       GameUI.notify.info(`Glyph respec is now ${player.reality.respec ? "active" : "inactive"}`);
     },
     visible: () => Slabdrill.isCursed || Slabdrill.isDestroyed
+  }, {
+    name: "Supernova",
+    keys: ["shift", "v"],
+    type: "bindRepeatableHotkey",
+    function: () => {
+      if (PlayerProgress.supernovaUnlocked()) supernovaResetRequest();
+    },
+    visible: () => PlayerProgress.supernovaUnlocked()
+  }, {
+    name: "Meta",
+    keys: ["v"],
+    type: "bindRepeatableHotkey",
+    function: () => requestManualMeta(),
+    visible: () => PlayerProgress.metaUnlocked()
   }, {
     name: "Save game",
     keys: ["mod", "s"],
@@ -386,6 +409,7 @@ export const shortcuts = [
     name: "Fullscreen",
     keys: ["F10"],
     type: "bind",
+    // eslint-disable-next-line no-empty-function
     function: () => {},
     visible: () => false
   },
@@ -446,6 +470,7 @@ GameKeyboard.bindHotkey("alt+r", () => toggleAutobuyer(Autobuyer.replicantiGalax
 GameKeyboard.bindHotkey("alt+c", () => toggleAutobuyer(Autobuyer.bigCrunch));
 GameKeyboard.bindHotkey("alt+e", () => toggleAutobuyer(Autobuyer.eternity));
 GameKeyboard.bindHotkey("alt+y", () => toggleAutobuyer(Autobuyer.reality));
+GameKeyboard.bindHotkey("alt+v", () => toggleAutobuyer(Autobuyer.meta));
 
 (function() {
   function bindDimensionHotkeys(tier) {
@@ -504,10 +529,6 @@ function keyboardToggleContinuum() {
     ImaginaryUpgrade(21).tryShowWarningModal();
     return;
   }
-  if (DualityUpgrade(21).isLockingMechanics && player.auto.disableContinuum) {
-    DualityUpgrade(21).tryShowWarningModal();
-    return;
-  }
   // This is a toggle despite the lack of !, because player.auto.disableContinuum
   // is negated compared to whether continuum is on.
   Laitela.setContinuum(player.auto.disableContinuum);
@@ -547,11 +568,6 @@ function keyboardAutomatorRestart() {
     AutomatorBackend.restart();
     AutomatorBackend.start();
   }
-}
-
-function armageddonRequest() {
-  if (!Pelle.canArmageddon) return;
-  Pelle.armageddon(true);
 }
 
 function keyboardPressEscape() {

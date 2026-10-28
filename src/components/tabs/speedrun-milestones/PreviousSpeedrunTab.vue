@@ -54,7 +54,7 @@ export default {
       return Object.keys(this.previousRuns).length;
     },
     highestIndex() {
-      return Math.max(this.previousRuns.map(k => Number(k.id)).max(), player.records.fullGameCompletions);
+      return Math.max(this.previousRuns.map(k => Number(k.id)).max().toNumber(), player.records.fullGameCompletions);
     },
     spectateText() {
       return this.isSpectating

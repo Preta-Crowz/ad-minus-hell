@@ -109,7 +109,7 @@ export default {
       return `Convert all Dark Hadrons into Hadrons`;
     },
     extraH1Text() {
-      if (SingularityMilestone.hadronEffect1Improvement.isReached) {
+      if (SingularityMilestone.hadronEffect1Improvement?.isReached) {
         return ` and ${formatPow(SingularityMilestone.hadronEffect1Improvement.effectOrDefault(1), 2, 3)}`;
       }
       return "";

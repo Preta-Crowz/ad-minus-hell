@@ -4,44 +4,48 @@ export class PlayerProgress {
   }
 
   get isInfinityUnlocked() {
-    // Infinity count data is stored in either player.infinitied or player.infinities based on if the save is before
-    // or after the reality update, but this also gets checked in the import modal before any migration code is run.
-    // Thus, it needs to manually support "before" and "after" states by converting both to Decimal.
-    const infinityData = this._player.infinitied ? this._player.infinitied : this._player.infinities;
-    return new Decimal(infinityData).gt(0) || this.isEternityUnlocked;
+    return new Decimal(this._player.infinities).gt(0) || this.isEternityUnlocked;
   }
 
   get isEternityUnlocked() {
-    // Similarly to above, player.eternities is a number pre-reality update and a Decimal post-reality update
     return new Decimal(this._player.eternities).gt(0) || this.isRealityUnlocked;
   }
 
   get isRealityUnlocked() {
-    return new Decimal(this._player.realities).gt(0) || this.isEndgameUnlocked;
+    return new Decimal(this._player.realities).gt(0) || this.isMetaUnlocked || this.isEndgameUnlocked;
   }
 
   get isEndgameUnlocked() {
-    return this._player.endgames > 0;
+    return this._player.endgames.gt(0);
   }
 
   get isCelestialInfinityUnlocked() {
-    return new Decimal(this._player.endgame.celDimExpansion.celestialInfinities).gt(0) || this.isCelestialEternityUnlocked;
+    return new Decimal(this._player.endgame?.celDimExpansion?.celestialInfinities).gt(0) ||
+      this.isCelestialEternityUnlocked;
   }
 
   get isCelestialEternityUnlocked() {
-    return new Decimal(this._player.endgame.celDimExpansion.celestialEternities).gt(0);
+    return new Decimal(this._player.endgame?.celDimExpansion?.celestialEternities).gt(0);
   }
 
   get isDivinityUnlocked() {
-    return this._player.celestials.pelle.divinities > 0;
+    return this._player.celestials?.pelle?.divinities > 0;
   }
 
   get isCondenseUnlocked() {
-    return new Decimal(this._player.celestials.pelle.divinity.condenses).gt(0) || this.isSupernovaUnlocked;
+    return new Decimal(this._player.celestials?.pelle?.divinity?.condenses).gt(0) || this.isSupernovaUnlocked;
   }
 
   get isSupernovaUnlocked() {
-    return new Decimal(this._player.celestials.pelle.divinity.supernovae).gt(0);
+    return new Decimal(this._player.celestials?.pelle?.divinity?.supernovae).gt(0);
+  }
+
+  get isMetaUnlocked() {
+    return new Decimal(this._player?.meta?.metas).gt(0);
+  }
+
+  get hasPelleCompletion() {
+    return new Decimal(this._player?.pelleResets).gt(0);
   }
 
   get hasFullCompletion() {
@@ -84,8 +88,8 @@ export class PlayerProgress {
     return PlayerProgress.current.isEndgameUnlocked;
   }
 
-  static divinityUnlocked() {
-    return PlayerProgress.current.isDivinityUnlocked;
+  static compressionUnlocked() {
+    return EndgameMastery.timeCompression.isBought;
   }
 
   static celestialInfinityUnlocked() {
@@ -96,6 +100,10 @@ export class PlayerProgress {
     return PlayerProgress.current.isCelestialEternityUnlocked;
   }
 
+  static divinityUnlocked() {
+    return PlayerProgress.current.isDivinityUnlocked;
+  }
+
   static condenseUnlocked() {
     return PlayerProgress.current.isCondenseUnlocked;
   }
@@ -104,8 +112,8 @@ export class PlayerProgress {
     return PlayerProgress.current.isSupernovaUnlocked;
   }
 
-  static compressionUnlocked() {
-    return EndgameMastery.timeCompression.isBought;
+  static metaUnlocked() {
+    return PlayerProgress.current.isMetaUnlocked;
   }
 
   static seenAlteredSpeed() {

@@ -1,4 +1,4 @@
-import { cosmeticGlyphs, glyphTypes } from "./glyph-types";
+import { cosmeticGlyphs, GlyphInfo } from "./core-glyph-info";
 import { perkConnections, perks } from "./perks";
 
 import { automator } from "./automator";
@@ -11,12 +11,12 @@ import { realityUpgrades } from "./reality-upgrades";
 
 export const reality = {
   automator,
-  cosmeticGlyphs,
   dualityUpgrades,
+  cosmeticGlyphs,
   glyphCosmeticSets,
   glyphEffects,
   glyphSacrifice,
-  glyphTypes,
+  GlyphInfo,
   imaginaryUpgrades,
   perks,
   perkConnections,

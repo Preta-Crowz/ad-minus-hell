@@ -115,22 +115,22 @@ export class EndgameMasteryState extends EndgameMasteriesState {
       player.blackHole[1].unlocked = true;
       player.reality.upgradeBits = 67108800;
       player.reality.upgReqs = 67108800;
-      if (player.reality.rebuyables[1] < 1) player.reality.rebuyables[1] = 1;
-      if (player.reality.rebuyables[2] < 1) player.reality.rebuyables[2] = 1;
-      if (player.reality.rebuyables[3] < 1) player.reality.rebuyables[3] = 1;
-      if (player.reality.rebuyables[4] < 1) player.reality.rebuyables[4] = 1;
-      if (player.reality.rebuyables[5] < 1) player.reality.rebuyables[5] = 1;
+      if (player.reality.rebuyables[1].lt(1)) player.reality.rebuyables[1] = DC.D1;
+      if (player.reality.rebuyables[2].lt(1)) player.reality.rebuyables[2] = DC.D1;
+      if (player.reality.rebuyables[3].lt(1)) player.reality.rebuyables[3] = DC.D1;
+      if (player.reality.rebuyables[4].lt(1)) player.reality.rebuyables[4] = DC.D1;
+      if (player.reality.rebuyables[5].lt(1)) player.reality.rebuyables[5] = DC.D1;
       Achievement(142).unlock();
       Achievement(144).unlock();
       Achievement(147).unlock();
       applyRUPG10();
     }
     if (id === 71) {
-      for (const type of BASIC_GLYPH_TYPES) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
-      for (const type of BASIC_GLYPH_TYPES) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
-      for (const type of BASIC_GLYPH_TYPES) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
-      for (const type of BASIC_GLYPH_TYPES) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
-      for (const type of BASIC_GLYPH_TYPES) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
+      for (const type of GlyphInfo.basicGlyphTypes) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
+      for (const type of GlyphInfo.basicGlyphTypes) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
+      for (const type of GlyphInfo.basicGlyphTypes) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
+      for (const type of GlyphInfo.basicGlyphTypes) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
+      for (const type of GlyphInfo.basicGlyphTypes) Glyphs.addToInventory(GlyphGenerator.endgameGlyph(type));
     }
   }
 }

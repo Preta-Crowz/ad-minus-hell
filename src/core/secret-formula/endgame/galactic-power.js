@@ -1,3 +1,5 @@
+import { DC } from "../../constants";
+
 export const galacticPowerRewards = {
   galaxyStrength: {
     id: 1,

@@ -17,9 +17,9 @@ export default {
       tesseractCost: new Decimal(0),
       totalInfinityDimCap: new Decimal(0),
       canBuyTesseract: false,
-      boughtTesseracts: 0,
-      extraTesseracts: 0,
-      tesseractMult: 0,
+      boughtTesseracts: new Decimal(0),
+      extraTesseracts: new Decimal(0),
+      tesseractMult: new Decimal(0),
       isTesseractAutoUnlocked: false,
       isTesseractAutoActive: false,
       tesseractMultText: "",
@@ -114,16 +114,16 @@ export default {
       this.tesseractCost.copyFrom(Tesseracts.nextCost);
       this.totalInfinityDimCap.copyFrom(InfinityDimensions.totalDimCap);
       this.canBuyTesseract = Tesseracts.canBuyTesseract;
-      this.boughtTesseracts = Tesseracts.bought;
-      this.extraTesseracts = Tesseracts.extra;
-      this.tesseractMult = Tesseracts.totalMult;
+      this.boughtTesseracts.copyFrom(Tesseracts.bought);
+      this.extraTesseracts.copyFrom(Tesseracts.extra);
+      this.tesseractMult.copyFrom(Tesseracts.totalMult);
       const tesseractAuto = Autobuyer.tesseract;
       this.isTesseractAutoUnlocked = tesseractAuto.isUnlocked;
       this.isTesseractAutoActive = tesseractAuto.isActive;
-      this.tesseractMultText = this.tesseractMult !== 1 ? ` × ${format(this.tesseractMult, 2, 2)}` : "";
-      this.additiveTesseractString = `${formatHybridSmall(this.boughtTesseracts, 3)}${this.tesseractMultText}${this.extraTesseracts > 0
+      this.tesseractMultText = !this.tesseractMult.eq(1) ? ` × ${format(this.tesseractMult, 2, 2)}` : "";
+      this.additiveTesseractString = `${formatHybridSmall(this.boughtTesseracts, 3)}${this.tesseractMultText}${this.extraTesseracts.gt(0)
         ? ` + ${format(this.extraTesseracts, 2, 2)}${this.tesseractMultText}` : ""}`;
-      this.multiplicativeTesseractString = `${formatHybridSmall(this.boughtTesseracts, 3)}${this.extraTesseracts > 0
+      this.multiplicativeTesseractString = `${formatHybridSmall(this.boughtTesseracts, 3)}${this.extraTesseracts.gt(0)
         ? ` × ${format(this.extraTesseracts, 2, 2)}${this.tesseractMultText}` : ""}`;
       this.tesseractStringArray = [this.multiplicativeTesseractString, this.additiveTesseractString];
       this.penteractsUnlocked = DualityUpgrade(25).isBought;

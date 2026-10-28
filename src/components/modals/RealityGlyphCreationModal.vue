@@ -11,21 +11,19 @@ export default {
   data() {
     return {
       isDoomed: false,
-      realityGlyphLevel: new Decimal(0),
+      realityGlyphLevel: new Decimal(),
       // This contains an array where each entry is an array looking like [4000, "realitygalaxies"]
       possibleEffects: [],
     };
   },
   methods: {
     update() {
-      this.isDoomed = Pelle.isDoomed && !PelleAlchemyUpgrade.alchemyReality.canBeApplied;
-      this.realityGlyphLevel.copyFrom(Decimal.floor(AlchemyResource.reality.amount));
-      const realityEffectConfigs = GlyphEffects.all
-        .filter(eff => eff.glyphTypes.includes("reality"))
-        .sort((a, b) => a.bitmaskIndex - b.bitmaskIndex);
-      const minRealityEffectIndex = realityEffectConfigs.map(cfg => cfg.bitmaskIndex).min();
+      this.isDoomed = Pelle.isDoomed;
+      this.realityGlyphLevel.copyFrom(AlchemyResource.reality.effectValue);
+      const realityEffectConfigs = GlyphEffects.all.filter(eff => eff.glyphTypes[0]?.() == "reality");
+      const minRealityEffectIndex = realityEffectConfigs.map(cfg => cfg.intID).nMin();
       this.possibleEffects = realityEffectConfigs
-        .map(cfg => [realityGlyphEffectLevelThresholds[cfg.bitmaskIndex - minRealityEffectIndex], cfg.id]);
+        .map(cfg => [realityGlyphEffectLevelThresholds[cfg.intID - minRealityEffectIndex], cfg.id]);
     },
     createRealityGlyph() {
       if (GameCache.glyphInventorySpace.value === 0) {
@@ -33,15 +31,15 @@ export default {
           { closeEvent: GAME_EVENT.GLYPHS_CHANGED });
         return;
       }
-      Glyphs.addToInventory(GlyphGenerator.realityGlyph(Decimal.floor(AlchemyResource.reality.amount)));
-      if (!ExpansionPack.effarigPack.isBought || player.disablePostReality) AlchemyResource.reality.amount = 0;
+      Glyphs.addToInventory(GlyphGenerator.realityGlyph());
+      AlchemyResource.reality.amount = new Decimal();
       player.reality.glyphs.createdRealityGlyph = true;
       this.emitClose();
     },
     formatGlyphEffect(effect) {
       if (this.realityGlyphLevel.lt(effect[0])) return `(Requires Glyph level ${formatInt(effect[0])})`;
       const config = GlyphEffects[effect[1]];
-      const value = config.effect(this.realityGlyphLevel, rarityToStrength(100 + Ra.unlocks.realityGlyphRarity.effectOrDefault(0)));
+      const value = config.effect(this.realityGlyphLevel, rarityToStrength(100));
       const effectTemplate = config.singleDesc;
       return effectTemplate.replace("{value}", config.formatEffect(value));
     }
@@ -56,7 +54,7 @@ export default {
     </template>
     <div class="c-reality-glyph-creation">
       <div>
-        Create a level {{ formatHybridLarge(realityGlyphLevel, 3) }} Reality Glyph.
+        Create a level {{ formatInt(realityGlyphLevel) }} Reality Glyph.
         Rarity will always be {{ formatPercents(1) }} and
         level scales on your current Reality Resource amount (which is all consumed). All other Alchemy Resources will
         be unaffected. Reality Glyphs have unique effects, some of which are only available with higher level Glyphs.

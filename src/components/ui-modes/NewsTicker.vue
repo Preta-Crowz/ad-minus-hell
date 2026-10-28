@@ -1,6 +1,6 @@
 <script>
-import { openExternalLink } from "@/utility/open-external-link";
 import { STEAM } from "@/env";
+import { openExternalLink } from "@/utility/open-external-link";
 
 export default {
   name: "NewsTicker",
@@ -68,19 +68,28 @@ export default {
         this.currentNews = GameDatabase.news
           .filter(message => message.isAdvertising && canShow(message))
           .randomElement();
+      } else if (player.options.news.onlyVisNews) {
+        this.currentNews = GameDatabase.news
+          .filter(message => message.id.includes("vis"))
+          .filter(message => canShow(message))
+          .randomElement();
       } else {
         const isAI = Math.random() < player.options.news.AIChance;
-        const isEND = Math.random() < player.options.news.ENDChance;
+        const isEndgame = Math.random() < player.options.news.ENDChance;
         const isStory = Math.random() < player.options.news.StoryChance;
         const isMature = Math.random() < player.options.news.MatureChance;
-        this.currentNews = GameDatabase.news
+        const categorizedNews = GameDatabase.news
           .filter(message => message.id.includes("ai") === isAI)
-          .filter(message => message.id.includes("e") === isEND)
+          .filter(message => message.id.includes("e") === isEndgame)
           .filter(message => message.id.includes("se") === isStory)
           .filter(message => message.id.includes("m") === isMature)
+          .filter(message => canShow(message));
+        this.currentNews = categorizedNews.randomElement() || GameDatabase.news
           .filter(message => canShow(message))
           .randomElement();
       }
+
+      if (!this.currentNews) return;
 
       this.recentTickers.push(this.currentNews.id);
       while (this.recentTickers.length > player.options.news.repeatBuffer) this.recentTickers.shift();
@@ -100,8 +109,7 @@ export default {
       line.innerHTML = text;
 
       line.style["transition-duration"] = "0ms";
-      if (this.currentNews?.id === "a244" || this.currentNews?.id === "ai63" ||
-        (this.currentNews?.id === "ae570" && this.currentNews?.text === "weeeeeeeeeeee")) {
+      if (this.currentNews?.id === "a244" || this.currentNews?.id === "ai63") {
         line.style.transform = "translateX(-100%)";
       } else {
         line.style.transform = "translateX(0)";
@@ -118,8 +126,7 @@ export default {
       const scrollDuration = (this.$refs.ticker.clientWidth + line.clientWidth) / SCROLL_SPEED;
 
       line.style["transition-duration"] = `${scrollDuration}s`;
-      if (this.currentNews && this.currentNews.id === "a244" ||
-        (this.currentNews?.id === "ae570" && this.currentNews?.text === "weeeeeeeeeeee")) {
+      if (this.currentNews && this.currentNews.id === "a244") {
         line.style.transform = "translateX(0)";
       } else {
         line.style.transform = "translateX(-100%)";

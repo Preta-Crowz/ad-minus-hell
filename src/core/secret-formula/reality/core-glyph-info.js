@@ -199,7 +199,7 @@ export const GlyphInfo = {
     sacrificeInfo: {
       id: "reality",
       effect: added => {
-        if (Pelle.isDisabled("glyphsac")) return DC.D0;
+        if (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied) return DC.D0;
         const sac = player.reality.glyphs.sac.reality.add(added ?? 0);
         // This cap is only feasibly reached with the imaginary upgrade, but we still want to cap it at a nice number
         return Decimal.min(Decimal.sqrt(sac).div(15).add(1), 100);
@@ -229,7 +229,7 @@ export const GlyphInfo = {
     hasSacrifice: true,
     sacrificeInfo: {
       effect: added => {
-        if (Pelle.isDisabled("glyphsac")) return DC.D0;
+        if (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied) return DC.D0;
       const sac = player.reality.glyphs.sac.effarig.add(added ?? 0);
       // This doesn't use the GlyphSacrificeHandler cap because it hits its cap (+100%) earlier
       const capped = Decimal.clampMax(sac, Achievement(192).isUnlocked ? DC.EE10 : 1e70);
@@ -282,7 +282,7 @@ export const GlyphInfo = {
     sacrificeInfo: {
       id: "power",
       effect: added => {
-        if (Pelle.isDisabled("glyphsac")) return new Decimal(1);
+        if (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied) return new Decimal(1);
       const sac = player.reality.glyphs.sac.power.add(added ?? 0);
       const capped = Decimal.clampMax(sac, GlyphSacrificeHandler.maxSacrificeForEffects);
       const base = Decimal.div(capped.add(1).log10(), 100);
@@ -319,7 +319,7 @@ export const GlyphInfo = {
     sacrificeInfo: {
       id: "infinity",
       effect: added => {
-        if (Pelle.isDisabled("glyphsac")) return DC.D1;
+        if (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied) return DC.D1;
         const sac = player.reality.glyphs.sac.infinity.add(added ?? DC.D0);
         const capped = Decimal.clampMax(sac, GlyphSacrificeHandler.maxSacrificeForEffects);
         return Decimal.mul(Decimal.log10(Decimal.pow(capped, 0.2).div(100).add(1)), extra().div(5).max(1)).add(1);
@@ -350,7 +350,7 @@ export const GlyphInfo = {
     sacrificeInfo: {
       id: "replication",
       effect: added => {
-        if (Pelle.isDisabled("glyphsac")) return new Decimal(0);
+        if (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied) return new Decimal(0);
         const sac = player.reality.glyphs.sac.replication.add(added ?? 0);
         const capped = Decimal.clampMax(sac, GlyphSacrificeHandler.maxSacrificeForEffects);
         let base = Decimal.log10(capped.add(1)).div(Decimal.log10(100)).pow(1.2).mul(1500);
@@ -390,7 +390,7 @@ export const GlyphInfo = {
     sacrificeInfo: {
       id: "time",
       effect: added => {
-        if (Pelle.isDisabled("glyphsac")) return DC.D0;
+        if (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied) return DC.D0;
       const sac = player.reality.glyphs.sac.time.add(added ?? 0);
       const capped = Decimal.clampMax(sac, GlyphSacrificeHandler.maxSacrificeForEffects);
       return Decimal.pow(Decimal.pow(capped, 0.2).div(100).add(1), 2).mul(Decimal.pow(1.5, extra()));
@@ -420,7 +420,7 @@ export const GlyphInfo = {
     hasSacrifice: true,
     sacrificeInfo: {
       effect: added => {
-        if (Pelle.isDisabled("glyphsac")) return DC.D1;
+        if (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied) return DC.D1;
       const sac = player.reality.glyphs.sac.dilation.add(added ?? 0);
       const capped = Decimal.clampMax(sac, GlyphSacrificeHandler.maxSacrificeForEffects);
       const exponent = Decimal.pow(new Decimal(Decimal.log10(capped.add(1))).mul(0.32).div(
@@ -452,6 +452,7 @@ export const GlyphInfo = {
     sacrificeInfo: {
       id: "glitch",
       effect: added => {
+        if (Pelle.isDisabled("glyphsac") && !PelleRealityUpgrade.scourToEmpower.canBeApplied) return DC.D0;
       const sac = player.reality.glyphs.sac.glitch.add(added ?? 0);
       return sac.add(1).pow(0.9);
       },

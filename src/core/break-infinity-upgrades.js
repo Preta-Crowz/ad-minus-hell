@@ -12,6 +12,35 @@ class ChargedBreakInfinityUpgradeState extends GameMechanicState {
   }
 }
 
+const chargeableBreakUpgrades = () => [
+  BreakInfinityUpgrade.totalAMMult,
+  BreakInfinityUpgrade.currentAMMult,
+  BreakInfinityUpgrade.galaxyBoost,
+  BreakInfinityUpgrade.infinitiedMult,
+  BreakInfinityUpgrade.achievementMult,
+  BreakInfinityUpgrade.slowestChallengeMult,
+  BreakInfinityUpgrade.infinitiedGen,
+  BreakInfinityUpgrade.autobuyMaxDimboosts,
+  BreakInfinityUpgrade.autobuyerSpeed
+];
+
+export function tryChargeAllBreakUpgrades() {
+  if (player.endgame.overcharge.chargesLeft.infinite < 9) return;
+  for (const upgrade of chargeableBreakUpgrades()) {
+    if (upgrade.canCharge) upgrade.charge();
+  }
+}
+
+export function disChargeAllBreakUpgrades() {
+  const overcharge = player.endgame.overcharge;
+  for (const upgrade of chargeableBreakUpgrades()) {
+    if (upgrade.isCharged) upgrade.disCharge();
+  }
+  overcharge.charged.infinite.clear();
+  overcharge.chargesLeft.infinite = overcharge.completions.bi;
+  overcharge.discharge.infinite = false;
+}
+
 export class BreakInfinityUpgradeState extends SetPurchasableMechanicState {
   constructor(config) {
     super(config);
@@ -28,18 +57,12 @@ export class BreakInfinityUpgradeState extends SetPurchasableMechanicState {
     return player.infinityUpgrades;
   }
 
-  get cost() {
-    return this.config.cost();
+  get isEffectActive() {
+    return this.isBought && !this.isCharged;
   }
 
   get isAvailableForPurchase() {
-    if (Alpha.isRunning && !player.break) return false;
-    if (this.id === "autoBuyerUpgrade" && Alpha.isRunning && Alpha.currentStage < 7) return false;
-    return true;
-  }
-
-  get isEffectActive() {
-    return this.isBought && !this.isCharged;
+    return !this.config.hellOnly || Hell.isInside;
   }
 
   get chargedEffect() {
@@ -47,13 +70,9 @@ export class BreakInfinityUpgradeState extends SetPurchasableMechanicState {
   }
 
   purchase() {
-    if (super.purchase()) {
-      EventHub.dispatch(GAME_EVENT.BREAK_INFINITY_UPGRADE_BOUGHT);
-      return true;
-    }
+    if (super.purchase()) return true;
     if (this.canCharge) {
       this.charge();
-      EventHub.dispatch(GAME_EVENT.BREAK_INFINITY_UPGRADE_CHARGED);
       return true;
     }
     return false;
@@ -91,7 +110,8 @@ export class BreakInfinityUpgradeState extends SetPurchasableMechanicState {
         Alpha.quotes.powerGalaxies.show();
       }
     }
-    if (BreakInfinityUpgrade.all.filter(u => u.isBought).length === (BreakInfinityUpgrade.all.length - player.infinityRebuyables.length) &&
+    if (BreakInfinityUpgrade.all.filter(u => u.isBought).length ===
+      (BreakInfinityUpgrade.all.length - player.infinityRebuyables.length) &&
       BreakInfinityUpgrade.all.filter(u => u.isCapped).length === player.infinityRebuyables.length &&
       Alpha.isRunning && Alpha.currentStage === 7) {
       InfinityDimensions.fullReset();
@@ -115,65 +135,20 @@ class RebuyableBreakInfinityUpgradeState extends RebuyableMechanicState {
   }
 
   get isCapped() {
-    return this.boughtAmount === this.config.maxUpgrades();
-  }
-
-  get isAvailableForPurchase() {
-    if (Alpha.isRunning && !player.break) return false;
-    return true;
+    return this.boughtAmount.gte(this.config.maxUpgrades);
   }
 
   onPurchased() {
     this.config.onPurchased?.();
-    if (BreakInfinityUpgrade.all.filter(u => u.isBought).length === (BreakInfinityUpgrade.all.length - player.infinityRebuyables.length) &&
+    if (BreakInfinityUpgrade.all.filter(u => u.isBought).length ===
+      (BreakInfinityUpgrade.all.length - player.infinityRebuyables.length) &&
       BreakInfinityUpgrade.all.filter(u => u.isCapped).length === player.infinityRebuyables.length &&
       Alpha.isRunning && Alpha.currentStage === 7) {
-      InfinityDimensions.fullReset()
+      InfinityDimensions.fullReset();
       Alpha.advanceLayer();
       Alpha.quotes.allBreakUpgrades.show();
     }
   }
-}
-
-export function tryChargeAllBreakUpgrades() {
-  if (player.endgame.overcharge.chargesLeft.infinite < 9) return;
-  const upgrades = [
-    BreakInfinityUpgrade.totalAMMult,
-    BreakInfinityUpgrade.currentAMMult,
-    BreakInfinityUpgrade.galaxyBoost,
-    BreakInfinityUpgrade.infinitiedMult,
-    BreakInfinityUpgrade.achievementMult,
-    BreakInfinityUpgrade.slowestChallengeMult,
-    BreakInfinityUpgrade.infinitiedGen,
-    BreakInfinityUpgrade.autobuyMaxDimboosts,
-    BreakInfinityUpgrade.autobuyerSpeed
-  ];
-  for (const upgrade of upgrades) {
-    if (upgrade.canCharge) {
-      upgrade.charge();
-    }
-  }
-}
-
-export function disChargeAllBreakUpgrades() {
-  const upgrades = [
-    BreakInfinityUpgrade.totalAMMult,
-    BreakInfinityUpgrade.currentAMMult,
-    BreakInfinityUpgrade.galaxyBoost,
-    BreakInfinityUpgrade.infinitiedMult,
-    BreakInfinityUpgrade.achievementMult,
-    BreakInfinityUpgrade.slowestChallengeMult,
-    BreakInfinityUpgrade.infinitiedGen,
-    BreakInfinityUpgrade.autobuyMaxDimboosts,
-    BreakInfinityUpgrade.autobuyerSpeed
-  ];
-  for (const upgrade of upgrades) {
-    if (upgrade.isCharged) {
-      upgrade.disCharge();
-    }
-  }
-  player.endgame.overcharge.discharge.infinite = false;
-  EventHub.dispatch(GAME_EVENT.BREAK_INFINITY_UPGRADES_DISCHARGED);
 }
 
 export const BreakInfinityUpgrade = mapGameDataToObject(
@@ -182,3 +157,7 @@ export const BreakInfinityUpgrade = mapGameDataToObject(
     ? new RebuyableBreakInfinityUpgradeState(config)
     : new BreakInfinityUpgradeState(config))
 );
+
+// Hell-only upgrades are kept out of `all` so completion checks (Alpha, Pelle) are unaffected
+BreakInfinityUpgrade.hellUpgrades = BreakInfinityUpgrade.all.filter(u => u.config.hellOnly);
+BreakInfinityUpgrade.all = BreakInfinityUpgrade.all.filter(u => !u.config.hellOnly);

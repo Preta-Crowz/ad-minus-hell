@@ -17,6 +17,7 @@ export default {
   },
   methods: {
     handleYesClick() {
+      if (Slabdrill.currentStage < 10) return;
       player.celestials.slabdrill.isGoodbye = true;
     },
   },

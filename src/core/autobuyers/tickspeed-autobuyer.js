@@ -1,3 +1,5 @@
+import { DC } from "../constants";
+
 import { UpgradeableAutobuyerState } from "./autobuyer";
 
 export class TickspeedAutobuyerState extends UpgradeableAutobuyerState {
@@ -10,7 +12,7 @@ export class TickspeedAutobuyerState extends UpgradeableAutobuyerState {
   }
 
   get isUnlocked() {
-    if (LHC.voidRunning && NullUpgrade.limerick5.isBought) return true;
+    if (LHC.voidRunning && LHCNullUpgrade.limerick5.isBought) return true;
     if (Pelle.isDisabled("tickspeedAutobuyer")) return false;
     return this.canBeUpgraded;
   }
@@ -85,9 +87,7 @@ export class TickspeedAutobuyerState extends UpgradeableAutobuyerState {
   }
 
   get resetTickOn() {
-    return Perk.antimatterNoReset.canBeApplied &&
-      (!player.disablePostReality || (LHC.voidRunning && player.endgame.largeHadronCollider.void.nullified))
-      ? PRESTIGE_EVENT.ANTIMATTER_GALAXY : PRESTIGE_EVENT.DIMENSION_BOOST;
+    return Perk.antimatterNoReset.canBeApplied ? PRESTIGE_EVENT.ANTIMATTER_GALAXY : PRESTIGE_EVENT.DIMENSION_BOOST;
   }
 
   reset() {

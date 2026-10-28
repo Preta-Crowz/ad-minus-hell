@@ -3,9 +3,10 @@ import * as ADNotations from "adnot-beport-small";
 import { DEV } from "@/env";
 import { devMigrations } from "./dev-migrations";
 import { migrations } from "./migrations";
-import { decimalMigration } from "./decimal-migrations";
 
 import { deepmergeAll } from "@/utility/deepmerge";
+
+window.deepmergeAll = deepmergeAll;
 
 export const BACKUP_SLOT_TYPE = {
   ONLINE: 0,
@@ -90,15 +91,15 @@ export const GameStorage = {
   },
 
   get localStorageKey() {
-    return DEV ? "dimensionTestSave" : "dimensionSave";
+    return DEV ? "dimensionTestSaveForVis" : "forbiddenNote";
   },
 
   backupDataKey(saveSlot, backupSlot) {
-    return DEV ? `backupTestSave-${saveSlot}-${backupSlot}` : `backupSave-${saveSlot}-${backupSlot}`;
+    return DEV ? `backupTestSaveForVis-${saveSlot}-${backupSlot}` : `backupSave-${saveSlot}-${backupSlot}`;
   },
 
   backupTimeKey(saveSlot) {
-    return DEV ? `backupTestTimes-${saveSlot}` : `backupTimes-${saveSlot}`;
+    return DEV ? `backupTestTimesforVis-${saveSlot}` : `backupTimes-${saveSlot}`;
   },
 
   load() {
@@ -106,7 +107,6 @@ export const GameStorage = {
     const root = GameSaveSerializer.deserialize(save);
 
     this.loadRoot(root);
-    Achievements.updateSteamStatus();
   },
 
   loadRoot(root) {
@@ -147,9 +147,7 @@ export const GameStorage = {
     this.backupOfflineSlots();
     Tabs.all.find(t => t.id === player.options.lastOpenTab).show(false);
     Modal.hideAll();
-    Cloud.resetTempState();
     GameUI.notify.info("Game loaded");
-    Achievements.updateSteamStatus();
   },
 
   import(saveData) {
@@ -169,7 +167,6 @@ export const GameStorage = {
     GlyphAppearanceHandler.clearInvalidCosmetics();
     if (player.speedrun?.isActive) Speedrun.setSegmented(true);
     this.save(true);
-    Cloud.resetTempState();
     this.resetBackupTimer();
 
     // This is to fix a very specific exploit: When the game is ending, some tabs get hidden
@@ -178,7 +175,6 @@ export const GameStorage = {
     // is showing
     Tab.options.subtabs[0].show();
     GameUI.notify.info("Game imported");
-    Achievements.updateSteamStatus();
   },
 
   importAsFile() {
@@ -237,7 +233,7 @@ export const GameStorage = {
     }
     checkNaN(save, "player");
 
-    if (invalidProps.length === 0 || player.DEV) return "";
+    if (invalidProps.length === 0) return "";
     return `${quantify("NaN player property", invalidProps.length)} found:
       ${invalidProps.join(", ")}`;
   },
@@ -251,11 +247,12 @@ export const GameStorage = {
     return !isEnd && !(isSelectingGlyph || isSimulating);
   },
 
-  save(silent = true, manual = false) {
-    if (!this.canSave()) return;
+  save(silent = true, manual = false, force = false) {
+    if (!this.canSave() && !force) return;
     this.lastSaveTime = Date.now();
     GameIntervals.save.restart();
     if (manual && ++this.saved > 99) SecretAchievement(12).unlock();
+    if (manual && ++this.saved > 4999) SecretAchievement(48).unlock();
     const root = {
       current: this.currentSlot,
       saves: this.saves
@@ -270,7 +267,12 @@ export const GameStorage = {
   // to the player if we instead defer the call until after simulation
   saveToBackup(backupSlot, backupTimer) {
     if (!this.canSave(true)) return;
-    localStorage.setItem(this.backupDataKey(this.currentSlot, backupSlot), GameSaveSerializer.serialize(player));
+    try {
+      localStorage.setItem(this.backupDataKey(this.currentSlot, backupSlot), GameSaveSerializer.serialize(player));
+    } catch (e) {
+      // Storage quota exceeded; skip this backup rather than breaking the game loop
+      return;
+    }
     this.lastBackupTimes[backupSlot] = {
       backupTimer,
       date: Date.now(),
@@ -337,7 +339,7 @@ export const GameStorage = {
   // since these may cause the backup timer to be significantly behind
   resetBackupTimer() {
     const latestBackupTime = Object.values(this.lastBackupTimes).map(t => t && t.backupTimer).max();
-    player.backupTimer = Math.max(this.oldBackupTimer, player.backupTimer, latestBackupTime);
+    player.backupTimer = Math.max(this.oldBackupTimer, player.backupTimer, latestBackupTime.toNumber());
   },
 
   // Saves the current game state to the first reserve slot it finds
@@ -418,11 +420,19 @@ export const GameStorage = {
     this.loadPlayerObject(Player.defaultStart);
     this.save(true);
     Tab.dimensions.antimatter.show();
-    Cloud.resetTempState();
   },
 
+  // eslint-disable-next-line complexity
   loadPlayerObject(playerObject) {
     this.saved = 0;
+
+    // Older saves contain snapshots nested inside snapshots, which bloats the save size exponentially
+    for (const key of ["alpha", "slabdrill"]) {
+      const records = playerObject?.celestials?.[key]?.records;
+      if (!records?.celestials) continue;
+      delete records.celestials.alpha?.records;
+      delete records.celestials.slabdrill?.records;
+    }
 
     const checkString = this.checkPlayerObject(playerObject);
     if (playerObject === Player.defaultStart || checkString !== "") {
@@ -456,85 +466,42 @@ export const GameStorage = {
       if (DEV && player.options.testVersion !== undefined) {
         devMigrations.patch(player);
       }
-
-      // Post-reality migrations are separated from pre-reality because they need to happen after any dev migrations,
-      // which themselves must happen after the deepmerge
+      
+      if (player.version >= 27) {
+        const fixGlyph = glyph => {
+          glyph.level = new Decimal(glyph.level);
+          glyph.rawLevel = new Decimal(glyph.rawLevel);
+          glyph.strength = new Decimal(glyph.strength);
+          // eslint-disable-next-line consistent-return
+          return glyph;
+        };
+        player.celestials.teresa.bestAMSet = player.celestials.teresa.bestAMSet.map(n => fixGlyph(n));
+        player.celestials.v.runGlyphs = player.celestials.v.runGlyphs.map(n => n.map(g => fixGlyph(g)));
+        player.reality.glyphs.active = player.reality.glyphs.active.map(n => fixGlyph(n));
+        player.reality.glyphs.inventory = player.reality.glyphs.inventory.map(n => fixGlyph(n));
+        for (let i = 0; i < 7; i++) {
+          player.reality.glyphs.sets[i].glyphs = player.reality.glyphs.sets[i].glyphs.map(n => fixGlyph(n));
+        }
+        player.records.bestReality.RMSet = player.records.bestReality.RMSet?.map(n => fixGlyph(n));
+        player.records.bestReality.RMminSet = player.records.bestReality.RMminSet?.map(n => fixGlyph(n));
+        player.records.bestReality.glyphLevelSet = player.records.bestReality.glyphLevelSet?.map(n => fixGlyph(n));
+        player.records.bestReality.imCapSet = player.records.bestReality.imCapSet?.map(n => fixGlyph(n));
+        player.records.bestReality.laitelaSet = player.records.bestReality.laitelaSet?.map(n => fixGlyph(n));
+        player.records.bestReality.speedSet = player.records.bestReality.speedSet?.map(n => fixGlyph(n));
+      }
+      for (const item in player.reality.glyphs.filter.types) {
+        player.reality.glyphs.filter.types[item].rarity = new Decimal(player.reality.glyphs.filter.types[item].rarity);
+        // eslint-disable-next-line max-len
+        // Eplayer.reality.glyphs.filter.types[item].score = new Decimal(player.reality.glyphs.filter.types[item].score);
+      }
+      
       player = migrations.patchPostReality(player);
     }
 
-    decimalMigration(player);
-
-    let s1 = player.reality.glyphs.active;
-    for (let g1 = 0; g1 < s1.length; g1++) {
-      if (s1[g1].level) s1[g1].level = new Decimal(s1[g1].level);
-    }
-    player.reality.glyphs.active = s1;
-    let s2 = player.reality.glyphs.inventory;
-    for (let g2 = 0; g2 < s2.length; g2++) {
-      if (s2[g2].level) s2[g2].level = new Decimal(s2[g2].level);
-    }
-    player.reality.glyphs.inventory = s2;
-    let s3 = player.reality.glyphs.sets;
-    for (let a3 = 0; a3 < s3.length; a3++) {
-      if (s3[a3].glyphs) {
-        for (let g3 = 0; g3 < s3[a3].glyphs.length; g3++) {
-          if (s3[a3].glyphs[g3].level) s3[a3].glyphs[g3].level = new Decimal(s3[a3].glyphs[g3].level);
-        }
-      }
-    }
-    player.reality.glyphs.sets = s3;
-    let s4 = player.celestials.teresa.bestAMSet;
-    for (let g4 = 0; g4 < s4.length; g4++) {
-      if (s4[g4].level) s4[g4].level = new Decimal(s4[g4].level);
-    }
-    player.celestials.teresa.bestAMSet = s4;
-    let s5 = player.celestials.v.runGlyphs;
-    for (let a5 = 0; a5 < s5.length; a5++) {
-      if (s5[a5]) {
-        for (let g5 = 0; g5 < s5[a5].length; g5++) {
-          if (s5[a5][g5].level) s5[a5][g5].level = new Decimal(s5[a5][g5].level);
-        }
-      }
-    }
-    player.celestials.v.runGlyphs = s5;
-    let s6 = player.records.bestReality.RMSet;
-    for (let g6 = 0; g6 < s6.length; g6++) {
-      if (s6[g6].level) s6[g6].level = new Decimal(s6[g6].level);
-    }
-    player.records.bestReality.RMSet = s6;
-    let s7 = player.records.bestReality.RMminSet;
-    for (let g7 = 0; g7 < s7.length; g7++) {
-      if (s7[g7].level) s7[g7].level = new Decimal(s7[g7].level);
-    }
-    player.records.bestReality.RMminSet = s7;
-    let s8 = player.records.bestReality.glyphLevelSet;
-    for (let g8 = 0; g8 < s8.length; g8++) {
-      if (s8[g8].level) s8[g8].level = new Decimal(s8[g8].level);
-    }
-    player.records.bestReality.glyphLevelSet = s8;
-    let s9 = player.records.bestReality.bestEPSet;
-    for (let g9 = 0; g9 < s9.length; g9++) {
-      if (s9[g9].level) s9[g9].level = new Decimal(s9[g9].level);
-    }
-    player.records.bestReality.bestEPSet = s9;
-    let s10 = player.records.bestReality.speedSet;
-    for (let g10 = 0; g10 < s10.length; g10++) {
-      if (s10[g10].level) s10[g10].level = new Decimal(s10[g10].level);
-    }
-    player.records.bestReality.speedSet = s10;
-    let s11 = player.records.bestReality.iMCapSet;
-    for (let g11 = 0; g11 < s11.length; g11++) {
-      if (s11[g11].level) s11[g11].level = new Decimal(s11[g11].level);
-    }
-    player.records.bestReality.iMCapSet = s11;
-    let s12 = player.records.bestReality.laitelaSet;
-    for (let g12 = 0; g12 < s12.length; g12++) {
-      if (s12[g12].level) s12[g12].level = new Decimal(s12[g12].level);
-    }
-    player.records.bestReality.laitelaSet = s12;
-
     this.saves[this.currentSlot] = player;
     this.lastUpdateOnLoad = player.lastUpdate;
+
+    if (GameIntervals.checkCloudSave.isStarted) Cloud.resetTempState();
 
     if (DEV) {
       guardFromNaNValues(player);
@@ -555,7 +522,6 @@ export const GameStorage = {
     Glyphs.unseen = [];
     Glyphs.unequipped = [];
     Notations.find(player.options.notation).setAsCurrent(true);
-    LNotations.find(player.options.lnotation).setAsCurrent(true);
     ADNotations.Settings.exponentCommas.min = 10 ** player.options.notationDigits.comma;
     ADNotations.Settings.exponentCommas.max = 10 ** player.options.notationDigits.notation;
 
@@ -565,8 +531,8 @@ export const GameStorage = {
 
     const rawDiff = Date.now() - player.lastUpdate;
     // We set offlineEnabled externally on importing or loading a backup; otherwise this is just a local load
-    const simulateOffline = this.offlineEnabled ?? player.options.offlineProgress;
-    if (simulateOffline && !Speedrun.isPausedAtStart() && player.hasSeenIntro) {
+    const simulateOffline = !Hell.isOfflineLocked && (this.offlineEnabled ?? player.options.offlineProgress);
+    if (simulateOffline && !Speedrun.isPausedAtStart()) {
       let diff = rawDiff;
       player.speedrun.offlineTimeUsed += diff;
       if (diff > 5 * 60 * 1000 && player.celestials.enslaved.autoStoreReal) {
@@ -609,11 +575,12 @@ export const GameStorage = {
     // manually above
     GameIntervals.restart();
     GameStorage.ignoreBackupTimer = false;
-    Enslaved.nextTickDiff = player.options.updateRate;
+    Enslaved.nextTickDiff = new Decimal(player.options.updateRate);
     // The condition for this secret achievement is only checked when the player is actively storing real time, either
     // when online or simulating time. When only storing offline, the condition is never actually entered in the
     // gameLoop due to the option technically being false, so we need to check it on-load too.
-    if (player.celestials.enslaved.storedReal > (24 * 60 * 60 * 1000)) SecretAchievement(46).unlock();
+    if (player.celestials.enslaved.storedReal.gte(24 * 3600000)) SecretAchievement(46).unlock();
+    
     GameUI.update();
 
     for (const resource of AlchemyResources.all) {
