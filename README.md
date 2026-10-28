@@ -23,3 +23,7 @@ be displayed in your terminal. The server **doesn't** need to be restarted
 after you've made changes - just reload the page. The server **can**
 occasionally crash, so check your terminal from time to time and run `serve`
 again if needed.
+
+# AI Usage Info
+This repository is fully managed from AI except for copied codes/assets from original mods and vanilla things.
+This is made from joke. So who cares?
